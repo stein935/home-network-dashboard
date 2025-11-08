@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-body bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text;
+  }
+}
+
+@layer components {
+  .btn-brutal {
+    @apply border-3 border-light-border dark:border-dark-border
+           bg-light-surface dark:bg-dark-surface
+           px-6 py-3 font-display uppercase
+           shadow-brutal hover:shadow-none
+           hover:translate-x-1 hover:translate-y-1
+           active:translate-x-2 active:translate-y-2
+           transition-all duration-200
+           cursor-pointer;
+  }
+
+  .btn-brutal-primary {
+    @apply btn-brutal border-light-accent1 dark:border-dark-accent1
+           text-light-accent1 dark:text-dark-accent1;
+  }
+
+  .btn-brutal-danger {
+    @apply btn-brutal border-light-error dark:border-dark-error
+           text-light-error dark:text-dark-error;
+  }
+
+  .input-brutal {
+    @apply border-3 border-light-border dark:border-dark-border
+           bg-light-surface dark:bg-dark-surface
+           text-light-text dark:text-dark-text
+           px-4 py-2 font-body
+           focus:outline-none focus:border-light-accent1 dark:focus:border-dark-accent1
+           transition-colors duration-200;
+  }
+
+  .card-brutal {
+    @apply border-5 border-light-border dark:border-dark-border
+           bg-light-surface dark:bg-dark-surface
+           shadow-brutal
+           hover:shadow-none hover:translate-x-2 hover:translate-y-2
+           transition-all duration-200;
+  }
+
+  .service-card {
+    @apply card-brutal
+           cursor-pointer
+           p-6
+           flex flex-col items-center justify-center
+           min-h-[200px]
+           group;
+  }
+
+  .service-card:hover {
+    @apply border-light-accent1 dark:border-dark-accent1;
+  }
+
+  .text-neon-green {
+    @apply text-[#00ff00];
+  }
+
+  .text-neon-magenta {
+    @apply text-[#ff00ff];
+  }
+
+  .text-neon-cyan {
+    @apply text-[#00ffff];
+  }
+
+  .text-neon-yellow {
+    @apply text-[#ffff00];
+  }
+
+  .border-neon-green {
+    @apply border-[#00ff00];
+  }
+
+  .border-neon-red {
+    @apply border-[#ff0000];
+  }
+
+  .border-neon-blue {
+    @apply border-[#0000ff];
+  }
+
+  .border-neon-magenta {
+    @apply border-[#ff00ff];
+  }
+}
