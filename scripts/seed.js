@@ -21,22 +21,12 @@ async function seedAdmin() {
     // Initialize database
     initializeDatabase();
 
-    console.log('To add an admin user, you need their Google ID and email.\n');
-    console.log('You can get the Google ID by:');
-    console.log('1. Going to https://myaccount.google.com/');
-    console.log('2. Clicking on "Personal info"');
-    console.log('3. Or use developer tools to inspect the OAuth response\n');
+    console.log('To add an admin user, simply enter their Google email address.\n');
+    console.log('The user will be able to log in with their Google account.\n');
 
     const email = await question('Enter user email: ');
     if (!email || !email.includes('@')) {
       console.error('Error: Invalid email address');
-      rl.close();
-      return;
-    }
-
-    const googleId = await question('Enter Google ID: ');
-    if (!googleId) {
-      console.error('Error: Google ID is required');
       rl.close();
       return;
     }
@@ -56,19 +46,20 @@ async function seedAdmin() {
       }
     } else {
       // Create new admin user
-      const user = User.create(googleId, email, name || email, 'admin');
+      const user = User.create(email, name || null, 'admin');
       console.log('\n✓ Admin user created successfully!');
       console.log(`  Email: ${user.email}`);
+      console.log(`  Name: ${user.name || 'Not provided'}`);
       console.log(`  Role: ${user.role}`);
       console.log(`  ID: ${user.id}`);
     }
 
-    console.log('\nYou can now log in with this Google account at the dashboard.\n');
+    console.log('\nThe user can now log in with their Google account at the dashboard.\n');
 
   } catch (error) {
     console.error('\nError creating admin user:', error.message);
     if (error.code === 'SQLITE_CONSTRAINT') {
-      console.error('A user with this Google ID or email already exists.');
+      console.error('A user with this email already exists.');
     }
   } finally {
     rl.close();

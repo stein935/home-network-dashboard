@@ -12,7 +12,6 @@ const validateUser = [
 
 const validateNewUser = [
   ...validateUser,
-  body('google_id').trim().isLength({ min: 1 }).withMessage('Google ID is required'),
   body('name').optional().trim()
 ];
 
@@ -44,15 +43,15 @@ router.post('/', isAdmin, validateNewUser, (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { google_id, email, name, role } = req.body;
+    const { email, name, role } = req.body;
 
     // Check if user already exists
-    const existingUser = User.findByGoogleId(google_id);
+    const existingUser = User.findByEmail(email);
     if (existingUser) {
       return res.status(409).json({ error: 'User already exists' });
     }
 
-    const user = User.create(google_id, email, name || email, role);
+    const user = User.create(email, name || null, role);
 
     console.log(`User added to whitelist: ${email} (${role}) by ${req.user.email}`);
     res.status(201).json({

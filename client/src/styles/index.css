@@ -59,6 +59,35 @@
     @apply border-accent1;
   }
 
+  .calendar-card {
+    @apply items-start justify-start
+           cursor-default;
+  }
+
+  .calendar-card:hover {
+    @apply shadow-brutal translate-x-0 translate-y-0;
+  }
+
+  .calendar-content {
+    @apply w-full;
+  }
+
+  .calendar-content::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .calendar-content::-webkit-scrollbar-track {
+    @apply bg-surface border-2 border-border;
+  }
+
+  .calendar-content::-webkit-scrollbar-thumb {
+    @apply bg-accent1 border-2 border-border;
+  }
+
+  .calendar-content::-webkit-scrollbar-thumb:hover {
+    @apply bg-accent2;
+  }
+
   .text-neon-green {
     @apply text-[#00ff00];
   }

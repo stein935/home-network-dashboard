@@ -1,9 +1,16 @@
 import { useState } from 'react';
 import * as Icons from 'lucide-react';
+import { CalendarCard } from './CalendarCard';
 
 export function ServiceCard({ service }) {
   const [imageError, setImageError] = useState(false);
 
+  // Render calendar card for calendar type
+  if (service.card_type === 'calendar') {
+    return <CalendarCard service={service} />;
+  }
+
+  // Default link card behavior
   const handleClick = () => {
     window.open(service.url, '_blank', 'noopener,noreferrer');
   };

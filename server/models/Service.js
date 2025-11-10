@@ -1,30 +1,48 @@
 const db = require('../config/database');
+const ServiceConfig = require('./ServiceConfig');
 
 class Service {
   static getAll() {
     return db.prepare('SELECT * FROM services ORDER BY display_order ASC').all();
   }
 
+  static getAllWithConfig() {
+    const services = this.getAll();
+    return services.map(service => {
+      const config = ServiceConfig.findByServiceId(service.id);
+      return { ...service, config };
+    });
+  }
+
   static findById(id) {
     return db.prepare('SELECT * FROM services WHERE id = ?').get(id);
   }
 
-  static create(name, url, icon, displayOrder) {
+  static findByIdWithConfig(id) {
+    const service = this.findById(id);
+    if (service) {
+      const config = ServiceConfig.findByServiceId(service.id);
+      return { ...service, config };
+    }
+    return null;
+  }
+
+  static create(name, url, icon, displayOrder, sectionId, cardType = 'link') {
     const stmt = db.prepare(`
-      INSERT INTO services (name, url, icon, display_order)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO services (name, url, icon, display_order, section_id, card_type)
+      VALUES (?, ?, ?, ?, ?, ?)
     `);
-    const result = stmt.run(name, url, icon, displayOrder);
+    const result = stmt.run(name, url, icon, displayOrder, sectionId, cardType);
     return this.findById(result.lastInsertRowid);
   }
 
-  static update(id, name, url, icon, displayOrder) {
+  static update(id, name, url, icon, displayOrder, sectionId, cardType = 'link') {
     const stmt = db.prepare(`
       UPDATE services
-      SET name = ?, url = ?, icon = ?, display_order = ?, updated_at = CURRENT_TIMESTAMP
+      SET name = ?, url = ?, icon = ?, display_order = ?, section_id = ?, card_type = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `);
-    stmt.run(name, url, icon, displayOrder, id);
+    stmt.run(name, url, icon, displayOrder, sectionId, cardType, id);
     return this.findById(id);
   }
 
