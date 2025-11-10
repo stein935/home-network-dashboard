@@ -13,7 +13,7 @@ export function ServiceCard({ service }) {
 
   return (
     <div
-      className="service-card"
+      className="service-card group"
       onClick={handleClick}
       role="button"
       tabIndex={0}
@@ -23,13 +23,13 @@ export function ServiceCard({ service }) {
         }
       }}
     >
-      <div className="mb-4 text-light-accent1 dark:text-dark-accent1 group-hover:text-light-accent2 dark:group-hover:text-dark-accent2 transition-colors">
+      <div className="mb-4 text-accent1 group-hover:text-accent2 transition-colors">
         <IconComponent size={64} strokeWidth={2.5} />
       </div>
-      <h3 className="font-display text-2xl uppercase text-center text-light-text dark:text-dark-text">
+      <h3 className="font-display text-2xl uppercase text-center text-text">
         {service.name}
       </h3>
-      <p className="font-body text-sm mt-2 text-light-text/70 dark:text-dark-text/70 text-center break-all">
+      <p className="font-body text-sm mt-2 text-text/70 text-center truncate w-full">
         {service.url}
       </p>
     </div>

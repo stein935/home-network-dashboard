@@ -99,19 +99,19 @@ export function AdminPanel() {
             Back to Dashboard
           </button>
 
-          <h1 className="font-display text-display-lg uppercase text-light-text dark:text-dark-text">
-            Admin <span className="text-light-accent1 dark:text-dark-accent1">Panel</span>
+          <h1 className="font-display text-display-lg uppercase text-text">
+            Admin <span className="text-accent1">Panel</span>
           </h1>
         </header>
 
         {/* Tabs */}
-        <div className="mb-8 flex gap-4 border-b-5 border-light-border dark:border-dark-border">
+        <div className="mb-8 flex gap-4 border-b-5 border-border">
           <button
             onClick={() => setActiveTab('services')}
             className={`font-display uppercase px-6 py-3 border-b-5 transition-colors ${
               activeTab === 'services'
-                ? 'border-light-accent1 dark:border-dark-accent1 text-light-accent1 dark:text-dark-accent1'
-                : 'border-transparent text-light-text/60 dark:text-dark-text/60 hover:text-light-text dark:hover:text-dark-text'
+                ? 'border-accent1 text-accent1'
+                : 'border-transparent text-text/60 hover:text-text'
             }`}
           >
             Services
@@ -120,8 +120,8 @@ export function AdminPanel() {
             onClick={() => setActiveTab('users')}
             className={`font-display uppercase px-6 py-3 border-b-5 transition-colors ${
               activeTab === 'users'
-                ? 'border-light-accent1 dark:border-dark-accent1 text-light-accent1 dark:text-dark-accent1'
-                : 'border-transparent text-light-text/60 dark:text-dark-text/60 hover:text-light-text dark:hover:text-dark-text'
+                ? 'border-accent1 text-accent1'
+                : 'border-transparent text-text/60 hover:text-text'
             }`}
           >
             Users
@@ -132,7 +132,7 @@ export function AdminPanel() {
         {activeTab === 'services' ? (
           <div>
             <div className="flex justify-between items-center mb-6">
-              <h2 className="font-display text-display-sm uppercase text-light-text dark:text-dark-text">
+              <h2 className="font-display text-display-sm uppercase text-text">
                 Manage Services
               </h2>
               <button
@@ -146,56 +146,56 @@ export function AdminPanel() {
 
             {loading ? (
               <div className="text-center py-8">
-                <p className="font-display text-xl uppercase text-light-accent1 dark:text-dark-accent1">
+                <p className="font-display text-xl uppercase text-accent1">
                   Loading Services...
                 </p>
               </div>
             ) : error ? (
-              <div className="border-3 border-light-error dark:border-dark-error bg-light-surface dark:bg-dark-surface p-4">
-                <p className="text-light-error dark:text-dark-error">{error}</p>
+              <div className="border-3 border-error bg-surface p-4">
+                <p className="text-error">{error}</p>
               </div>
             ) : (
-              <div className="border-5 border-light-border dark:border-dark-border bg-light-surface dark:bg-dark-surface shadow-brutal overflow-x-auto">
+              <div className="border-5 border-border bg-surface shadow-brutal overflow-x-auto">
                 <table className="w-full">
-                  <thead className="border-b-3 border-light-border dark:border-dark-border">
+                  <thead className="border-b-3 border-border">
                     <tr>
-                      <th className="text-left p-4 font-display uppercase text-light-text dark:text-dark-text">Order</th>
-                      <th className="text-left p-4 font-display uppercase text-light-text dark:text-dark-text">Name</th>
-                      <th className="text-left p-4 font-display uppercase text-light-text dark:text-dark-text">URL</th>
-                      <th className="text-left p-4 font-display uppercase text-light-text dark:text-dark-text">Icon</th>
-                      <th className="text-right p-4 font-display uppercase text-light-text dark:text-dark-text">Actions</th>
+                      <th className="text-left p-4 font-display uppercase text-text">Order</th>
+                      <th className="text-left p-4 font-display uppercase text-text">Name</th>
+                      <th className="text-left p-4 font-display uppercase text-text">URL</th>
+                      <th className="text-left p-4 font-display uppercase text-text">Icon</th>
+                      <th className="text-right p-4 font-display uppercase text-text">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {services.map((service) => (
                       <tr
                         key={service.id}
-                        className="border-b border-light-border/30 dark:border-dark-border/30 last:border-0"
+                        className="border-b border-border/30 last:border-0"
                       >
-                        <td className="p-4 font-body text-light-text dark:text-dark-text">
+                        <td className="p-4 font-body text-text">
                           {service.display_order}
                         </td>
-                        <td className="p-4 font-body text-light-text dark:text-dark-text">
+                        <td className="p-4 font-body text-text">
                           {service.name}
                         </td>
-                        <td className="p-4 font-body text-sm text-light-text/70 dark:text-dark-text/70 break-all max-w-xs">
+                        <td className="p-4 font-body text-sm text-text/70 break-all max-w-xs">
                           {service.url}
                         </td>
-                        <td className="p-4 font-body text-light-text dark:text-dark-text">
+                        <td className="p-4 font-body text-text">
                           {service.icon}
                         </td>
                         <td className="p-4 text-right">
                           <div className="flex justify-end gap-3">
                             <button
                               onClick={() => handleEditClick(service)}
-                              className="text-light-accent1 dark:text-dark-accent1 hover:opacity-80"
+                              className="text-accent1 hover:opacity-80"
                               aria-label="Edit service"
                             >
                               <Edit size={20} />
                             </button>
                             <button
                               onClick={() => handleDeleteService(service.id)}
-                              className="text-light-error dark:text-dark-error hover:opacity-80"
+                              className="text-error hover:opacity-80"
                               aria-label="Delete service"
                             >
                               <Trash2 size={20} />

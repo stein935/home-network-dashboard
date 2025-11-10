@@ -16,7 +16,11 @@ router.get('/google/callback',
   }),
   (req, res) => {
     // Successful authentication, redirect to dashboard
-    res.redirect('/');
+    // In development, redirect to Vite dev server
+    const redirectUrl = process.env.NODE_ENV === 'production'
+      ? '/'
+      : 'http://localhost:5173/';
+    res.redirect(redirectUrl);
   }
 );
 

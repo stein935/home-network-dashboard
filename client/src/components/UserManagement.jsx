@@ -76,7 +76,7 @@ export function UserManagement() {
   if (loading) {
     return (
       <div className="text-center py-8">
-        <p className="font-display text-xl uppercase text-light-accent1 dark:text-dark-accent1">
+        <p className="font-display text-xl uppercase text-accent1">
           Loading Users...
         </p>
       </div>
@@ -86,7 +86,7 @@ export function UserManagement() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="font-display text-display-sm uppercase text-light-text dark:text-dark-text">
+        <h2 className="font-display text-display-sm uppercase text-text">
           User Management
         </h2>
         <button
@@ -99,20 +99,20 @@ export function UserManagement() {
       </div>
 
       {error && (
-        <div className="mb-6 border-3 border-light-error dark:border-dark-error bg-light-surface dark:bg-dark-surface p-4">
-          <p className="text-light-error dark:text-dark-error">{error}</p>
+        <div className="mb-6 border-3 border-error bg-surface p-4">
+          <p className="text-error">{error}</p>
         </div>
       )}
 
       {showAddForm && (
-        <div className="mb-6 border-5 border-light-border dark:border-dark-border bg-light-surface dark:bg-dark-surface p-6 shadow-brutal">
-          <h3 className="font-display text-xl uppercase mb-4 text-light-text dark:text-dark-text">
+        <div className="mb-6 border-5 border-border bg-surface p-6 shadow-brutal">
+          <h3 className="font-display text-xl uppercase mb-4 text-text">
             Add New User
           </h3>
           <form onSubmit={handleAddUser} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block font-display uppercase text-sm mb-2 text-light-text dark:text-dark-text">
+                <label className="block font-display uppercase text-sm mb-2 text-text">
                   Email
                 </label>
                 <input
@@ -125,7 +125,7 @@ export function UserManagement() {
                 />
               </div>
               <div>
-                <label className="block font-display uppercase text-sm mb-2 text-light-text dark:text-dark-text">
+                <label className="block font-display uppercase text-sm mb-2 text-text">
                   Google ID
                 </label>
                 <input
@@ -138,7 +138,7 @@ export function UserManagement() {
                 />
               </div>
               <div>
-                <label className="block font-display uppercase text-sm mb-2 text-light-text dark:text-dark-text">
+                <label className="block font-display uppercase text-sm mb-2 text-text">
                   Name (Optional)
                 </label>
                 <input
@@ -150,7 +150,7 @@ export function UserManagement() {
                 />
               </div>
               <div>
-                <label className="block font-display uppercase text-sm mb-2 text-light-text dark:text-dark-text">
+                <label className="block font-display uppercase text-sm mb-2 text-text">
                   Role
                 </label>
                 <select
@@ -179,47 +179,47 @@ export function UserManagement() {
         </div>
       )}
 
-      <div className="border-5 border-light-border dark:border-dark-border bg-light-surface dark:bg-dark-surface shadow-brutal overflow-x-auto">
+      <div className="border-5 border-border bg-surface shadow-brutal overflow-x-auto">
         <table className="w-full">
-          <thead className="border-b-3 border-light-border dark:border-dark-border">
+          <thead className="border-b-3 border-border">
             <tr>
-              <th className="text-left p-4 font-display uppercase text-light-text dark:text-dark-text">Email</th>
-              <th className="text-left p-4 font-display uppercase text-light-text dark:text-dark-text">Name</th>
-              <th className="text-left p-4 font-display uppercase text-light-text dark:text-dark-text">Role</th>
-              <th className="text-left p-4 font-display uppercase text-light-text dark:text-dark-text">Last Login</th>
-              <th className="text-right p-4 font-display uppercase text-light-text dark:text-dark-text">Actions</th>
+              <th className="text-left p-4 font-display uppercase text-text">Email</th>
+              <th className="text-left p-4 font-display uppercase text-text">Name</th>
+              <th className="text-left p-4 font-display uppercase text-text">Role</th>
+              <th className="text-left p-4 font-display uppercase text-text">Last Login</th>
+              <th className="text-right p-4 font-display uppercase text-text">Actions</th>
             </tr>
           </thead>
           <tbody>
             {users.map((user) => (
               <tr
                 key={user.id}
-                className="border-b border-light-border/30 dark:border-dark-border/30 last:border-0"
+                className="border-b border-border/30 last:border-0"
               >
-                <td className="p-4 font-body text-light-text dark:text-dark-text">{user.email}</td>
-                <td className="p-4 font-body text-light-text dark:text-dark-text">{user.name || '-'}</td>
+                <td className="p-4 font-body text-text">{user.email}</td>
+                <td className="p-4 font-body text-text">{user.name || '-'}</td>
                 <td className="p-4">
                   <button
                     onClick={() => handleToggleRole(user.id, user.role)}
                     disabled={user.id === currentUser?.id}
                     className={`flex items-center gap-2 ${
                       user.role === 'admin'
-                        ? 'text-light-accent1 dark:text-dark-accent1'
-                        : 'text-light-text/60 dark:text-dark-text/60'
+                        ? 'text-accent1'
+                        : 'text-text/60'
                     } ${user.id === currentUser?.id ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80'}`}
                   >
                     {user.role === 'admin' ? <Shield size={16} /> : <Eye size={16} />}
                     <span className="font-display uppercase text-sm">{user.role}</span>
                   </button>
                 </td>
-                <td className="p-4 font-body text-sm text-light-text/70 dark:text-dark-text/70">
+                <td className="p-4 font-body text-sm text-text/70">
                   {user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'}
                 </td>
                 <td className="p-4 text-right">
                   <button
                     onClick={() => handleDeleteUser(user.id)}
                     disabled={user.id === currentUser?.id}
-                    className={`text-light-error dark:text-dark-error ${
+                    className={`text-error ${
                       user.id === currentUser?.id
                         ? 'opacity-30 cursor-not-allowed'
                         : 'hover:opacity-80'

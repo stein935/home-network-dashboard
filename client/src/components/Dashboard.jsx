@@ -40,11 +40,11 @@ export function Dashboard() {
         {/* Header */}
         <header className="mb-12 flex justify-between items-start flex-wrap gap-4">
           <div>
-            <h1 className="font-display text-display-lg uppercase text-light-text dark:text-dark-text mb-2">
-              Network
-              <span className="text-light-accent1 dark:text-dark-accent1"> Dashboard</span>
+            <h1 className="font-display text-display-lg uppercase text-text mb-2">
+              HOME
+              <span className="text-accent1"> Things</span>
             </h1>
-            <p className="font-body text-xl text-light-text/80 dark:text-dark-text/80">
+            <p className="font-body text-xl text-text/80">
               Welcome, {user?.name || user?.email}
             </p>
           </div>
@@ -74,28 +74,28 @@ export function Dashboard() {
         {/* Services Grid */}
         {loading ? (
           <div className="text-center py-12">
-            <div className="inline-block border-5 border-light-border dark:border-dark-border bg-light-surface dark:bg-dark-surface p-8 shadow-brutal">
-              <p className="font-display text-2xl uppercase text-light-accent1 dark:text-dark-accent1">
+            <div className="inline-block border-5 border-border bg-surface p-8 shadow-brutal">
+              <p className="font-display text-2xl uppercase text-accent1">
                 Loading Services...
               </p>
             </div>
           </div>
         ) : error ? (
           <div className="text-center py-12">
-            <div className="inline-block border-5 border-light-error dark:border-dark-error bg-light-surface dark:bg-dark-surface p-8 shadow-brutal">
-              <p className="font-display text-2xl uppercase text-light-error dark:text-dark-error">
+            <div className="inline-block border-5 border-error bg-surface p-8 shadow-brutal">
+              <p className="font-display text-2xl uppercase text-error">
                 {error}
               </p>
             </div>
           </div>
         ) : services.length === 0 ? (
           <div className="text-center py-12">
-            <div className="inline-block border-5 border-light-border dark:border-dark-border bg-light-surface dark:bg-dark-surface p-8 shadow-brutal">
-              <p className="font-display text-2xl uppercase text-light-text dark:text-dark-text">
+            <div className="inline-block border-5 border-border bg-surface p-8 shadow-brutal">
+              <p className="font-display text-2xl uppercase text-text">
                 No Services Available
               </p>
               {isAdmin && (
-                <p className="font-body mt-4 text-light-text/70 dark:text-dark-text/70">
+                <p className="font-body mt-4 text-text/70">
                   Click Admin to add services
                 </p>
               )}

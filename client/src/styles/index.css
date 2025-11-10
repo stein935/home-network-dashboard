@@ -4,14 +4,14 @@
 
 @layer base {
   body {
-    @apply font-body bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text;
+    @apply font-body bg-bg text-text;
   }
 }
 
 @layer components {
   .btn-brutal {
-    @apply border-3 border-light-border dark:border-dark-border
-           bg-light-surface dark:bg-dark-surface
+    @apply border-3 border-border
+           bg-surface
            px-6 py-3 font-display uppercase
            shadow-brutal hover:shadow-none
            hover:translate-x-1 hover:translate-y-1
@@ -21,27 +21,27 @@
   }
 
   .btn-brutal-primary {
-    @apply btn-brutal border-light-accent1 dark:border-dark-accent1
-           text-light-accent1 dark:text-dark-accent1;
+    @apply btn-brutal border-accent1
+           text-accent1;
   }
 
   .btn-brutal-danger {
-    @apply btn-brutal border-light-error dark:border-dark-error
-           text-light-error dark:text-dark-error;
+    @apply btn-brutal border-error
+           text-error;
   }
 
   .input-brutal {
-    @apply border-3 border-light-border dark:border-dark-border
-           bg-light-surface dark:bg-dark-surface
-           text-light-text dark:text-dark-text
+    @apply border-3 border-border
+           bg-surface
+           text-text
            px-4 py-2 font-body
-           focus:outline-none focus:border-light-accent1 dark:focus:border-dark-accent1
+           focus:outline-none focus:border-accent1
            transition-colors duration-200;
   }
 
   .card-brutal {
-    @apply border-5 border-light-border dark:border-dark-border
-           bg-light-surface dark:bg-dark-surface
+    @apply border-5 border-border
+           bg-surface
            shadow-brutal
            hover:shadow-none hover:translate-x-2 hover:translate-y-2
            transition-all duration-200;
@@ -52,12 +52,11 @@
            cursor-pointer
            p-6
            flex flex-col items-center justify-center
-           min-h-[200px]
-           group;
+           min-h-[200px];
   }
 
   .service-card:hover {
-    @apply border-light-accent1 dark:border-dark-accent1;
+    @apply border-accent1;
   }
 
   .text-neon-green {

@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { SortAsc, X } from 'lucide-react';
 
 const POPULAR_ICONS = [
-  'Router', 'Shield', 'Activity', 'Monitor', 'Server', 'Globe',
+  'Router', 'ShieldCheck', 'Activity', 'Monitor', 'Server', 'Globe',
   'Laptop', 'Wifi', 'Database', 'HardDrive', 'Cloud', 'Lock',
   'BarChart', 'Download', 'Upload', 'Settings', 'Zap', 'Home',
-  'Network', 'Radio', 'Tv', 'Smartphone', 'Tablet', 'Watch'
+  'Network', 'Radio', 'Tv', 'Smartphone', 'Tablet', 'Watch',
+  'Utensils', 'Calendar'
 ];
+
+const SORTED_POPULAR_ICONS = POPULAR_ICONS.sort((a, b) => a.localeCompare(b));
 
 export function ServiceForm({ service, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
@@ -92,15 +95,15 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="border-5 border-light-border dark:border-dark-border bg-light-surface dark:bg-dark-surface shadow-brutal max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="border-5 border-border bg-surface shadow-brutal max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="font-display text-display-sm uppercase text-light-text dark:text-dark-text">
+            <h2 className="font-display text-display-sm uppercase text-text">
               {service ? 'Edit Service' : 'Add Service'}
             </h2>
             <button
               onClick={onCancel}
-              className="text-light-text dark:text-dark-text hover:text-light-error dark:hover:text-dark-error transition-colors"
+              className="text-text hover:text-error transition-colors"
               aria-label="Close"
             >
               <X size={32} strokeWidth={3} />
@@ -109,7 +112,7 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block font-display uppercase text-sm mb-2 text-light-text dark:text-dark-text">
+              <label className="block font-display uppercase text-sm mb-2 text-text">
                 Name
               </label>
               <input
@@ -121,12 +124,12 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
                 placeholder="Router Admin"
               />
               {errors.name && (
-                <p className="mt-2 text-light-error dark:text-dark-error text-sm">{errors.name}</p>
+                <p className="mt-2 text-error text-sm">{errors.name}</p>
               )}
             </div>
 
             <div>
-              <label className="block font-display uppercase text-sm mb-2 text-light-text dark:text-dark-text">
+              <label className="block font-display uppercase text-sm mb-2 text-text">
                 URL
               </label>
               <input
@@ -138,12 +141,12 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
                 placeholder="http://192.168.1.1"
               />
               {errors.url && (
-                <p className="mt-2 text-light-error dark:text-dark-error text-sm">{errors.url}</p>
+                <p className="mt-2 text-error text-sm">{errors.url}</p>
               )}
             </div>
 
             <div>
-              <label className="block font-display uppercase text-sm mb-2 text-light-text dark:text-dark-text">
+              <label className="block font-display uppercase text-sm mb-2 text-text">
                 Icon
               </label>
               <select
@@ -152,17 +155,17 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
                 onChange={handleChange}
                 className="input-brutal w-full"
               >
-                {POPULAR_ICONS.map(icon => (
+                {SORTED_POPULAR_ICONS.map(icon => (
                   <option key={icon} value={icon}>{icon}</option>
                 ))}
               </select>
               {errors.icon && (
-                <p className="mt-2 text-light-error dark:text-dark-error text-sm">{errors.icon}</p>
+                <p className="mt-2 text-error text-sm">{errors.icon}</p>
               )}
             </div>
 
             <div>
-              <label className="block font-display uppercase text-sm mb-2 text-light-text dark:text-dark-text">
+              <label className="block font-display uppercase text-sm mb-2 text-text">
                 Display Order
               </label>
               <input
@@ -174,7 +177,7 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
                 min="0"
               />
               {errors.display_order && (
-                <p className="mt-2 text-light-error dark:text-dark-error text-sm">{errors.display_order}</p>
+                <p className="mt-2 text-error text-sm">{errors.display_order}</p>
               )}
             </div>
 

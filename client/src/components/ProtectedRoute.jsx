@@ -8,8 +8,8 @@ export function ProtectedRoute({ children, requireAdmin = false }) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="border-5 border-light-border dark:border-dark-border bg-light-surface dark:bg-dark-surface p-8 shadow-brutal">
-            <h1 className="font-display text-display-sm uppercase text-light-accent1 dark:text-dark-accent1">
+          <div className="border-5 border-border bg-surface p-8 shadow-brutal">
+            <h1 className="font-display text-display-sm uppercase text-accent1">
               Loading...
             </h1>
           </div>
