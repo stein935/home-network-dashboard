@@ -9,22 +9,22 @@ class Service {
     return db.prepare('SELECT * FROM services WHERE id = ?').get(id);
   }
 
-  static create(name, url, icon, displayOrder, sectionId) {
+  static create(name, url, icon, displayOrder, sectionId, cardType = 'link') {
     const stmt = db.prepare(`
-      INSERT INTO services (name, url, icon, display_order, section_id)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO services (name, url, icon, display_order, section_id, card_type)
+      VALUES (?, ?, ?, ?, ?, ?)
     `);
-    const result = stmt.run(name, url, icon, displayOrder, sectionId);
+    const result = stmt.run(name, url, icon, displayOrder, sectionId, cardType);
     return this.findById(result.lastInsertRowid);
   }
 
-  static update(id, name, url, icon, displayOrder, sectionId) {
+  static update(id, name, url, icon, displayOrder, sectionId, cardType = 'link') {
     const stmt = db.prepare(`
       UPDATE services
-      SET name = ?, url = ?, icon = ?, display_order = ?, section_id = ?, updated_at = CURRENT_TIMESTAMP
+      SET name = ?, url = ?, icon = ?, display_order = ?, section_id = ?, card_type = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `);
-    stmt.run(name, url, icon, displayOrder, sectionId, id);
+    stmt.run(name, url, icon, displayOrder, sectionId, cardType, id);
     return this.findById(id);
   }
 

@@ -31,6 +31,7 @@ function initializeDatabase() {
   // Check if we need to migrate services table
   const tableInfo = db.prepare("PRAGMA table_info(services)").all();
   const hasSectionId = tableInfo.some(col => col.name === 'section_id');
+  const hasCardType = tableInfo.some(col => col.name === 'card_type');
 
   if (!hasSectionId) {
     console.log('Migrating services table to add section_id...');
@@ -44,6 +45,7 @@ function initializeDatabase() {
         icon TEXT NOT NULL,
         display_order INTEGER NOT NULL,
         section_id INTEGER NOT NULL,
+        card_type TEXT NOT NULL DEFAULT 'link' CHECK(card_type IN ('link')),
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (section_id) REFERENCES sections(id)
@@ -61,8 +63,8 @@ function initializeDatabase() {
     const existingServices = db.prepare('SELECT * FROM services').all();
     if (existingServices.length > 0) {
       const insertStmt = db.prepare(`
-        INSERT INTO services_new (id, name, url, icon, display_order, section_id, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO services_new (id, name, url, icon, display_order, section_id, card_type, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
       const migrate = db.transaction(() => {
@@ -74,6 +76,7 @@ function initializeDatabase() {
             service.icon,
             service.display_order,
             defaultSectionId,
+            'link',
             service.created_at,
             service.updated_at
           );
@@ -87,8 +90,13 @@ function initializeDatabase() {
     db.exec('ALTER TABLE services_new RENAME TO services');
 
     console.log('Migration complete');
+  } else if (!hasCardType) {
+    // Services table has section_id but not card_type - add it
+    console.log('Adding card_type column to services table...');
+    db.exec(`ALTER TABLE services ADD COLUMN card_type TEXT NOT NULL DEFAULT 'link' CHECK(card_type IN ('link'))`);
+    console.log('card_type column added');
   } else {
-    // Services table already has section_id, just ensure it exists
+    // Services table already has both section_id and card_type, just ensure it exists
     db.exec(`
       CREATE TABLE IF NOT EXISTS services (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -97,6 +105,7 @@ function initializeDatabase() {
         icon TEXT NOT NULL,
         display_order INTEGER NOT NULL,
         section_id INTEGER NOT NULL,
+        card_type TEXT NOT NULL DEFAULT 'link' CHECK(card_type IN ('link')),
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (section_id) REFERENCES sections(id)
@@ -130,19 +139,19 @@ function initializeDatabase() {
   if (serviceCount.count === 0) {
     console.log('Seeding default services...');
     const insertService = db.prepare(`
-      INSERT INTO services (name, url, icon, display_order, section_id)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO services (name, url, icon, display_order, section_id, card_type)
+      VALUES (?, ?, ?, ?, ?, ?)
     `);
 
     const services = [
-      { name: 'Router Admin', url: 'http://192.168.1.1', icon: 'Router', displayOrder: 1 },
-      { name: 'Pi-hole Admin', url: 'http://pi.hole/admin', icon: 'Shield', displayOrder: 2 },
-      { name: 'Network Monitor', url: 'http://192.168.1.100:8080', icon: 'Activity', displayOrder: 3 }
+      { name: 'Router Admin', url: 'http://192.168.1.1', icon: 'Router', displayOrder: 1, cardType: 'link' },
+      { name: 'Pi-hole Admin', url: 'http://pi.hole/admin', icon: 'Shield', displayOrder: 2, cardType: 'link' },
+      { name: 'Network Monitor', url: 'http://192.168.1.100:8080', icon: 'Activity', displayOrder: 3, cardType: 'link' }
     ];
 
     const insertMany = db.transaction((services) => {
       for (const service of services) {
-        insertService.run(service.name, service.url, service.icon, service.displayOrder, defaultSectionId);
+        insertService.run(service.name, service.url, service.icon, service.displayOrder, defaultSectionId, service.cardType);
       }
     });
 

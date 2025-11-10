@@ -18,7 +18,8 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
     url: '',
     icon: 'Router',
     display_order: 1,
-    section_id: ''
+    section_id: '',
+    card_type: 'link'
   });
 
   const [errors, setErrors] = useState({});
@@ -37,7 +38,8 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
         url: service.url,
         icon: service.icon,
         display_order: service.display_order,
-        section_id: service.section_id || ''
+        section_id: service.section_id || '',
+        card_type: service.card_type || 'link'
       });
     } else if (sections.length > 0 && !formData.section_id) {
       // Set default section for new services
@@ -142,6 +144,23 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block font-display uppercase text-sm mb-2 text-text">
+                Card Type
+              </label>
+              <select
+                name="card_type"
+                value={formData.card_type}
+                onChange={handleChange}
+                className="input-brutal w-full"
+              >
+                <option value="link">Link</option>
+              </select>
+              {errors.card_type && (
+                <p className="mt-2 text-error text-sm">{errors.card_type}</p>
+              )}
+            </div>
+            
             <div>
               <label className="block font-display uppercase text-sm mb-2 text-text">
                 Name

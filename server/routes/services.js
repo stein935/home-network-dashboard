@@ -11,7 +11,8 @@ const validateService = [
   body('url').trim().isURL().withMessage('Valid URL is required'),
   body('icon').trim().isLength({ min: 1 }).withMessage('Icon is required'),
   body('display_order').isInt({ min: 0 }).withMessage('Display order must be a positive integer'),
-  body('section_id').isInt({ min: 1 }).withMessage('Section ID is required')
+  body('section_id').isInt({ min: 1 }).withMessage('Section ID is required'),
+  body('card_type').optional().isIn(['link']).withMessage('Card type must be "link"')
 ];
 
 // GET all services (requires authentication)
@@ -33,8 +34,8 @@ router.post('/', isAdmin, validateService, (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { name, url, icon, display_order, section_id } = req.body;
-    const service = Service.create(name, url, icon, display_order, section_id);
+    const { name, url, icon, display_order, section_id, card_type = 'link' } = req.body;
+    const service = Service.create(name, url, icon, display_order, section_id, card_type);
 
     console.log(`Service created: ${name} by ${req.user.email}`);
     res.status(201).json(service);
@@ -56,14 +57,14 @@ router.put('/:id', isAdmin, [
     }
 
     const { id } = req.params;
-    const { name, url, icon, display_order, section_id } = req.body;
+    const { name, url, icon, display_order, section_id, card_type = 'link' } = req.body;
 
     const existingService = Service.findById(id);
     if (!existingService) {
       return res.status(404).json({ error: 'Service not found' });
     }
 
-    const service = Service.update(id, name, url, icon, display_order, section_id);
+    const service = Service.update(id, name, url, icon, display_order, section_id, card_type);
 
     console.log(`Service updated: ${name} by ${req.user.email}`);
     res.json(service);
