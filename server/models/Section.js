@@ -70,10 +70,9 @@ class Section {
   }
 
   static getWithServices() {
+    const Service = require('./Service');
     const sections = this.getAll();
-    const services = db.prepare(`
-      SELECT * FROM services ORDER BY display_order ASC
-    `).all();
+    const services = Service.getAllWithConfig();
 
     return sections.map(section => ({
       ...section,

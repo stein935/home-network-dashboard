@@ -41,4 +41,13 @@ export const authApi = {
   logout: () => api.get('/auth/logout')
 };
 
+// Calendar API
+export const calendarApi = {
+  getCalendars: () => api.get('/api/calendar/calendars'),
+  getEvents: (calendarId, timeMin, timeMax) =>
+    api.get('/api/calendar/events', {
+      params: { calendarId, timeMin, timeMax }
+    })
+};
+
 export default api;

@@ -9,7 +9,9 @@ function setupPassport() {
       {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: process.env.GOOGLE_CALLBACK_URL
+        callbackURL: process.env.GOOGLE_CALLBACK_URL,
+        accessType: 'offline',
+        prompt: 'consent'
       },
       async (accessToken, refreshToken, profile, done) => {
         try {
@@ -30,6 +32,11 @@ function setupPassport() {
           if (!user.google_id || user.google_id !== googleId) {
             User.updateGoogleId(user.id, googleId);
             user.google_id = googleId;
+          }
+
+          // Store OAuth tokens for Calendar API access
+          if (accessToken) {
+            User.updateGoogleTokens(user.id, accessToken, refreshToken);
           }
 
           // Update last login timestamp

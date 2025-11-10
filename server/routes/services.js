@@ -2,23 +2,26 @@ const express = require('express');
 const { body, param, validationResult } = require('express-validator');
 const router = express.Router();
 const Service = require('../models/Service');
+const ServiceConfig = require('../models/ServiceConfig');
 const { isAuthenticated } = require('../middleware/auth');
 const isAdmin = require('../middleware/admin');
 
 // Validation middleware
 const validateService = [
   body('name').trim().isLength({ min: 1, max: 100 }).withMessage('Name is required and must be less than 100 characters'),
-  body('url').trim().isURL().withMessage('Valid URL is required'),
+  body('url').optional({ checkFalsy: true }).trim().isURL().withMessage('Valid URL is required'),
   body('icon').trim().isLength({ min: 1 }).withMessage('Icon is required'),
   body('display_order').isInt({ min: 0 }).withMessage('Display order must be a positive integer'),
   body('section_id').isInt({ min: 1 }).withMessage('Section ID is required'),
-  body('card_type').optional().isIn(['link']).withMessage('Card type must be "link"')
+  body('card_type').optional().isIn(['link', 'calendar']).withMessage('Card type must be "link" or "calendar"'),
+  body('config.calendar_id').optional().trim(),
+  body('config.view_type').optional().isIn(['day', 'week', 'month']).withMessage('View type must be "day", "week", or "month"')
 ];
 
 // GET all services (requires authentication)
 router.get('/', isAuthenticated, (req, res) => {
   try {
-    const services = Service.getAll();
+    const services = Service.getAllWithConfig();
     res.json(services);
   } catch (error) {
     console.error('Error fetching services:', error);
@@ -34,11 +37,17 @@ router.post('/', isAdmin, validateService, (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { name, url, icon, display_order, section_id, card_type = 'link' } = req.body;
+    const { name, url = '', icon, display_order, section_id, card_type = 'link', config } = req.body;
     const service = Service.create(name, url, icon, display_order, section_id, card_type);
 
+    // If calendar card type, save config
+    if (card_type === 'calendar' && config) {
+      ServiceConfig.upsert(service.id, config.calendar_id, config.view_type || 'week');
+    }
+
+    const serviceWithConfig = Service.findByIdWithConfig(service.id);
     console.log(`Service created: ${name} by ${req.user.email}`);
-    res.status(201).json(service);
+    res.status(201).json(serviceWithConfig);
   } catch (error) {
     console.error('Error creating service:', error);
     res.status(500).json({ error: 'Failed to create service' });
@@ -57,7 +66,7 @@ router.put('/:id', isAdmin, [
     }
 
     const { id } = req.params;
-    const { name, url, icon, display_order, section_id, card_type = 'link' } = req.body;
+    const { name, url = '', icon, display_order, section_id, card_type = 'link', config } = req.body;
 
     const existingService = Service.findById(id);
     if (!existingService) {
@@ -66,8 +75,17 @@ router.put('/:id', isAdmin, [
 
     const service = Service.update(id, name, url, icon, display_order, section_id, card_type);
 
+    // If calendar card type, save config
+    if (card_type === 'calendar' && config) {
+      ServiceConfig.upsert(id, config.calendar_id, config.view_type || 'week');
+    } else if (card_type !== 'calendar') {
+      // Delete config if switching away from calendar
+      ServiceConfig.delete(id);
+    }
+
+    const serviceWithConfig = Service.findByIdWithConfig(id);
     console.log(`Service updated: ${name} by ${req.user.email}`);
-    res.json(service);
+    res.json(serviceWithConfig);
   } catch (error) {
     console.error('Error updating service:', error);
     res.status(500).json({ error: 'Failed to update service' });

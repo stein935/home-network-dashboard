@@ -40,6 +40,20 @@ class User {
     return stmt.run(id);
   }
 
+  static updateGoogleTokens(id, accessToken, refreshToken) {
+    const stmt = db.prepare(`
+      UPDATE users
+      SET google_access_token = ?, google_refresh_token = ?
+      WHERE id = ?
+    `);
+    return stmt.run(accessToken, refreshToken, id);
+  }
+
+  static getGoogleTokens(id) {
+    const user = db.prepare('SELECT google_access_token, google_refresh_token FROM users WHERE id = ?').get(id);
+    return user ? { accessToken: user.google_access_token, refreshToken: user.google_refresh_token } : null;
+  }
+
   static updateRole(id, role) {
     const stmt = db.prepare(`
       UPDATE users SET role = ? WHERE id = ?

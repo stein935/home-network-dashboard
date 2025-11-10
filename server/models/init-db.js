@@ -3,11 +3,13 @@ const db = require('../config/database');
 function initializeDatabase() {
   console.log('Initializing database...');
 
-  // Check if users table needs migration for optional google_id
+  // Check if users table needs migration for optional google_id and OAuth tokens
   const usersTableInfo = db.prepare("PRAGMA table_info(users)").all();
   const usersTableExists = usersTableInfo.length > 0;
   const googleIdColumn = usersTableInfo.find(col => col.name === 'google_id');
   const googleIdIsNotNull = googleIdColumn && googleIdColumn.notnull === 1;
+  const hasAccessToken = usersTableInfo.find(col => col.name === 'google_access_token');
+  const hasRefreshToken = usersTableInfo.find(col => col.name === 'google_refresh_token');
 
   if (usersTableExists && googleIdIsNotNull) {
     // Migrate existing users table to make google_id optional
@@ -20,6 +22,8 @@ function initializeDatabase() {
         email TEXT UNIQUE NOT NULL,
         name TEXT,
         role TEXT NOT NULL CHECK(role IN ('admin', 'readonly')),
+        google_access_token TEXT,
+        google_refresh_token TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         last_login DATETIME
       )
@@ -29,13 +33,23 @@ function initializeDatabase() {
     const existingUsers = db.prepare('SELECT * FROM users').all();
     if (existingUsers.length > 0) {
       const insertStmt = db.prepare(`
-        INSERT INTO users_new (id, google_id, email, name, role, created_at, last_login)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO users_new (id, google_id, email, name, role, google_access_token, google_refresh_token, created_at, last_login)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
       const migrate = db.transaction(() => {
         for (const user of existingUsers) {
-          insertStmt.run(user.id, user.google_id, user.email, user.name, user.role, user.created_at, user.last_login);
+          insertStmt.run(
+            user.id,
+            user.google_id,
+            user.email,
+            user.name,
+            user.role,
+            user.google_access_token || null,
+            user.google_refresh_token || null,
+            user.created_at,
+            user.last_login
+          );
         }
       });
       migrate();
@@ -44,8 +58,18 @@ function initializeDatabase() {
     db.exec('DROP TABLE users');
     db.exec('ALTER TABLE users_new RENAME TO users');
     console.log('Users table migration complete');
+  } else if (usersTableExists && (!hasAccessToken || !hasRefreshToken)) {
+    // Add OAuth token columns to existing table
+    console.log('Adding OAuth token columns to users table...');
+    if (!hasAccessToken) {
+      db.exec('ALTER TABLE users ADD COLUMN google_access_token TEXT');
+    }
+    if (!hasRefreshToken) {
+      db.exec('ALTER TABLE users ADD COLUMN google_refresh_token TEXT');
+    }
+    console.log('OAuth token columns added');
   } else {
-    // Create users table with optional google_id
+    // Create users table with optional google_id and OAuth tokens
     db.exec(`
       CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -53,6 +77,8 @@ function initializeDatabase() {
         email TEXT UNIQUE NOT NULL,
         name TEXT,
         role TEXT NOT NULL CHECK(role IN ('admin', 'readonly')),
+        google_access_token TEXT,
+        google_refresh_token TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         last_login DATETIME
       )
@@ -73,10 +99,11 @@ function initializeDatabase() {
 
   // Check if we need to migrate services table
   const tableInfo = db.prepare("PRAGMA table_info(services)").all();
+  const servicesTableExists = tableInfo.length > 0;
   const hasSectionId = tableInfo.some(col => col.name === 'section_id');
   const hasCardType = tableInfo.some(col => col.name === 'card_type');
 
-  if (!hasSectionId) {
+  if (servicesTableExists && !hasSectionId) {
     console.log('Migrating services table to add section_id...');
 
     // Create new services table with section_id
@@ -88,7 +115,7 @@ function initializeDatabase() {
         icon TEXT NOT NULL,
         display_order INTEGER NOT NULL,
         section_id INTEGER NOT NULL,
-        card_type TEXT NOT NULL DEFAULT 'link' CHECK(card_type IN ('link')),
+        card_type TEXT NOT NULL DEFAULT 'link' CHECK(card_type IN ('link', 'calendar')),
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (section_id) REFERENCES sections(id)
@@ -133,11 +160,27 @@ function initializeDatabase() {
     db.exec('ALTER TABLE services_new RENAME TO services');
 
     console.log('Migration complete');
-  } else if (!hasCardType) {
+  } else if (servicesTableExists && !hasCardType) {
     // Services table has section_id but not card_type - add it
     console.log('Adding card_type column to services table...');
-    db.exec(`ALTER TABLE services ADD COLUMN card_type TEXT NOT NULL DEFAULT 'link' CHECK(card_type IN ('link'))`);
+    db.exec(`ALTER TABLE services ADD COLUMN card_type TEXT NOT NULL DEFAULT 'link' CHECK(card_type IN ('link', 'calendar'))`);
     console.log('card_type column added');
+  } else if (!servicesTableExists) {
+    // No services table exists - create it from scratch
+    db.exec(`
+      CREATE TABLE services (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        url TEXT NOT NULL,
+        icon TEXT NOT NULL,
+        display_order INTEGER NOT NULL,
+        section_id INTEGER NOT NULL,
+        card_type TEXT NOT NULL DEFAULT 'link' CHECK(card_type IN ('link', 'calendar')),
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (section_id) REFERENCES sections(id)
+      )
+    `);
   } else {
     // Services table already has both section_id and card_type, just ensure it exists
     db.exec(`
@@ -148,13 +191,26 @@ function initializeDatabase() {
         icon TEXT NOT NULL,
         display_order INTEGER NOT NULL,
         section_id INTEGER NOT NULL,
-        card_type TEXT NOT NULL DEFAULT 'link' CHECK(card_type IN ('link')),
+        card_type TEXT NOT NULL DEFAULT 'link' CHECK(card_type IN ('link', 'calendar')),
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (section_id) REFERENCES sections(id)
       )
     `);
   }
+
+  // Create service_config table for calendar-specific configuration
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS service_config (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      service_id INTEGER NOT NULL UNIQUE,
+      calendar_id TEXT,
+      view_type TEXT CHECK(view_type IN ('day', 'week', 'month')) DEFAULT 'week',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE
+    )
+  `);
 
   // Create indexes
   db.exec(`
@@ -163,6 +219,7 @@ function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_services_order ON services(display_order);
     CREATE INDEX IF NOT EXISTS idx_services_section ON services(section_id);
     CREATE INDEX IF NOT EXISTS idx_sections_order ON sections(display_order);
+    CREATE INDEX IF NOT EXISTS idx_service_config_service ON service_config(service_id);
   `);
 
   // Ensure default section exists

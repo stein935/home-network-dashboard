@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { SortAsc, X } from 'lucide-react';
-import { sectionsApi } from '../utils/api';
+import { sectionsApi, calendarApi } from '../utils/api';
 
 const POPULAR_ICONS = [
   'Router', 'ShieldCheck', 'Activity', 'Monitor', 'Server', 'Globe',
@@ -19,13 +19,19 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
     icon: 'Router',
     display_order: 1,
     section_id: '',
-    card_type: 'link'
+    card_type: 'link',
+    config: {
+      calendar_id: '',
+      view_type: 'week'
+    }
   });
 
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [sections, setSections] = useState([]);
   const [loadingSections, setLoadingSections] = useState(true);
+  const [calendars, setCalendars] = useState([]);
+  const [loadingCalendars, setLoadingCalendars] = useState(false);
 
   useEffect(() => {
     fetchSections();
@@ -35,12 +41,24 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
     if (service) {
       setFormData({
         name: service.name,
-        url: service.url,
+        url: service.url || '',
         icon: service.icon,
         display_order: service.display_order,
         section_id: service.section_id || '',
-        card_type: service.card_type || 'link'
+        card_type: service.card_type || 'link',
+        config: service.config ? {
+          calendar_id: service.config.calendar_id || '',
+          view_type: service.config.view_type || 'week'
+        } : {
+          calendar_id: '',
+          view_type: 'week'
+        }
       });
+
+      // Load calendars if card type is calendar
+      if (service.card_type === 'calendar') {
+        fetchCalendars();
+      }
     } else if (sections.length > 0 && !formData.section_id) {
       // Set default section for new services
       const defaultSection = sections.find(s => s.is_default);
@@ -62,6 +80,20 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
     }
   };
 
+  const fetchCalendars = async () => {
+    try {
+      setLoadingCalendars(true);
+      const response = await calendarApi.getCalendars();
+      setCalendars(response.data);
+    } catch (err) {
+      console.error('Error fetching calendars:', err);
+      const errorMessage = err.response?.data?.error || 'Failed to load calendars. Please log out and log back in to grant calendar access.';
+      setErrors(prev => ({ ...prev, calendar: errorMessage }));
+    } finally {
+      setLoadingCalendars(false);
+    }
+  };
+
   const validate = () => {
     const newErrors = {};
 
@@ -71,13 +103,26 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
       newErrors.name = 'Name must be less than 100 characters';
     }
 
-    if (!formData.url.trim()) {
-      newErrors.url = 'URL is required';
-    } else {
-      try {
-        new URL(formData.url);
-      } catch {
-        newErrors.url = 'Invalid URL format';
+    // URL only required for link cards
+    if (formData.card_type === 'link') {
+      if (!formData.url.trim()) {
+        newErrors.url = 'URL is required';
+      } else {
+        try {
+          new URL(formData.url);
+        } catch {
+          newErrors.url = 'Invalid URL format';
+        }
+      }
+    }
+
+    // Calendar config required for calendar cards
+    if (formData.card_type === 'calendar') {
+      if (!formData.config.calendar_id) {
+        newErrors.calendar_id = 'Calendar is required';
+      }
+      if (!formData.config.view_type) {
+        newErrors.view_type = 'View type is required';
       }
     }
 
@@ -116,13 +161,32 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'display_order' || name === 'section_id' ? parseInt(value) || 0 : value
-    }));
+
+    // Handle nested config fields
+    if (name.startsWith('config.')) {
+      const configKey = name.split('.')[1];
+      setFormData(prev => ({
+        ...prev,
+        config: {
+          ...prev.config,
+          [configKey]: value
+        }
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: name === 'display_order' || name === 'section_id' ? parseInt(value) || 0 : value
+      }));
+    }
+
     // Clear error for this field
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+
+    // Load calendars when switching to calendar type
+    if (name === 'card_type' && value === 'calendar' && calendars.length === 0) {
+      fetchCalendars();
     }
   };
 
@@ -155,6 +219,7 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
                 className="input-brutal w-full"
               >
                 <option value="link">Link</option>
+                <option value="calendar">Calendar</option>
               </select>
               {errors.card_type && (
                 <p className="mt-2 text-error text-sm">{errors.card_type}</p>
@@ -178,22 +243,80 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
               )}
             </div>
 
-            <div>
-              <label className="block font-display uppercase text-sm mb-2 text-text">
-                URL
-              </label>
-              <input
-                type="text"
-                name="url"
-                value={formData.url}
-                onChange={handleChange}
-                className="input-brutal w-full"
-                placeholder="http://192.168.1.1"
-              />
-              {errors.url && (
-                <p className="mt-2 text-error text-sm">{errors.url}</p>
-              )}
-            </div>
+            {formData.card_type === 'link' && (
+              <div>
+                <label className="block font-display uppercase text-sm mb-2 text-text">
+                  URL
+                </label>
+                <input
+                  type="text"
+                  name="url"
+                  value={formData.url}
+                  onChange={handleChange}
+                  className="input-brutal w-full"
+                  placeholder="http://192.168.1.1"
+                />
+                {errors.url && (
+                  <p className="mt-2 text-error text-sm">{errors.url}</p>
+                )}
+              </div>
+            )}
+
+            {formData.card_type === 'calendar' && (
+              <>
+                <div>
+                  <label className="block font-display uppercase text-sm mb-2 text-text">
+                    Calendar
+                  </label>
+                  {loadingCalendars ? (
+                    <div className="input-brutal w-full text-text/60">Loading calendars...</div>
+                  ) : calendars.length === 0 ? (
+                    <div className="input-brutal w-full text-text/60">
+                      No calendars found. Please ensure calendar access is granted.
+                    </div>
+                  ) : (
+                    <select
+                      name="config.calendar_id"
+                      value={formData.config.calendar_id}
+                      onChange={handleChange}
+                      className="input-brutal w-full"
+                    >
+                      <option value="">Select a calendar</option>
+                      {calendars.map(cal => (
+                        <option key={cal.id} value={cal.id}>
+                          {cal.summary} {cal.primary ? '(Primary)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {errors.calendar_id && (
+                    <p className="mt-2 text-error text-sm">{errors.calendar_id}</p>
+                  )}
+                  {errors.calendar && (
+                    <p className="mt-2 text-error text-sm">{errors.calendar}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block font-display uppercase text-sm mb-2 text-text">
+                    Default View
+                  </label>
+                  <select
+                    name="config.view_type"
+                    value={formData.config.view_type}
+                    onChange={handleChange}
+                    className="input-brutal w-full"
+                  >
+                    <option value="day">Day</option>
+                    <option value="week">Week</option>
+                    <option value="month">Month</option>
+                  </select>
+                  {errors.view_type && (
+                    <p className="mt-2 text-error text-sm">{errors.view_type}</p>
+                  )}
+                </div>
+              </>
+            )}
 
             <div>
               <label className="block font-display uppercase text-sm mb-2 text-text">

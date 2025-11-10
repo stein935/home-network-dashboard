@@ -23,7 +23,7 @@ home-network-dashboard/
 ├── server/
 │   ├── config/
 │   │   ├── database.js       # SQLite connection
-│   │   └── passport.js       # Google OAuth config
+│   │   └── passport.js       # Google OAuth config with Calendar scope
 │   ├── middleware/
 │   │   ├── auth.js           # isAuthenticated check
 │   │   └── admin.js          # isAdmin check
@@ -31,20 +31,25 @@ home-network-dashboard/
 │   │   ├── init-db.js        # DB schema & initialization
 │   │   ├── User.js           # User CRUD operations
 │   │   ├── Service.js        # Service CRUD operations
+│   │   ├── ServiceConfig.js  # Calendar config operations
 │   │   └── Section.js        # Section CRUD with services
 │   ├── routes/
 │   │   ├── auth.js           # /auth/* - OAuth endpoints
-│   │   ├── services.js       # /api/services - CRUD
+│   │   ├── services.js       # /api/services - CRUD with config
 │   │   ├── sections.js       # /api/sections - CRUD
-│   │   └── users.js          # /api/users - admin only
+│   │   ├── users.js          # /api/users - admin only
+│   │   └── calendar.js       # /api/calendar - Calendar API proxy
+│   ├── services/
+│   │   └── calendarService.js # Google Calendar API integration
 │   └── server.js             # Express app entry
 ├── client/
 │   └── src/
 │       ├── components/
 │       │   ├── Dashboard.jsx      # Main view with service cards
-│       │   ├── ServiceCard.jsx    # Individual service card
+│       │   ├── ServiceCard.jsx    # Individual service card (routes by type)
+│       │   ├── CalendarCard.jsx   # Calendar card with day/week/month views
 │       │   ├── AdminPanel.jsx     # Admin interface tabs
-│       │   ├── ServiceForm.jsx    # Create/edit services
+│       │   ├── ServiceForm.jsx    # Create/edit services with calendar config
 │       │   ├── SectionManager.jsx # Manage sections
 │       │   └── UserManagement.jsx # Manage users
 │       ├── context/
@@ -52,7 +57,7 @@ home-network-dashboard/
 │       ├── hooks/
 │       │   └── useServices.js     # Fetch services hook
 │       └── utils/
-│           └── api.js             # Axios instance
+│           └── api.js             # Axios instance with calendar API
 ├── data/                   # SQLite databases (runtime)
 ├── scripts/
 │   └── seed.js            # Add initial admin user
@@ -62,12 +67,19 @@ home-network-dashboard/
 ## Database Schema
 
 **users**
-- id, google_id (unique), email, name, role (admin/read-only)
+- id, google_id (unique), email, name, role (admin/read-only), google_access_token, google_refresh_token
+- OAuth tokens stored for Calendar API access
 
 **services**
 - id, name, url, icon, display_order, section_id, card_type
 - Cards displayed on dashboard linking to internal services
-- card_type: Currently supports 'link' (default), extensible for future types
+- card_type: Supports 'link' (default) and 'calendar', extensible for future types
+
+**service_config**
+- id, service_id, calendar_id, view_type
+- Stores card-specific configuration (e.g., calendar settings)
+- calendar_id: Google Calendar ID to display
+- view_type: Default view ('day', 'week', or 'month')
 
 **sections**
 - id, name, display_order, is_default
@@ -90,9 +102,9 @@ home-network-dashboard/
 - POST `/auth/logout` - End session
 
 **Services** (authenticated)
-- GET `/api/services` - List all services
-- POST `/api/services` - Create (admin only)
-- PUT `/api/services/:id` - Update (admin only)
+- GET `/api/services` - List all services with config
+- POST `/api/services` - Create with optional calendar config (admin only)
+- PUT `/api/services/:id` - Update with optional calendar config (admin only)
 - DELETE `/api/services/:id` - Delete (admin only)
 - PUT `/api/services/reorder` - Update display order (admin only)
 
@@ -108,6 +120,10 @@ home-network-dashboard/
 - GET `/api/users` - List all users
 - POST `/api/users` - Add user to whitelist
 - DELETE `/api/users/:id` - Remove user
+
+**Calendar** (authenticated)
+- GET `/api/calendar/calendars` - List user's Google calendars
+- GET `/api/calendar/events` - Get events for a calendar (params: calendarId, timeMin, timeMax)
 
 ## Development
 
@@ -129,12 +145,13 @@ Required in `.env`:
 ## Current State
 
 Working features:
-- Google OAuth login with session management
+- Google OAuth login with session management and Calendar API integration
 - Service cards with icons and links
-- Card type system (currently 'link' only, extensible for future types)
+- Card type system (link and calendar types)
 - Section-based organization
 - Admin panel for services, sections, and users
 - Role-based access control
+- Google Calendar integration with day/week/month views
 - Responsive brutalist design
 
 ## Card Types
@@ -143,6 +160,15 @@ The service card system supports different card types via the `card_type` field:
 
 **Currently Supported:**
 - `link` (default) - Opens URL in new tab when clicked
+- `calendar` - Displays Google Calendar events with day, week, or month views
+
+**Calendar Card Features:**
+- Integrates with Google Calendar API using OAuth tokens
+- Three view modes: Day, Week (Sunday-Saturday), Month (traditional grid)
+- Navigation controls to move forward/backward through time periods
+- Event display with time, title, location
+- Configurable calendar selection (primary or other calendars)
+- Configurable default view type per card
 
 **Extensible Design:**
 The card_type field is designed to support future types like:
@@ -154,15 +180,16 @@ The card_type field is designed to support future types like:
 **To Add New Card Type:**
 1. Update CHECK constraint in `server/models/init-db.js`:
    ```sql
-   CHECK(card_type IN ('link', 'embed', 'iframe', 'widget'))
+   CHECK(card_type IN ('link', 'calendar', 'embed', 'iframe', 'widget'))
    ```
 2. Add migration to handle existing databases
 3. Update validation in `server/routes/services.js`:
    ```js
-   body('card_type').optional().isIn(['link', 'embed', 'iframe', 'widget'])
+   body('card_type').optional().isIn(['link', 'calendar', 'embed', 'iframe', 'widget'])
    ```
 4. Add option to dropdown in `client/src/components/ServiceForm.jsx`
 5. Implement rendering logic in `client/src/components/ServiceCard.jsx`
+6. Create dedicated component (like `CalendarCard.jsx`) if needed
 
 ## Common Tasks
 

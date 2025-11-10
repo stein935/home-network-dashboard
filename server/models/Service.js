@@ -1,12 +1,30 @@
 const db = require('../config/database');
+const ServiceConfig = require('./ServiceConfig');
 
 class Service {
   static getAll() {
     return db.prepare('SELECT * FROM services ORDER BY display_order ASC').all();
   }
 
+  static getAllWithConfig() {
+    const services = this.getAll();
+    return services.map(service => {
+      const config = ServiceConfig.findByServiceId(service.id);
+      return { ...service, config };
+    });
+  }
+
   static findById(id) {
     return db.prepare('SELECT * FROM services WHERE id = ?').get(id);
+  }
+
+  static findByIdWithConfig(id) {
+    const service = this.findById(id);
+    if (service) {
+      const config = ServiceConfig.findByServiceId(service.id);
+      return { ...service, config };
+    }
+    return null;
   }
 
   static create(name, url, icon, displayOrder, sectionId, cardType = 'link') {
