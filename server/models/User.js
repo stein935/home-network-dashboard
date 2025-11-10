@@ -17,13 +17,20 @@ class User {
     return db.prepare('SELECT * FROM users ORDER BY created_at DESC').all();
   }
 
-  static create(googleId, email, name, role = 'readonly') {
+  static create(email, name = null, role = 'readonly', googleId = null) {
     const stmt = db.prepare(`
-      INSERT INTO users (google_id, email, name, role)
+      INSERT INTO users (email, name, role, google_id)
       VALUES (?, ?, ?, ?)
     `);
-    const result = stmt.run(googleId, email, name, role);
+    const result = stmt.run(email, name, role, googleId);
     return this.findById(result.lastInsertRowid);
+  }
+
+  static updateGoogleId(id, googleId) {
+    const stmt = db.prepare(`
+      UPDATE users SET google_id = ? WHERE id = ?
+    `);
+    return stmt.run(googleId, id);
   }
 
   static updateLastLogin(id) {

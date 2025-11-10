@@ -3,18 +3,61 @@ const db = require('../config/database');
 function initializeDatabase() {
   console.log('Initializing database...');
 
-  // Create users table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      google_id TEXT UNIQUE NOT NULL,
-      email TEXT UNIQUE NOT NULL,
-      name TEXT,
-      role TEXT NOT NULL CHECK(role IN ('admin', 'readonly')),
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      last_login DATETIME
-    )
-  `);
+  // Check if users table needs migration for optional google_id
+  const usersTableInfo = db.prepare("PRAGMA table_info(users)").all();
+  const usersTableExists = usersTableInfo.length > 0;
+  const googleIdColumn = usersTableInfo.find(col => col.name === 'google_id');
+  const googleIdIsNotNull = googleIdColumn && googleIdColumn.notnull === 1;
+
+  if (usersTableExists && googleIdIsNotNull) {
+    // Migrate existing users table to make google_id optional
+    console.log('Migrating users table to make google_id optional...');
+
+    db.exec(`
+      CREATE TABLE users_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        google_id TEXT UNIQUE,
+        email TEXT UNIQUE NOT NULL,
+        name TEXT,
+        role TEXT NOT NULL CHECK(role IN ('admin', 'readonly')),
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        last_login DATETIME
+      )
+    `);
+
+    // Copy existing data
+    const existingUsers = db.prepare('SELECT * FROM users').all();
+    if (existingUsers.length > 0) {
+      const insertStmt = db.prepare(`
+        INSERT INTO users_new (id, google_id, email, name, role, created_at, last_login)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `);
+
+      const migrate = db.transaction(() => {
+        for (const user of existingUsers) {
+          insertStmt.run(user.id, user.google_id, user.email, user.name, user.role, user.created_at, user.last_login);
+        }
+      });
+      migrate();
+    }
+
+    db.exec('DROP TABLE users');
+    db.exec('ALTER TABLE users_new RENAME TO users');
+    console.log('Users table migration complete');
+  } else {
+    // Create users table with optional google_id
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        google_id TEXT UNIQUE,
+        email TEXT UNIQUE NOT NULL,
+        name TEXT,
+        role TEXT NOT NULL CHECK(role IN ('admin', 'readonly')),
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        last_login DATETIME
+      )
+    `);
+  }
 
   // Create sections table
   db.exec(`

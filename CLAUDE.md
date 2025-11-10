@@ -131,10 +131,38 @@ Required in `.env`:
 Working features:
 - Google OAuth login with session management
 - Service cards with icons and links
+- Card type system (currently 'link' only, extensible for future types)
 - Section-based organization
 - Admin panel for services, sections, and users
 - Role-based access control
 - Responsive brutalist design
+
+## Card Types
+
+The service card system supports different card types via the `card_type` field:
+
+**Currently Supported:**
+- `link` (default) - Opens URL in new tab when clicked
+
+**Extensible Design:**
+The card_type field is designed to support future types like:
+- `embed` - Embedded iframe content
+- `iframe` - Full-page iframe view
+- `widget` - Interactive dashboard widget
+- `status` - Service status indicator
+
+**To Add New Card Type:**
+1. Update CHECK constraint in `server/models/init-db.js`:
+   ```sql
+   CHECK(card_type IN ('link', 'embed', 'iframe', 'widget'))
+   ```
+2. Add migration to handle existing databases
+3. Update validation in `server/routes/services.js`:
+   ```js
+   body('card_type').optional().isIn(['link', 'embed', 'iframe', 'widget'])
+   ```
+4. Add option to dropdown in `client/src/components/ServiceForm.jsx`
+5. Implement rendering logic in `client/src/components/ServiceCard.jsx`
 
 ## Common Tasks
 

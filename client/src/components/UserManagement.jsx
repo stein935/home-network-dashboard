@@ -12,7 +12,6 @@ export function UserManagement() {
 
   const [formData, setFormData] = useState({
     email: '',
-    google_id: '',
     name: '',
     role: 'readonly'
   });
@@ -40,7 +39,7 @@ export function UserManagement() {
     try {
       await usersApi.create(formData);
       setShowAddForm(false);
-      setFormData({ email: '', google_id: '', name: '', role: 'readonly' });
+      setFormData({ email: '', name: '', role: 'readonly' });
       fetchUsers();
     } catch (err) {
       console.error('Error adding user:', err);
@@ -123,19 +122,9 @@ export function UserManagement() {
                   required
                   placeholder="user@example.com"
                 />
-              </div>
-              <div>
-                <label className="block font-display uppercase text-sm mb-2 text-text">
-                  Google ID
-                </label>
-                <input
-                  type="text"
-                  value={formData.google_id}
-                  onChange={(e) => setFormData({ ...formData, google_id: e.target.value })}
-                  className="input-brutal w-full"
-                  required
-                  placeholder="Get from Google account"
-                />
+                <p className="mt-1 text-sm text-text/60">
+                  User will be able to login with their Google account using this email
+                </p>
               </div>
               <div>
                 <label className="block font-display uppercase text-sm mb-2 text-text">

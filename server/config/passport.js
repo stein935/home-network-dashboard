@@ -17,13 +17,19 @@ function setupPassport() {
           const email = profile.emails[0].value;
           const name = profile.displayName;
 
-          // Check if user exists in whitelist
-          let user = User.findByGoogleId(googleId);
+          // Check if user exists in whitelist by email
+          let user = User.findByEmail(email);
 
           if (!user) {
             // User not in whitelist - deny access
             console.log(`Access denied for non-whitelisted user: ${email}`);
             return done(null, false, { message: 'User not authorized. Contact admin for access.' });
+          }
+
+          // Store/update google_id on first login or if it changed
+          if (!user.google_id || user.google_id !== googleId) {
+            User.updateGoogleId(user.id, googleId);
+            user.google_id = googleId;
           }
 
           // Update last login timestamp
