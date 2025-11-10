@@ -16,6 +16,7 @@ const setupPassport = require("./config/passport");
 // Import routes
 const authRoutes = require("./routes/auth");
 const servicesRoutes = require("./routes/services");
+const sectionsRoutes = require("./routes/sections");
 const usersRoutes = require("./routes/users");
 
 // Initialize database
@@ -72,6 +73,7 @@ app.use(passport.session());
 // API Routes
 app.use("/auth", authRoutes);
 app.use("/api/services", servicesRoutes);
+app.use("/api/sections", sectionsRoutes);
 app.use("/api/users", usersRoutes);
 
 // Serve static frontend files

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { SortAsc, X } from 'lucide-react';
+import { sectionsApi } from '../utils/api';
 
 const POPULAR_ICONS = [
   'Router', 'ShieldCheck', 'Activity', 'Monitor', 'Server', 'Globe',
@@ -16,11 +17,18 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
     name: '',
     url: '',
     icon: 'Router',
-    display_order: 1
+    display_order: 1,
+    section_id: ''
   });
 
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [sections, setSections] = useState([]);
+  const [loadingSections, setLoadingSections] = useState(true);
+
+  useEffect(() => {
+    fetchSections();
+  }, []);
 
   useEffect(() => {
     if (service) {
@@ -28,10 +36,29 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
         name: service.name,
         url: service.url,
         icon: service.icon,
-        display_order: service.display_order
+        display_order: service.display_order,
+        section_id: service.section_id || ''
       });
+    } else if (sections.length > 0 && !formData.section_id) {
+      // Set default section for new services
+      const defaultSection = sections.find(s => s.is_default);
+      if (defaultSection) {
+        setFormData(prev => ({ ...prev, section_id: defaultSection.id }));
+      }
     }
-  }, [service]);
+  }, [service, sections]);
+
+  const fetchSections = async () => {
+    try {
+      setLoadingSections(true);
+      const response = await sectionsApi.getAll();
+      setSections(response.data);
+    } catch (err) {
+      console.error('Error fetching sections:', err);
+    } finally {
+      setLoadingSections(false);
+    }
+  };
 
   const validate = () => {
     const newErrors = {};
@@ -60,6 +87,10 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
       newErrors.display_order = 'Display order must be positive';
     }
 
+    if (!formData.section_id) {
+      newErrors.section_id = 'Section is required';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -85,7 +116,7 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'display_order' ? parseInt(value) || 0 : value
+      [name]: name === 'display_order' || name === 'section_id' ? parseInt(value) || 0 : value
     }));
     // Clear error for this field
     if (errors[name]) {
@@ -161,6 +192,32 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
               </select>
               {errors.icon && (
                 <p className="mt-2 text-error text-sm">{errors.icon}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block font-display uppercase text-sm mb-2 text-text">
+                Section
+              </label>
+              {loadingSections ? (
+                <div className="input-brutal w-full text-text/60">Loading sections...</div>
+              ) : (
+                <select
+                  name="section_id"
+                  value={formData.section_id}
+                  onChange={handleChange}
+                  className="input-brutal w-full"
+                >
+                  <option value="">Select a section</option>
+                  {sections.map(section => (
+                    <option key={section.id} value={section.id}>
+                      {section.name} {section.is_default ? '(Default)' : ''}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {errors.section_id && (
+                <p className="mt-2 text-error text-sm">{errors.section_id}</p>
               )}
             </div>
 

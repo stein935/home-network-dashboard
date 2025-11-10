@@ -10,7 +10,8 @@ const validateService = [
   body('name').trim().isLength({ min: 1, max: 100 }).withMessage('Name is required and must be less than 100 characters'),
   body('url').trim().isURL().withMessage('Valid URL is required'),
   body('icon').trim().isLength({ min: 1 }).withMessage('Icon is required'),
-  body('display_order').isInt({ min: 0 }).withMessage('Display order must be a positive integer')
+  body('display_order').isInt({ min: 0 }).withMessage('Display order must be a positive integer'),
+  body('section_id').isInt({ min: 1 }).withMessage('Section ID is required')
 ];
 
 // GET all services (requires authentication)
@@ -32,8 +33,8 @@ router.post('/', isAdmin, validateService, (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { name, url, icon, display_order } = req.body;
-    const service = Service.create(name, url, icon, display_order);
+    const { name, url, icon, display_order, section_id } = req.body;
+    const service = Service.create(name, url, icon, display_order, section_id);
 
     console.log(`Service created: ${name} by ${req.user.email}`);
     res.status(201).json(service);
@@ -55,14 +56,14 @@ router.put('/:id', isAdmin, [
     }
 
     const { id } = req.params;
-    const { name, url, icon, display_order } = req.body;
+    const { name, url, icon, display_order, section_id } = req.body;
 
     const existingService = Service.findById(id);
     if (!existingService) {
       return res.status(404).json({ error: 'Service not found' });
     }
 
-    const service = Service.update(id, name, url, icon, display_order);
+    const service = Service.update(id, name, url, icon, display_order, section_id);
 
     console.log(`Service updated: ${name} by ${req.user.email}`);
     res.json(service);

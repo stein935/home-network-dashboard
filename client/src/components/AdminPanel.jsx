@@ -4,6 +4,7 @@ import { ArrowLeft, Plus, Edit, Trash2 } from 'lucide-react';
 import { servicesApi } from '../utils/api';
 import UserManagement from './UserManagement';
 import ServiceForm from './ServiceForm';
+import SectionManager from './SectionManager';
 
 export function AdminPanel() {
   const navigate = useNavigate();
@@ -117,6 +118,16 @@ export function AdminPanel() {
             Services
           </button>
           <button
+            onClick={() => setActiveTab('sections')}
+            className={`font-display uppercase px-6 py-3 border-b-5 transition-colors ${
+              activeTab === 'sections'
+                ? 'border-accent1 text-accent1'
+                : 'border-transparent text-text/60 hover:text-text'
+            }`}
+          >
+            Sections
+          </button>
+          <button
             onClick={() => setActiveTab('users')}
             className={`font-display uppercase px-6 py-3 border-b-5 transition-colors ${
               activeTab === 'users'
@@ -209,6 +220,8 @@ export function AdminPanel() {
               </div>
             )}
           </div>
+        ) : activeTab === 'sections' ? (
+          <SectionManager />
         ) : (
           <UserManagement />
         )}

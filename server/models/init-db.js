@@ -16,25 +16,113 @@ function initializeDatabase() {
     )
   `);
 
-  // Create services table
+  // Create sections table
   db.exec(`
-    CREATE TABLE IF NOT EXISTS services (
+    CREATE TABLE IF NOT EXISTS sections (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
-      url TEXT NOT NULL,
-      icon TEXT NOT NULL,
       display_order INTEGER NOT NULL,
+      is_default BOOLEAN NOT NULL DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  // Check if we need to migrate services table
+  const tableInfo = db.prepare("PRAGMA table_info(services)").all();
+  const hasSectionId = tableInfo.some(col => col.name === 'section_id');
+
+  if (!hasSectionId) {
+    console.log('Migrating services table to add section_id...');
+
+    // Create new services table with section_id
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS services_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        url TEXT NOT NULL,
+        icon TEXT NOT NULL,
+        display_order INTEGER NOT NULL,
+        section_id INTEGER NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (section_id) REFERENCES sections(id)
+      )
+    `);
+
+    // Ensure default section exists
+    const defaultSection = db.prepare('SELECT id FROM sections WHERE is_default = 1').get();
+    if (!defaultSection) {
+      db.prepare('INSERT INTO sections (name, display_order, is_default) VALUES (?, ?, ?)').run('Default', 1, 1);
+    }
+    const defaultSectionId = db.prepare('SELECT id FROM sections WHERE is_default = 1').get().id;
+
+    // Copy existing services to new table with default section
+    const existingServices = db.prepare('SELECT * FROM services').all();
+    if (existingServices.length > 0) {
+      const insertStmt = db.prepare(`
+        INSERT INTO services_new (id, name, url, icon, display_order, section_id, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+
+      const migrate = db.transaction(() => {
+        for (const service of existingServices) {
+          insertStmt.run(
+            service.id,
+            service.name,
+            service.url,
+            service.icon,
+            service.display_order,
+            defaultSectionId,
+            service.created_at,
+            service.updated_at
+          );
+        }
+      });
+      migrate();
+    }
+
+    // Drop old table and rename new one
+    db.exec('DROP TABLE services');
+    db.exec('ALTER TABLE services_new RENAME TO services');
+
+    console.log('Migration complete');
+  } else {
+    // Services table already has section_id, just ensure it exists
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS services (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        url TEXT NOT NULL,
+        icon TEXT NOT NULL,
+        display_order INTEGER NOT NULL,
+        section_id INTEGER NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (section_id) REFERENCES sections(id)
+      )
+    `);
+  }
 
   // Create indexes
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id);
     CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
     CREATE INDEX IF NOT EXISTS idx_services_order ON services(display_order);
+    CREATE INDEX IF NOT EXISTS idx_services_section ON services(section_id);
+    CREATE INDEX IF NOT EXISTS idx_sections_order ON sections(display_order);
   `);
+
+  // Ensure default section exists
+  const sectionCount = db.prepare('SELECT COUNT(*) as count FROM sections').get();
+  if (sectionCount.count === 0) {
+    console.log('Creating default section...');
+    db.prepare('INSERT INTO sections (name, display_order, is_default) VALUES (?, ?, ?)').run('Default', 1, 1);
+  }
+
+  // Get default section ID
+  const defaultSection = db.prepare('SELECT id FROM sections WHERE is_default = 1').get();
+  const defaultSectionId = defaultSection ? defaultSection.id : 1;
 
   // Check if services table is empty and seed with default services
   const serviceCount = db.prepare('SELECT COUNT(*) as count FROM services').get();
@@ -42,8 +130,8 @@ function initializeDatabase() {
   if (serviceCount.count === 0) {
     console.log('Seeding default services...');
     const insertService = db.prepare(`
-      INSERT INTO services (name, url, icon, display_order)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO services (name, url, icon, display_order, section_id)
+      VALUES (?, ?, ?, ?, ?)
     `);
 
     const services = [
@@ -54,7 +142,7 @@ function initializeDatabase() {
 
     const insertMany = db.transaction((services) => {
       for (const service of services) {
-        insertService.run(service.name, service.url, service.icon, service.displayOrder);
+        insertService.run(service.name, service.url, service.icon, service.displayOrder, defaultSectionId);
       }
     });
 

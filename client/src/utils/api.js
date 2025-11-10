@@ -17,6 +17,16 @@ export const servicesApi = {
   reorder: (updates) => api.put('/api/services/reorder/bulk', { updates })
 };
 
+// Sections API
+export const sectionsApi = {
+  getAll: () => api.get('/api/sections'),
+  getAllWithServices: () => api.get('/api/sections/with-services'),
+  create: (data) => api.post('/api/sections', data),
+  update: (id, data) => api.put(`/api/sections/${id}`, data),
+  delete: (id) => api.delete(`/api/sections/${id}`),
+  reorder: (updates) => api.put('/api/sections/reorder/bulk', { updates })
+};
+
 // Users API
 export const usersApi = {
   getAll: () => api.get('/api/users'),
