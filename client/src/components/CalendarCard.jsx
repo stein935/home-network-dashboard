@@ -578,7 +578,7 @@ function MonthView({ events, currentDate, setExpandedDay, setSelectedEvent, card
       <div className={`grid gap-1 ${isVeryNarrow ? 'grid-cols-3' : 'grid-cols-7'}`}>
         {days.map((day, idx) => {
           if (!day) {
-            return <div key={idx} className="aspect-square" />;
+            return <div key={idx} />;
           }
 
           const date = new Date(year, month, day);
@@ -613,7 +613,7 @@ function MonthView({ events, currentDate, setExpandedDay, setSelectedEvent, card
           return (
             <div
               key={idx}
-              className={`border-3 ${isToday ? 'border-accent1' : 'border-border'} bg-surface p-2 flex flex-col min-h-[80px]`}
+              className={`border-3 ${isToday ? 'border-accent1' : 'border-border'} bg-surface p-2 flex flex-col min-h-[120px]`}
             >
               <div className="font-display text-sm text-text mb-1">
                 {day}
