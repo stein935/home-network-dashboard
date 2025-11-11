@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import { calendarApi } from '../utils/api';
+import { EventDetailDialog } from './EventDetailDialog';
 
 export function CalendarCard({ service }) {
   const config = service.config || {};
   const defaultViewType = config.view_type || 'week';
+  const cardRef = useRef(null);
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,6 +14,7 @@ export function CalendarCard({ service }) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewType, setViewType] = useState(defaultViewType);
   const [expandedDay, setExpandedDay] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState(null);
 
   const calendarId = config.calendar_id || 'primary';
 
@@ -203,7 +206,7 @@ export function CalendarCard({ service }) {
   };
 
   return (
-    <div className={`service-card calendar-card ${getColumnSpanClass()}`}>
+    <div ref={cardRef} className={`service-card calendar-card ${getColumnSpanClass()} relative`}>
       {/* Header with navigation */}
       <div className="flex items-center justify-between w-full mb-4">
         <h3 className="font-display text-2xl uppercase text-text">
@@ -274,14 +277,17 @@ export function CalendarCard({ service }) {
 
       {/* Calendar view content */}
       <div className={`calendar-content ${viewType === 'month' ? '' : 'overflow-y-auto max-h-[500px]'}`}>
-        {viewType === 'day' && <DayView events={events} currentDate={currentDate} formatDate={formatDate} />}
-        {viewType === 'week' && <WeekView events={events} currentDate={currentDate} formatDate={formatDate} getWeekStart={getWeekStart} />}
-        {viewType === 'month' && <MonthView events={events} currentDate={currentDate} expandedDay={expandedDay} setExpandedDay={setExpandedDay} />}
+        {viewType === 'day' && <DayView events={events} currentDate={currentDate} formatDate={formatDate} setSelectedEvent={setSelectedEvent} />}
+        {viewType === 'week' && <WeekView events={events} currentDate={currentDate} formatDate={formatDate} getWeekStart={getWeekStart} setSelectedEvent={setSelectedEvent} />}
+        {viewType === 'month' && <MonthView events={events} currentDate={currentDate} expandedDay={expandedDay} setExpandedDay={setExpandedDay} setSelectedEvent={setSelectedEvent} />}
       </div>
+
+      {/* Event detail dialog */}
+      {selectedEvent && <EventDetailDialog event={selectedEvent} onClose={() => setSelectedEvent(null)} containerRef={cardRef} />}
 
       {/* Event modal */}
       {expandedDay && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setExpandedDay(null)}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center" style={{ zIndex: 9998 }} onClick={() => setExpandedDay(null)}>
           <div className="bg-surface border-5 border-border p-6 max-w-md w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-display text-xl uppercase text-text">
@@ -293,7 +299,15 @@ export function CalendarCard({ service }) {
             </div>
             <div className="space-y-2">
               {expandedDay.events.map((event, idx) => (
-                <div key={idx} className="border-3 border-border bg-white p-3">
+                <div
+                  key={idx}
+                  className="border-3 border-border bg-white p-3 cursor-pointer hover:bg-accent1/10 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setExpandedDay(null);
+                    setSelectedEvent(event);
+                  }}
+                >
                   <div className="font-display uppercase text-sm text-accent1 flex items-center gap-1">
                     {event.allDay && <CalendarIcon size={14} />}
                     {event.allDay ? 'All Day' : formatDate(event.start)}
@@ -313,7 +327,7 @@ export function CalendarCard({ service }) {
 }
 
 // Day View Component
-function DayView({ events, currentDate, formatDate }) {
+function DayView({ events, currentDate, formatDate, setSelectedEvent }) {
   // Remove duplicates and filter events for this day
   const uniqueEvents = events.filter((event, index, self) =>
     index === self.findIndex(e => e.id === event.id || (e.summary === event.summary && e.start === event.start))
@@ -345,8 +359,6 @@ function DayView({ events, currentDate, formatDate }) {
     return eventStart <= dayEnd && eventEnd >= dayStart;
   });
 
-  const hours = Array.from({ length: 24 }, (_, i) => i);
-
   return (
     <div className="space-y-2">
       {dayEvents.length === 0 ? (
@@ -355,7 +367,8 @@ function DayView({ events, currentDate, formatDate }) {
         dayEvents.map((event, idx) => (
           <div
             key={idx}
-            className="border-3 border-border bg-surface p-3 hover:bg-accent1/10 transition-colors"
+            className="border-3 border-border bg-surface p-3 hover:bg-accent1/10 transition-colors cursor-pointer"
+            onClick={() => setSelectedEvent(event)}
           >
             <div className="font-display uppercase text-sm text-accent1 flex items-center gap-1">
               {event.allDay && <CalendarIcon size={14} />}
@@ -373,7 +386,7 @@ function DayView({ events, currentDate, formatDate }) {
 }
 
 // Week View Component
-function WeekView({ events, currentDate, formatDate, getWeekStart }) {
+function WeekView({ events, currentDate, formatDate, getWeekStart, setSelectedEvent }) {
   const weekStart = getWeekStart(currentDate);
   const days = Array.from({ length: 7 }, (_, i) => {
     const day = new Date(weekStart);
@@ -420,19 +433,20 @@ function WeekView({ events, currentDate, formatDate, getWeekStart }) {
         const isToday = day.toDateString() === new Date().toDateString();
 
         return (
-          <div key={idx} className={`border-3 border-border ${isToday ? 'bg-accent1/20' : 'bg-surface'} p-2`}>
+          <div key={idx} className={`border-3 ${isToday ? 'border-accent1' : 'border-border'} bg-surface p-2`}>
             <div className="font-display uppercase text-xs text-center mb-2">
               {dayNames[idx]}
             </div>
             <div className="font-display text-center text-lg mb-2 text-text">
               {day.getDate()}
             </div>
-            <div className="divide-y divide-border">
+            <div className={`divide-y ${isToday ? 'divide-accent1' : 'divide-border' }`}>
               {dayEvents.map((event, eventIdx) => (
                 <div
                   key={eventIdx}
-                  className="text-text text-xs py-1 font-body truncate flex items-center gap-1"
+                  className="text-text text-xs py-1 font-body truncate flex items-center gap-1 cursor-pointer hover:bg-accent1/10 transition-colors"
                   title={event.summary}
+                  onClick={() => setSelectedEvent(event)}
                 >
                   {event.allDay && <CalendarIcon size={12} className="flex-shrink-0" />}
                   <span className="truncate">
@@ -449,7 +463,7 @@ function WeekView({ events, currentDate, formatDate, getWeekStart }) {
 }
 
 // Month View Component
-function MonthView({ events, currentDate, expandedDay, setExpandedDay }) {
+function MonthView({ events, currentDate, setExpandedDay, setSelectedEvent }) {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
@@ -527,17 +541,21 @@ function MonthView({ events, currentDate, expandedDay, setExpandedDay }) {
           return (
             <div
               key={idx}
-              className={`border-3 border-border ${isToday ? 'bg-accent1/20' : 'bg-surface'} p-2 flex flex-col min-h-[80px]`}
+              className={`border-3 ${isToday ? 'border-accent1' : 'border-border'} bg-surface p-2 flex flex-col min-h-[80px]`}
             >
               <div className="font-display text-sm text-text mb-1">
                 {day}
               </div>
-              <div className="flex-1 overflow-hidden divide-y divide-border">
+              <div className={`flex-1 overflow-hidden divide-y ${isToday ? 'divide-accent1' : 'divide-border' }`}>
                 {dayEvents.slice(0, 2).map((event, eventIdx) => (
                   <div
                     key={eventIdx}
-                    className="text-text text-xs py-1 truncate flex items-center gap-1"
+                    className="text-text text-xs py-1 truncate flex items-center gap-1 cursor-pointer hover:bg-accent1/10 transition-colors"
                     title={event.summary}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedEvent(event);
+                    }}
                   >
                     {event.allDay && <CalendarIcon size={10} className="flex-shrink-0" />}
                     <span className="truncate">{event.summary}</span>

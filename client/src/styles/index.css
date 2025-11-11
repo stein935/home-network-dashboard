@@ -62,10 +62,16 @@
   .calendar-card {
     @apply items-start justify-start
            cursor-default;
+    /* Override card-brutal hover effects */
+    transform: none !important;
+    box-shadow: 4px 4px 0 0 rgb(0 0 0) !important;
   }
 
   .calendar-card:hover {
-    @apply shadow-brutal translate-x-0 translate-y-0;
+    /* Keep everything the same on hover - no animations */
+    transform: none !important;
+    box-shadow: 4px 4px 0 0 rgb(0 0 0) !important;
+    border-color: rgb(0 0 0) !important;
   }
 
   .calendar-content {
