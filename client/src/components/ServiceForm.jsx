@@ -7,7 +7,7 @@ const POPULAR_ICONS = [
   'Laptop', 'Wifi', 'Database', 'HardDrive', 'Cloud', 'Lock',
   'BarChart', 'Download', 'Upload', 'Settings', 'Zap', 'Home',
   'Network', 'Radio', 'Tv', 'Smartphone', 'Tablet', 'Watch',
-  'Utensils', 'Calendar', 'MessageCircleHeart'
+  'Utensils', 'Calendar', 'MessageCircleHeart', 'Speaker'
 ];
 
 const SORTED_POPULAR_ICONS = POPULAR_ICONS.sort((a, b) => a.localeCompare(b));
