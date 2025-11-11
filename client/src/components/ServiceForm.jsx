@@ -7,7 +7,7 @@ const POPULAR_ICONS = [
   'Laptop', 'Wifi', 'Database', 'HardDrive', 'Cloud', 'Lock',
   'BarChart', 'Download', 'Upload', 'Settings', 'Zap', 'Home',
   'Network', 'Radio', 'Tv', 'Smartphone', 'Tablet', 'Watch',
-  'Utensils', 'Calendar'
+  'Utensils', 'Calendar', 'MessageCircleHeart'
 ];
 
 const SORTED_POPULAR_ICONS = POPULAR_ICONS.sort((a, b) => a.localeCompare(b));
@@ -236,7 +236,6 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
                 value={formData.name}
                 onChange={handleChange}
                 className="input-brutal w-full"
-                placeholder="Router Admin"
               />
               {errors.name && (
                 <p className="mt-2 text-error text-sm">{errors.name}</p>
@@ -254,7 +253,6 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
                   value={formData.url}
                   onChange={handleChange}
                   className="input-brutal w-full"
-                  placeholder="http://192.168.1.1"
                 />
                 {errors.url && (
                   <p className="mt-2 text-error text-sm">{errors.url}</p>

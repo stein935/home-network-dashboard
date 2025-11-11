@@ -36,7 +36,7 @@ export function EventDetailDialog({ event, onClose, containerRef }) {
       onClick={onClose}
     >
       <div
-        className="bg-surface border-5 border-border max-w-2xl w-full max-h-[80vh] overflow-y-auto shadow-2xl"
+        className="bg-surface border-5 border-border max-w-2xl w-full shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -56,7 +56,7 @@ export function EventDetailDialog({ event, onClose, containerRef }) {
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
           {/* Date/Time */}
           <div className="flex items-start gap-4">
             <div className="mt-1">

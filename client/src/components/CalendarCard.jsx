@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import { calendarApi } from '../utils/api';
 import { EventDetailDialog } from './EventDetailDialog';
@@ -6,17 +6,76 @@ import { EventDetailDialog } from './EventDetailDialog';
 export function CalendarCard({ service }) {
   const config = service.config || {};
   const defaultViewType = config.view_type || 'week';
-  const cardRef = useRef(null);
+  const resizeObserverRef = useRef(null);
+  const cardElementRef = useRef(null);
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewType, setViewType] = useState(defaultViewType);
+  const [selectedViewType, setSelectedViewType] = useState(defaultViewType); // What user selected
   const [expandedDay, setExpandedDay] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [cardWidth, setCardWidth] = useState(null);
 
   const calendarId = config.calendar_id || 'primary';
+
+  // Responsive breakpoints
+  const MONTH_VIEW_MIN_WIDTH = 900;
+  const WEEK_STACK_WIDTH = 672;
+
+  // Callback ref to set initial width immediately when DOM node is attached
+  const cardRef = (node) => {
+    cardElementRef.current = node;
+
+    if (node) {
+      // Set initial width immediately
+      setCardWidth(node.offsetWidth);
+
+      // Clean up previous observer if it exists
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+      }
+
+      // Set up ResizeObserver
+      resizeObserverRef.current = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          setCardWidth(entry.contentRect.width);
+        }
+      });
+
+      resizeObserverRef.current.observe(node);
+    } else {
+      // Cleanup when node is removed
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+        resizeObserverRef.current = null;
+      }
+    }
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+      }
+    };
+  }, []);
+
+  // Calculate effective view type based on width constraints
+  const getEffectiveViewType = () => {
+    if (!cardWidth) return selectedViewType;
+
+    // If user selected month but width is too narrow, show week instead
+    if (selectedViewType === 'month' && cardWidth < MONTH_VIEW_MIN_WIDTH) {
+      return 'week';
+    }
+
+    return selectedViewType;
+  };
+
+  const effectiveViewType = getEffectiveViewType();
 
   useEffect(() => {
     let isMounted = true;
@@ -32,7 +91,7 @@ export function CalendarCard({ service }) {
     return () => {
       isMounted = false;
     };
-  }, [currentDate, viewType, calendarId]);
+  }, [currentDate, effectiveViewType, calendarId]);
 
   const fetchEvents = async () => {
     try {
@@ -40,20 +99,8 @@ export function CalendarCard({ service }) {
       setError(null);
 
       const { timeMin, timeMax } = getTimeRange();
-      console.log('Fetching events:', { calendarId, timeMin, timeMax, viewType });
 
       const response = await calendarApi.getEvents(calendarId, timeMin, timeMax);
-      console.log('Events fetched:', response.data);
-      console.log('Number of events:', response.data.length);
-
-      // Log each event to see if they're duplicates
-      response.data.forEach((event, i) => {
-        console.log(`Event ${i}:`, event.id, event.summary, event.start, event.end, 'allDay:', event.allDay);
-        if (event.allDay) {
-          const endDate = new Date(event.end);
-          console.log(`  End date parsed:`, endDate.toString(), 'Hours:', endDate.getHours());
-        }
-      });
 
       // Deduplicate events at the source
       const uniqueEvents = response.data.filter((event, index, self) =>
@@ -62,7 +109,6 @@ export function CalendarCard({ service }) {
           (e.summary === event.summary && e.start === event.start && e.end === event.end)
         )
       );
-      console.log('After deduplication:', uniqueEvents.length);
 
       setEvents(uniqueEvents);
     } catch (err) {
@@ -77,20 +123,20 @@ export function CalendarCard({ service }) {
   const getTimeRange = () => {
     let timeMin, timeMax;
 
-    if (viewType === 'day') {
+    if (effectiveViewType === 'day') {
       const start = new Date(currentDate);
       start.setHours(0, 0, 0, 0);
       const end = new Date(currentDate);
       end.setHours(23, 59, 59, 999);
       timeMin = start.toISOString();
       timeMax = end.toISOString();
-    } else if (viewType === 'week') {
+    } else if (effectiveViewType === 'week') {
       const start = getWeekStart(currentDate);
       const end = new Date(start);
       end.setDate(end.getDate() + 7);
       timeMin = start.toISOString();
       timeMax = end.toISOString();
-    } else if (viewType === 'month') {
+    } else if (effectiveViewType === 'month') {
       const start = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
       const end = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
       end.setHours(23, 59, 59, 999);
@@ -113,11 +159,11 @@ export function CalendarCard({ service }) {
   const navigate = (direction) => {
     const newDate = new Date(currentDate);
 
-    if (viewType === 'day') {
+    if (effectiveViewType === 'day') {
       newDate.setDate(newDate.getDate() + direction);
-    } else if (viewType === 'week') {
+    } else if (effectiveViewType === 'week') {
       newDate.setDate(newDate.getDate() + (direction * 7));
-    } else if (viewType === 'month') {
+    } else if (effectiveViewType === 'month') {
       newDate.setMonth(newDate.getMonth() + direction);
     }
 
@@ -140,19 +186,19 @@ export function CalendarCard({ service }) {
   };
 
   const getHeaderText = () => {
-    if (viewType === 'day') {
+    if (effectiveViewType === 'day') {
       return currentDate.toLocaleDateString('en-US', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
         day: 'numeric'
       });
-    } else if (viewType === 'week') {
+    } else if (effectiveViewType === 'week') {
       const weekStart = getWeekStart(currentDate);
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekEnd.getDate() + 6);
       return `${formatDateShort(weekStart)} - ${formatDateShort(weekEnd)}`;
-    } else if (viewType === 'month') {
+    } else if (effectiveViewType === 'month') {
       return currentDate.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long'
@@ -183,23 +229,23 @@ export function CalendarCard({ service }) {
 
   // Determine column span based on view type
   const getColumnSpanClass = () => {
-    if (viewType === 'day') return 'col-span-1';
-    if (viewType === 'week') return 'col-span-1 md:col-span-2 lg:col-span-3';
-    if (viewType === 'month') return 'col-span-1 md:col-span-2 lg:col-span-3';
+    if (effectiveViewType === 'day') return 'col-span-1';
+    if (effectiveViewType === 'week') return 'col-span-1 md:col-span-2 lg:col-span-3';
+    if (effectiveViewType === 'month') return 'col-span-1 md:col-span-2 lg:col-span-3';
     return 'col-span-1';
   };
 
   // Check if already viewing current period
   const isViewingToday = () => {
     const today = new Date();
-    if (viewType === 'day') {
+    if (effectiveViewType === 'day') {
       return currentDate.toDateString() === today.toDateString();
-    } else if (viewType === 'week') {
+    } else if (effectiveViewType === 'week') {
       const weekStart = getWeekStart(currentDate);
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekEnd.getDate() + 6);
       return today >= weekStart && today <= weekEnd;
-    } else if (viewType === 'month') {
+    } else if (effectiveViewType === 'month') {
       return currentDate.getMonth() === today.getMonth() && currentDate.getFullYear() === today.getFullYear();
     }
     return false;
@@ -245,26 +291,30 @@ export function CalendarCard({ service }) {
       {/* View type selector */}
       <div className="flex gap-2 mb-4">
         <button
-          onClick={() => setViewType('day')}
+          onClick={() => setSelectedViewType('day')}
           className={`px-3 py-1 border-3 font-display uppercase text-sm bg-white text-text transition-colors ${
-            viewType === 'day' ? 'border-accent1' : 'border-border'
+            selectedViewType === 'day' ? 'border-accent1' : 'border-border'
           }`}
         >
           Day
         </button>
         <button
-          onClick={() => setViewType('week')}
+          onClick={() => setSelectedViewType('week')}
           className={`px-3 py-1 border-3 font-display uppercase text-sm bg-white text-text transition-colors ${
-            viewType === 'week' ? 'border-accent1' : 'border-border'
+            selectedViewType === 'week' ? 'border-accent1' : 'border-border'
           }`}
         >
           Week
         </button>
         <button
-          onClick={() => setViewType('month')}
-          className={`px-3 py-1 border-3 font-display uppercase text-sm bg-white text-text transition-colors ${
-            viewType === 'month' ? 'border-accent1' : 'border-border'
-          }`}
+          onClick={() => setSelectedViewType('month')}
+          disabled={cardWidth && cardWidth < MONTH_VIEW_MIN_WIDTH}
+          className={`px-3 py-1 border-3 font-display uppercase text-sm transition-colors ${
+            cardWidth && cardWidth < MONTH_VIEW_MIN_WIDTH
+              ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-300'
+              : 'bg-white text-text'
+          } ${selectedViewType === 'month' ? 'border-accent1' : 'border-border'}`}
+          title={cardWidth && cardWidth < MONTH_VIEW_MIN_WIDTH ? 'Month view requires more width' : ''}
         >
           Month
         </button>
@@ -276,14 +326,14 @@ export function CalendarCard({ service }) {
       </div>
 
       {/* Calendar view content */}
-      <div className={`calendar-content ${viewType === 'month' ? '' : 'overflow-y-auto max-h-[500px]'}`}>
-        {viewType === 'day' && <DayView events={events} currentDate={currentDate} formatDate={formatDate} setSelectedEvent={setSelectedEvent} />}
-        {viewType === 'week' && <WeekView events={events} currentDate={currentDate} formatDate={formatDate} getWeekStart={getWeekStart} setSelectedEvent={setSelectedEvent} />}
-        {viewType === 'month' && <MonthView events={events} currentDate={currentDate} expandedDay={expandedDay} setExpandedDay={setExpandedDay} setSelectedEvent={setSelectedEvent} />}
+      <div className="calendar-content">
+        {effectiveViewType === 'day' && <DayView events={events} currentDate={currentDate} formatDate={formatDate} setSelectedEvent={setSelectedEvent} />}
+        {effectiveViewType === 'week' && <WeekView events={events} currentDate={currentDate} formatDate={formatDate} getWeekStart={getWeekStart} setSelectedEvent={setSelectedEvent} cardWidth={cardWidth} weekStackWidth={WEEK_STACK_WIDTH} />}
+        {effectiveViewType === 'month' && <MonthView events={events} currentDate={currentDate} expandedDay={expandedDay} setExpandedDay={setExpandedDay} setSelectedEvent={setSelectedEvent} cardWidth={cardWidth} />}
       </div>
 
       {/* Event detail dialog */}
-      {selectedEvent && <EventDetailDialog event={selectedEvent} onClose={() => setSelectedEvent(null)} containerRef={cardRef} />}
+      {selectedEvent && <EventDetailDialog event={selectedEvent} onClose={() => setSelectedEvent(null)} containerRef={cardElementRef} />}
 
       {/* Event modal */}
       {expandedDay && (
@@ -386,7 +436,7 @@ function DayView({ events, currentDate, formatDate, setSelectedEvent }) {
 }
 
 // Week View Component
-function WeekView({ events, currentDate, formatDate, getWeekStart, setSelectedEvent }) {
+function WeekView({ events, currentDate, formatDate, getWeekStart, setSelectedEvent, cardWidth, weekStackWidth }) {
   const weekStart = getWeekStart(currentDate);
   const days = Array.from({ length: 7 }, (_, i) => {
     const day = new Date(weekStart);
@@ -401,8 +451,11 @@ function WeekView({ events, currentDate, formatDate, getWeekStart, setSelectedEv
     index === self.findIndex(e => e.id === event.id || (e.summary === event.summary && e.start === event.start))
   );
 
+  // Stack vertically when narrow
+  const isNarrow = cardWidth && cardWidth < weekStackWidth;
+
   return (
-    <div className="grid grid-cols-7 gap-2">
+    <div className={`grid gap-2 ${isNarrow ? 'grid-cols-1' : 'grid-cols-7'}`}>
       {days.map((day, idx) => {
         const dayEvents = uniqueEvents.filter(event => {
           // Parse dates - for all-day events, parse as local date, not UTC
@@ -434,12 +487,27 @@ function WeekView({ events, currentDate, formatDate, getWeekStart, setSelectedEv
 
         return (
           <div key={idx} className={`border-3 ${isToday ? 'border-accent1' : 'border-border'} bg-surface p-2`}>
-            <div className="font-display uppercase text-xs text-center mb-2">
-              {dayNames[idx]}
-            </div>
-            <div className="font-display text-center text-lg mb-2 text-text">
-              {day.getDate()}
-            </div>
+            {isNarrow ? (
+              // Horizontal layout for narrow view
+              <div className="flex items-center gap-3 mb-2">
+                <div className="font-display uppercase text-sm min-w-[60px]">
+                  {dayNames[idx]}
+                </div>
+                <div className="font-display text-lg text-text">
+                  {day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                </div>
+              </div>
+            ) : (
+              // Original stacked layout for wide view
+              <>
+                <div className="font-display uppercase text-xs text-center mb-2">
+                  {dayNames[idx]}
+                </div>
+                <div className="font-display text-center text-lg mb-2 text-text">
+                  {day.getDate()}
+                </div>
+              </>
+            )}
             <div className={`divide-y ${isToday ? 'divide-accent1' : 'divide-border' }`}>
               {dayEvents.map((event, eventIdx) => (
                 <div
@@ -463,7 +531,7 @@ function WeekView({ events, currentDate, formatDate, getWeekStart, setSelectedEv
 }
 
 // Month View Component
-function MonthView({ events, currentDate, setExpandedDay, setSelectedEvent }) {
+function MonthView({ events, currentDate, setExpandedDay, setSelectedEvent, cardWidth }) {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
@@ -491,19 +559,23 @@ function MonthView({ events, currentDate, setExpandedDay, setSelectedEvent }) {
     index === self.findIndex(e => e.id === event.id || (e.summary === event.summary && e.start === event.start))
   );
 
+  // Stack days vertically when very narrow (< 400px)
+  // Note: month view already switches to week view at 600px, so this is a fallback
+  const isVeryNarrow = cardWidth && cardWidth < 400;
+
   return (
     <div>
       {/* Day headers */}
-      <div className="grid grid-cols-7 gap-1 mb-2">
+      <div className={`grid gap-1 mb-2 ${isVeryNarrow ? 'grid-cols-3' : 'grid-cols-7'}`}>
         {dayNames.map(name => (
           <div key={name} className="font-display uppercase text-xs text-center text-text">
-            {name}
+            {isVeryNarrow ? name.slice(0, 1) : name}
           </div>
         ))}
       </div>
 
       {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-1">
+      <div className={`grid gap-1 ${isVeryNarrow ? 'grid-cols-3' : 'grid-cols-7'}`}>
         {days.map((day, idx) => {
           if (!day) {
             return <div key={idx} className="aspect-square" />;
