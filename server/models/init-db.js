@@ -212,6 +212,24 @@ function initializeDatabase() {
     )
   `);
 
+  // Create notes table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS notes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      section_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      message TEXT NOT NULL,
+      author_email TEXT NOT NULL,
+      author_name TEXT NOT NULL,
+      due_date TEXT,
+      color TEXT NOT NULL,
+      display_order INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (section_id) REFERENCES sections(id) ON DELETE CASCADE
+    )
+  `);
+
   // Create indexes
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id);
@@ -220,6 +238,8 @@ function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_services_section ON services(section_id);
     CREATE INDEX IF NOT EXISTS idx_sections_order ON sections(display_order);
     CREATE INDEX IF NOT EXISTS idx_service_config_service ON service_config(service_id);
+    CREATE INDEX IF NOT EXISTS idx_notes_section ON notes(section_id);
+    CREATE INDEX IF NOT EXISTS idx_notes_order ON notes(section_id, display_order);
   `);
 
   // Ensure default section exists

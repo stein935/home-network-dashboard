@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Dashboard from './components/Dashboard';
+import Footer from './components/Footer';
 import AdminPanel from './components/AdminPanel';
 
 function App() {
@@ -14,6 +15,7 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+                <Footer />
               </ProtectedRoute>
             }
           />
@@ -22,6 +24,7 @@ function App() {
             element={
               <ProtectedRoute requireAdmin={true}>
                 <AdminPanel />
+                <Footer />
               </ProtectedRoute>
             }
           />

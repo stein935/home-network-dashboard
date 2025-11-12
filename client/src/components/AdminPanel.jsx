@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Edit, Trash2 } from 'lucide-react';
+import * as Icons from 'lucide-react';
 import { servicesApi } from '../utils/api';
 import UserManagement from './UserManagement';
 import ServiceForm from './ServiceForm';
@@ -88,19 +89,19 @@ export function AdminPanel() {
   };
 
   return (
-    <div className="min-h-screen p-6 md:p-12">
+    <div className="min-h-[80vh] p-6 md:p-12">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <header className="mb-12">
+        <header className="mb-6 sm:mb-12">
           <button
             onClick={() => navigate('/')}
-            className="btn-brutal flex items-center gap-2 mb-6"
+            className="btn-brutal flex items-center justify-center gap-2 mb-6 w-full sm:w-auto"
           >
             <ArrowLeft size={20} />
             Back to Dashboard
           </button>
 
-          <h1 className="font-display text-display-lg uppercase text-text">
+          <h1 className="font-display text-display-sm sm:text-display-lg uppercase text-text">
             Admin <span className="text-accent1">Panel</span>
           </h1>
         </header>
@@ -109,7 +110,7 @@ export function AdminPanel() {
         <div className="mb-8 flex gap-4 border-b-5 border-border">
           <button
             onClick={() => setActiveTab('services')}
-            className={`font-display uppercase px-6 py-3 border-b-5 transition-colors ${
+            className={`font-display uppercase px-3 sm:px-6 py-1 sm:py-3 border-b-5 transition-colors ${
               activeTab === 'services'
                 ? 'border-accent1 text-accent1'
                 : 'border-transparent text-text/60 hover:text-text'
@@ -119,7 +120,7 @@ export function AdminPanel() {
           </button>
           <button
             onClick={() => setActiveTab('sections')}
-            className={`font-display uppercase px-6 py-3 border-b-5 transition-colors ${
+            className={`font-display uppercase px-3 sm:px-6 py-1 sm:py-3 border-b-5 transition-colors ${
               activeTab === 'sections'
                 ? 'border-accent1 text-accent1'
                 : 'border-transparent text-text/60 hover:text-text'
@@ -129,7 +130,7 @@ export function AdminPanel() {
           </button>
           <button
             onClick={() => setActiveTab('users')}
-            className={`font-display uppercase px-6 py-3 border-b-5 transition-colors ${
+            className={`font-display uppercase px-3 sm:px-6 py-1 sm:py-3 border-b-5 transition-colors ${
               activeTab === 'users'
                 ? 'border-accent1 text-accent1'
                 : 'border-transparent text-text/60 hover:text-text'
@@ -142,13 +143,13 @@ export function AdminPanel() {
         {/* Content */}
         {activeTab === 'services' ? (
           <div>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="font-display text-display-sm uppercase text-text">
+            <div className="flex flex-wrap justify-between items-center mb-6">
+              <h2 className="font-display text-display-sm uppercase text-text w-full sm:w-auto mb-1 sm:mb-0">
                 Manage Services
               </h2>
               <button
-                onClick={handleAddClick}
-                className="btn-brutal-primary flex items-center gap-2"
+                onClick={handleAddClick} 
+                className="btn-brutal-primary flex items-center justify-center gap-2 w-full sm:w-auto"
               >
                 <Plus size={20} />
                 Add Service
@@ -170,7 +171,7 @@ export function AdminPanel() {
                 <table className="w-full">
                   <thead className="border-b-3 border-border">
                     <tr>
-                      <th className="text-left p-4 font-display uppercase text-text">Order</th>
+                      <th className="text-left p-4 font-display uppercase text-text">Type</th>
                       <th className="text-left p-4 font-display uppercase text-text">Name</th>
                       <th className="text-left p-4 font-display uppercase text-text">URL</th>
                       <th className="text-left p-4 font-display uppercase text-text">Icon</th>
@@ -184,7 +185,7 @@ export function AdminPanel() {
                         className="border-b border-border/30 last:border-0"
                       >
                         <td className="p-4 font-body text-text">
-                          {service.display_order}
+                          {service.card_type}
                         </td>
                         <td className="p-4 font-body text-text">
                           {service.name}
@@ -193,7 +194,10 @@ export function AdminPanel() {
                           {service.url}
                         </td>
                         <td className="p-4 font-body text-text">
-                          {service.icon}
+                          {(() => {
+                            const IconComponent = Icons[service.icon] || Icons.ExternalLink;
+                            return <IconComponent size={24} strokeWidth={2} />;
+                          })()}
                         </td>
                         <td className="p-4 text-right">
                           <div className="flex justify-end gap-3">

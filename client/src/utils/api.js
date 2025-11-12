@@ -50,4 +50,14 @@ export const calendarApi = {
     })
 };
 
+// Notes API
+export const notesApi = {
+  getAll: () => api.get('/api/notes'),
+  getBySection: (sectionId) => api.get(`/api/notes/section/${sectionId}`),
+  create: (data) => api.post('/api/notes', data),
+  update: (id, data) => api.put(`/api/notes/${id}`, data),
+  reorder: (updates) => api.put('/api/notes/reorder/bulk', { updates }),
+  delete: (id) => api.delete(`/api/notes/${id}`)
+};
+
 export default api;

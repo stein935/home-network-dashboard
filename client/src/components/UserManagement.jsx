@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { UserPlus, Trash2, Shield, Eye } from 'lucide-react';
 import { usersApi } from '../utils/api';
 import { useAuth } from '../hooks/useAuth';
+import { Dialog } from './Dialog';
 
 export function UserManagement() {
   const { user: currentUser } = useAuth();
@@ -84,13 +85,13 @@ export function UserManagement() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="font-display text-display-sm uppercase text-text">
+      <div className="flex flex-wrap justify-between items-center mb-6">
+        <h2 className="font-display text-display-sm uppercase text-text w-full sm:w-auto mb-1 sm:mb-0">
           User Management
         </h2>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="btn-brutal-primary flex items-center gap-2"
+          className="btn-brutal-primary flex items-center justify-center gap-2 w-full sm:w-auto"
         >
           <UserPlus size={20} />
           Add User
@@ -104,12 +105,30 @@ export function UserManagement() {
       )}
 
       {showAddForm && (
-        <div className="mb-6 border-5 border-border bg-surface p-6 shadow-brutal">
-          <h3 className="font-display text-xl uppercase mb-4 text-text">
-            Add New User
-          </h3>
+        <Dialog
+          title="Add New User"
+          onClose={() => setShowAddForm(false)}
+          footer={
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={handleAddUser}
+                className="btn-brutal-primary flex-1"
+              >
+                Add User
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowAddForm(false)}
+                className="btn-brutal flex-1"
+              >
+                Cancel
+              </button>
+            </div>
+          }
+        >
           <form onSubmit={handleAddUser} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div>
                 <label className="block font-display uppercase text-sm mb-2 text-text">
                   Email
@@ -152,20 +171,8 @@ export function UserManagement() {
                 </select>
               </div>
             </div>
-            <div className="flex gap-4">
-              <button type="submit" className="btn-brutal-primary">
-                Add User
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowAddForm(false)}
-                className="btn-brutal"
-              >
-                Cancel
-              </button>
-            </div>
           </form>
-        </div>
+        </Dialog>
       )}
 
       <div className="border-5 border-border bg-surface shadow-brutal overflow-x-auto">
@@ -191,11 +198,11 @@ export function UserManagement() {
                   <button
                     onClick={() => handleToggleRole(user.id, user.role)}
                     disabled={user.id === currentUser?.id}
-                    className={`flex items-center gap-2 ${
+                    className={`flex items-center gap-2 py-1 px-2 border-3 border-border ${
                       user.role === 'admin'
                         ? 'text-accent1'
                         : 'text-text/60'
-                    } ${user.id === currentUser?.id ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80'}`}
+                    } ${user.id === currentUser?.id ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80 hover:border-accent1'}`}
                   >
                     {user.role === 'admin' ? <Shield size={16} /> : <Eye size={16} />}
                     <span className="font-display uppercase text-sm">{user.role}</span>
