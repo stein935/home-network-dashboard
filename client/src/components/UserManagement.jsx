@@ -84,13 +84,13 @@ export function UserManagement() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="font-display text-display-sm uppercase text-text">
+      <div className="flex flex-wrap justify-between items-center mb-6">
+        <h2 className="font-display text-display-sm uppercase text-text w-full sm:w-auto mb-1 sm:mb-0">
           User Management
         </h2>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="btn-brutal-primary flex items-center gap-2"
+          className="btn-brutal-primary flex items-center justify-center gap-2 w-full sm:w-auto"
         >
           <UserPlus size={20} />
           Add User

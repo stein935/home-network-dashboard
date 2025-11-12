@@ -8,7 +8,7 @@ Brutalist-designed home network dashboard with Google OAuth, role-based access c
 - SQLite database via better-sqlite3
 - Passport.js + Google OAuth 2.0
 - Session management with connect-sqlite3
-- Models: User, Service, Section
+- Models: User, Service, ServiceConfig, Section, Note
 
 **Frontend** (React + Vite)
 - React Router for navigation
@@ -32,32 +32,40 @@ home-network-dashboard/
 │   │   ├── User.js           # User CRUD operations
 │   │   ├── Service.js        # Service CRUD operations
 │   │   ├── ServiceConfig.js  # Calendar config operations
-│   │   └── Section.js        # Section CRUD with services
+│   │   ├── Section.js        # Section CRUD with services
+│   │   └── Note.js           # Note CRUD operations
 │   ├── routes/
 │   │   ├── auth.js           # /auth/* - OAuth endpoints
 │   │   ├── services.js       # /api/services - CRUD with config
 │   │   ├── sections.js       # /api/sections - CRUD
 │   │   ├── users.js          # /api/users - admin only
-│   │   └── calendar.js       # /api/calendar - Calendar API proxy
+│   │   ├── calendar.js       # /api/calendar - Calendar API proxy
+│   │   └── notes.js          # /api/notes - CRUD for sticky notes
 │   ├── services/
 │   │   └── calendarService.js # Google Calendar API integration
 │   └── server.js             # Express app entry
 ├── client/
 │   └── src/
 │       ├── components/
-│       │   ├── Dashboard.jsx      # Main view with service cards
-│       │   ├── ServiceCard.jsx    # Individual service card (routes by type)
-│       │   ├── CalendarCard.jsx   # Calendar card with day/week/month views
-│       │   ├── AdminPanel.jsx     # Admin interface tabs
-│       │   ├── ServiceForm.jsx    # Create/edit services with calendar config
-│       │   ├── SectionManager.jsx # Manage sections
-│       │   └── UserManagement.jsx # Manage users
+│       │   ├── Dashboard.jsx          # Main view with collapsible sections
+│       │   ├── ServiceCard.jsx        # Routes card rendering by type
+│       │   ├── CalendarCard.jsx       # Calendar with responsive views
+│       │   ├── EventDetailDialog.jsx  # Event details with attendees/links
+│       │   ├── StickyNoteCard.jsx     # Draggable sticky note display
+│       │   ├── NoteDialog.jsx         # Note create/edit/delete dialog
+│       │   ├── AdminPanel.jsx         # Admin interface tabs
+│       │   ├── ServiceForm.jsx        # Service CRUD with calendar config
+│       │   ├── SectionManager.jsx     # Section management
+│       │   ├── UserManagement.jsx     # User whitelist management
+│       │   └── ProtectedRoute.jsx     # Route protection HOC
 │       ├── context/
-│       │   └── AuthContext.jsx    # Auth state & user data
+│       │   └── AuthContext.jsx        # Auth provider (exports useAuth)
 │       ├── hooks/
-│       │   └── useServices.js     # Fetch services hook
+│       │   └── useAuth.js             # Re-exports useAuth from context
 │       └── utils/
-│           └── api.js             # Axios instance with calendar API
+│           ├── api.js                 # Axios with API endpoints
+│           ├── dateUtils.js           # Due date formatting & categorization
+│           └── noteColors.js          # Sticky note color palette
 ├── data/                   # SQLite databases (runtime)
 ├── scripts/
 │   └── seed.js            # Add initial admin user
@@ -66,32 +74,25 @@ home-network-dashboard/
 
 ## Database Schema
 
-**users**
-- id, google_id (unique), email, name, role (admin/read-only), google_access_token, google_refresh_token
-- OAuth tokens stored for Calendar API access
+**users**: id, google_id (nullable), email, name, role (admin/readonly), google_access_token, google_refresh_token
 
-**services**
-- id, name, url, icon, display_order, section_id, card_type
-- Cards displayed on dashboard linking to internal services
-- card_type: Supports 'link' (default) and 'calendar', extensible for future types
+**services**: id, name, url, icon, display_order, section_id, card_type (link/calendar)
 
-**service_config**
-- id, service_id, calendar_id, view_type
-- Stores card-specific configuration (e.g., calendar settings)
-- calendar_id: Google Calendar ID to display
-- view_type: Default view ('day', 'week', or 'month')
+**service_config**: id, service_id, calendar_id, view_type (day/week/month)
 
-**sections**
-- id, name, display_order, is_default
-- Organizational grouping for services
+**sections**: id, name, display_order, is_default
+
+**notes**: id, title, message, color, due_date (nullable), author_id, author_name, section_id, display_order, created_at, updated_at
 
 ## Key Features
 
 1. **Authentication**: Google OAuth with whitelist-based access
-2. **Authorization**: Admin role can manage users/services, read-only can view
-3. **Service Cards**: Click-to-open links with icons, organized by sections
-4. **Admin Interface**: Manage services, sections, and user access
-5. **Brutalist Design**: High-contrast, bold UI with bright accents
+2. **Authorization**: Admin role can manage users/services, readonly can view
+3. **Service Cards**: Link and calendar card types, organized in collapsible sections
+4. **Calendar Integration**: Day/week/month views with event details, attendees, meeting links
+5. **Sticky Notes**: Draggable notes with due dates, color coding, and urgency badges
+6. **Admin Interface**: Manage services, sections, and user access
+7. **Responsive Design**: Brutalist styling with adaptive layouts
 
 ## API Endpoints
 
@@ -125,6 +126,14 @@ home-network-dashboard/
 - GET `/api/calendar/calendars` - List user's Google calendars
 - GET `/api/calendar/events` - Get events for a calendar (params: calendarId, timeMin, timeMax)
 
+**Notes** (authenticated)
+- GET `/api/notes` - List all notes
+- GET `/api/notes/section/:sectionId` - Get notes for a specific section
+- POST `/api/notes` - Create note (requires: title, message, color, sectionId; optional: dueDate)
+- PUT `/api/notes/:id` - Update note (author can edit own notes)
+- DELETE `/api/notes/:id` - Delete note (author or admin only)
+- PUT `/api/notes/reorder` - Update display order via drag-and-drop
+
 ## Development
 
 **Start backend**: `npm run dev` (nodemon, port 3030)
@@ -144,15 +153,7 @@ Required in `.env`:
 
 ## Current State
 
-Working features:
-- Google OAuth login with session management and Calendar API integration
-- Service cards with icons and links
-- Card type system (link and calendar types)
-- Section-based organization
-- Admin panel for services, sections, and users
-- Role-based access control
-- Google Calendar integration with day/week/month views
-- Responsive brutalist design
+Fully functional with Google OAuth, role-based access, link/calendar card types, sticky notes with drag-and-drop reordering, collapsible sections, admin panel, and responsive brutalist design. Calendar integration includes day/week/month views with event details. Sticky notes support due dates with urgency indicators and customizable colors.
 
 ## Card Types
 
@@ -163,45 +164,53 @@ The service card system supports different card types via the `card_type` field:
 - `calendar` - Displays Google Calendar events with day, week, or month views
 
 **Calendar Card Features:**
-- Integrates with Google Calendar API using OAuth tokens
 - Three view modes: Day, Week (Sunday-Saturday), Month (traditional grid)
-- Navigation controls to move forward/backward through time periods
-- Event display with time, title, location
-- Configurable calendar selection (primary or other calendars)
-- Configurable default view type per card
+- Event detail dialog with attendees, response status, organizer, meeting/hangout links
+- Responsive layouts: Month view disabled <900px, week view stacks <672px (ResizeObserver)
+- Event deduplication, all-day event support
+- Navigation controls (prev/next/today) with view persistence
+- Configurable calendar selection and default view type
 
-**Extensible Design:**
-The card_type field is designed to support future types like:
-- `embed` - Embedded iframe content
-- `iframe` - Full-page iframe view
-- `widget` - Interactive dashboard widget
-- `status` - Service status indicator
+**Adding New Card Types:**
+1. Update CHECK constraint in `server/models/init-db.js` and add migration
+2. Update validation in `server/routes/services.js`
+3. Add option to ServiceForm dropdown, implement rendering in ServiceCard
+4. Create dedicated component if needed (e.g., CalendarCard)
 
-**To Add New Card Type:**
-1. Update CHECK constraint in `server/models/init-db.js`:
-   ```sql
-   CHECK(card_type IN ('link', 'calendar', 'embed', 'iframe', 'widget'))
-   ```
-2. Add migration to handle existing databases
-3. Update validation in `server/routes/services.js`:
-   ```js
-   body('card_type').optional().isIn(['link', 'calendar', 'embed', 'iframe', 'widget'])
-   ```
-4. Add option to dropdown in `client/src/components/ServiceForm.jsx`
-5. Implement rendering logic in `client/src/components/ServiceCard.jsx`
-6. Create dedicated component (like `CalendarCard.jsx`) if needed
+## Sticky Notes
+
+Sticky notes are section-specific notes that appear alongside services within collapsible sections.
+
+**Features:**
+- Drag-and-drop reordering within sections
+- Customizable colors (10 color palette: yellows, pinks, blues, greens)
+- Optional due dates with intelligent categorization
+- Urgency badges: "DUE TODAY" (red), "DUE SOON" (orange), "OVERDUE" (red alert)
+- Future dates displayed without badge
+- Author attribution (automatic from authenticated user)
+- Folded corner design element (bottom-right)
+- Click to edit/view details
+- Author or admin can delete notes
+- Character limits: title (200 chars), message (5000 chars)
+
+**Due Date Categories:**
+- `overdue` - Past due (red badge with AlertTriangle icon)
+- `today` - Due today (red badge with AlertCircle icon)
+- `soon` - Due within 3 days (orange badge with Clock icon)
+- `future` - Due later (no badge, shows date with Calendar icon)
+- `none` - No due date set
+
+**Display Rules:**
+- Notes shown in masonry grid layout
+- Aspect ratio: square (1:1)
+- Size range: min 200px, max 280px
+- Ring highlight on drag-over (blue)
+- Responsive grid with auto-fit columns
 
 ## Common Tasks
 
-**Add new service field**:
-1. Update schema in `server/models/init-db.js`
-2. Update Service model methods in `server/models/Service.js`
-3. Update API routes in `server/routes/services.js`
-4. Update ServiceForm component in `client/src/components/ServiceForm.jsx`
-5. Update ServiceCard display if needed
+**Add service field**: Update init-db.js (schema), Service.js (model), services.js (routes), ServiceForm.jsx (UI)
 
-**Add new admin feature**:
-1. Create/update model in `server/models/`
-2. Create route in `server/routes/` with auth middleware
-3. Add tab to AdminPanel component
-4. Create management component in `client/src/components/`
+**Add note field**: Update init-db.js (schema), Note.js (model), notes.js (routes), NoteDialog.jsx (UI)
+
+**Add admin feature**: Create model, add route with auth middleware, add AdminPanel tab, create management component
