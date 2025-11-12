@@ -50,6 +50,7 @@ home-network-dashboard/
 │       │   ├── Dashboard.jsx          # Main view with collapsible sections
 │       │   ├── ServiceCard.jsx        # Routes card rendering by type
 │       │   ├── CalendarCard.jsx       # Calendar with responsive views
+│       │   ├── Dialog.jsx             # Unified dialog component (blue header)
 │       │   ├── EventDetailDialog.jsx  # Event details with attendees/links
 │       │   ├── StickyNoteCard.jsx     # Draggable sticky note display
 │       │   ├── NoteDialog.jsx         # Note create/edit/delete dialog
@@ -153,7 +154,7 @@ Required in `.env`:
 
 ## Current State
 
-Fully functional with Google OAuth, role-based access, link/calendar card types, sticky notes with drag-and-drop reordering, collapsible sections, admin panel, and responsive brutalist design. Calendar integration includes day/week/month views with event details. Sticky notes support due dates with urgency indicators and customizable colors.
+Fully functional with Google OAuth, role-based access, link/calendar card types, sticky notes with drag-and-drop reordering, collapsible sections, admin panel, and responsive brutalist design. Calendar integration includes day/week/month views with event details. Sticky notes support due dates with urgency indicators and customizable colors. All dialogs use a unified Dialog component with consistent blue header design and mobile-responsive layouts.
 
 ## Card Types
 
@@ -207,6 +208,52 @@ Sticky notes are section-specific notes that appear alongside services within co
 - Ring highlight on drag-over (blue)
 - Responsive grid with auto-fit columns
 
+## Unified Dialog Component
+
+All dialogs in the application use a shared Dialog component for consistency and maintainability.
+
+**Features:**
+- Blue header (bg-accent1) with white text and close button
+- Scrollable content section with customizable spacing
+- Optional footer section for action buttons
+- Responsive design with Tailwind breakpoints
+- Click-outside-to-close functionality
+- Configurable max width and z-index
+
+**Props:**
+- `title` (string) - Dialog title displayed in header
+- `onClose` (function) - Handler called when dialog is closed
+- `children` (ReactNode) - Content section of dialog
+- `footer` (ReactNode, optional) - Footer with action buttons
+- `maxWidth` (string, optional) - Max width class (default: 'max-w-2xl')
+- `contentClassName` (string, optional) - Additional classes for content
+- `zIndex` (number, optional) - Z-index for dialog (default: 50)
+
+**Usage Example:**
+```jsx
+<Dialog
+  title="Edit Service"
+  onClose={handleClose}
+  footer={
+    <div className="flex gap-3">
+      <button onClick={handleSave} className="btn-brutal-primary">Save</button>
+      <button onClick={handleClose} className="btn-brutal">Cancel</button>
+    </div>
+  }
+>
+  <form className="space-y-4">
+    {/* Form fields */}
+  </form>
+</Dialog>
+```
+
+**Used By:**
+- NoteDialog - Create/edit sticky notes
+- EventDetailDialog - Display calendar event details
+- ServiceForm - Add/edit services
+- SectionManager - Add/edit sections
+- UserManagement - Add users to whitelist
+
 ## Common Tasks
 
 **Add service field**: Update init-db.js (schema), Service.js (model), services.js (routes), ServiceForm.jsx (UI)
@@ -214,3 +261,5 @@ Sticky notes are section-specific notes that appear alongside services within co
 **Add note field**: Update init-db.js (schema), Note.js (model), notes.js (routes), NoteDialog.jsx (UI)
 
 **Add admin feature**: Create model, add route with auth middleware, add AdminPanel tab, create management component
+
+**Add new dialog**: Use Dialog component with title, onClose, optional footer, and content as children

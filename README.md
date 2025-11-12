@@ -8,8 +8,8 @@ A brutalist-designed home network dashboard with Google OAuth authentication, ro
 - **Role-Based Access Control**: Admin and read-only user roles
 - **Service Management**: Add, edit, and delete network service links
 - **User Whitelist**: Control who can access your dashboard
-- **Brutalist Design**: Bold, high-contrast UI with bright accent colors
-- **Responsive Layout**: Works on desktop, tablet, and mobile
+- **Brutalist Design**: Bold, high-contrast UI with bright accent colors and consistent dialog styling
+- **Responsive Layout**: Works on desktop, tablet, and mobile with adaptive dialogs
 - **Dark/Light Mode**: Automatically follows system preference
 - **Docker Deployment**: Easy deployment with Docker Compose
 
@@ -109,12 +109,9 @@ npm run seed
 
 The script will prompt you for:
 - Your email address (the one you'll use to log in with Google)
-- Your Google ID (you can find this by temporarily logging in and checking the browser developer console, or use a Google ID lookup tool)
 - Your name (optional)
 
-**Finding Your Google ID:**
-- Easiest method: After setting up OAuth, attempt to login. Check the browser console Network tab for the OAuth response which includes your Google ID.
-- Alternative: Use a temporary script or online tool to fetch your Google profile ID.
+That's it! When you first log in with Google OAuth, your account details (Google ID and tokens) will be automatically populated.
 
 ### 4. Build and Run with Docker
 
@@ -165,10 +162,11 @@ As an admin user:
 3. Click "Add User"
 4. Enter the user's:
    - Email address
-   - Google ID
    - Name (optional)
    - Role (Admin or Read Only)
 5. Click "Add User"
+
+The user's Google account details will be automatically linked when they first log in.
 
 **User Roles:**
 - **Admin**: Can manage services and users
@@ -217,7 +215,7 @@ home-network-dashboard/
 │   └── server.js        # Main server file
 ├── client/              # Frontend React app
 │   └── src/
-│       ├── components/  # React components
+│       ├── components/  # React components (inc. unified Dialog)
 │       ├── context/     # Auth context
 │       ├── hooks/       # Custom hooks
 │       ├── utils/       # API utilities
@@ -292,6 +290,13 @@ The application uses [Lucide React](https://lucide.dev/icons/) icons. All icon n
 ### Changing Default Services
 
 Edit `server/models/init-db.js` to modify the default services that are seeded on first run.
+
+### Customizing Dialogs
+
+All dialogs use a unified `Dialog.jsx` component with consistent styling. To customize dialog appearance:
+- Edit `client/src/components/Dialog.jsx`
+- Modify header background color, border styles, or spacing
+- All existing dialogs (notes, events, forms) will automatically update
 
 ## License
 

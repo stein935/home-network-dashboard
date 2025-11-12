@@ -89,7 +89,7 @@ export function AdminPanel() {
   };
 
   return (
-    <div className="min-h-screen p-6 md:p-12">
+    <div className="min-h-[80vh] p-6 md:p-12">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <header className="mb-6 sm:mb-12">

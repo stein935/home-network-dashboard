@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, X } from 'lucide-react';
+import { Plus, Edit, Trash2 } from 'lucide-react';
 import { sectionsApi } from '../utils/api';
+import { Dialog } from './Dialog';
 
 export function SectionManager() {
   const [sections, setSections] = useState([]);
@@ -175,76 +176,67 @@ export function SectionManager() {
 
       {/* Section Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-surface border-5 border-border shadow-brutal max-w-md w-full p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-display text-display-sm uppercase text-text">
-                {editingSection ? 'Edit Section' : 'Add Section'}
-              </h3>
+        <Dialog
+          title={editingSection ? 'Edit Section' : 'Add Section'}
+          onClose={handleCloseForm}
+          maxWidth="max-w-md"
+          footer={
+            <div className="flex gap-3">
               <button
-                onClick={handleCloseForm}
-                className="text-text/60 hover:text-text"
-                aria-label="Close"
+                type="button"
+                onClick={handleSubmit}
+                className="btn-brutal-primary flex-1"
               >
-                <X size={24} />
+                {editingSection ? 'Update' : 'Create'}
+              </button>
+              <button
+                type="button"
+                onClick={handleCloseForm}
+                className="btn-brutal flex-1"
+              >
+                Cancel
               </button>
             </div>
+          }
+        >
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="name" className="block font-display uppercase text-sm text-text mb-2">
+                Section Name
+              </label>
+              <input
+                type="text"
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="w-full px-4 py-2 border-3 border-border bg-background text-text focus:border-accent1 focus:outline-none"
+                required
+                maxLength={100}
+              />
+            </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="name" className="block font-display uppercase text-sm text-text mb-2">
-                  Section Name
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2 border-3 border-border bg-background text-text focus:border-accent1 focus:outline-none"
-                  required
-                  maxLength={100}
-                />
+            <div>
+              <label htmlFor="display_order" className="block font-display uppercase text-sm text-text mb-2">
+                Display Order
+              </label>
+              <input
+                type="number"
+                id="display_order"
+                value={formData.display_order}
+                onChange={(e) => setFormData({ ...formData, display_order: e.target.value })}
+                className="w-full px-4 py-2 border-3 border-border bg-background text-text focus:border-accent1 focus:outline-none"
+                required
+                min="0"
+              />
+            </div>
+
+            {formError && (
+              <div className="border-2 border-error bg-error/10 p-3">
+                <p className="text-error text-sm">{formError}</p>
               </div>
-
-              <div>
-                <label htmlFor="display_order" className="block font-display uppercase text-sm text-text mb-2">
-                  Display Order
-                </label>
-                <input
-                  type="number"
-                  id="display_order"
-                  value={formData.display_order}
-                  onChange={(e) => setFormData({ ...formData, display_order: e.target.value })}
-                  className="w-full px-4 py-2 border-3 border-border bg-background text-text focus:border-accent1 focus:outline-none"
-                  required
-                  min="0"
-                />
-              </div>
-
-              {formError && (
-                <div className="border-2 border-error bg-error/10 p-3">
-                  <p className="text-error text-sm">{formError}</p>
-                </div>
-              )}
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="submit"
-                  className="btn-brutal-primary flex-1"
-                >
-                  {editingSection ? 'Update' : 'Create'}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCloseForm}
-                  className="btn-brutal flex-1"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+            )}
+          </form>
+        </Dialog>
       )}
     </div>
   );

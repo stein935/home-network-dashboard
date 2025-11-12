@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
 import { sectionsApi, calendarApi } from '../utils/api';
+import { Dialog } from './Dialog';
 
 const POPULAR_ICONS = [
   'Router', 'ShieldCheck', 'Activity', 'Monitor', 'Server', 'Globe',
@@ -184,24 +184,34 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
     }
   };
 
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="border-5 border-border bg-surface shadow-brutal max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="font-display text-display-sm uppercase text-text">
-              {service ? 'Edit Service' : 'Add Service'}
-            </h2>
-            <button
-              onClick={onCancel}
-              className="text-text hover:text-error transition-colors"
-              aria-label="Close"
-            >
-              <X size={32} strokeWidth={3} />
-            </button>
-          </div>
+  const footer = (
+    <div className="flex gap-4">
+      <button
+        type="button"
+        onClick={handleSubmit}
+        disabled={submitting}
+        className="btn-brutal-primary flex-1"
+      >
+        {submitting ? 'Saving...' : service ? 'Update' : 'Create'}
+      </button>
+      <button
+        type="button"
+        onClick={onCancel}
+        className="btn-brutal flex-1"
+      >
+        Cancel
+      </button>
+    </div>
+  );
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+  return (
+    <Dialog
+      title={service ? 'Edit Service' : 'Add Service'}
+      onClose={onCancel}
+      footer={footer}
+      zIndex={50}
+    >
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             <div>
               <label className="block font-display uppercase text-sm mb-2 text-text">
                 Card Type
@@ -355,26 +365,8 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
               )}
             </div>
 
-            <div className="flex gap-4 pt-4">
-              <button
-                type="submit"
-                disabled={submitting}
-                className="btn-brutal-primary flex-1"
-              >
-                {submitting ? 'Saving...' : service ? 'Update' : 'Create'}
-              </button>
-              <button
-                type="button"
-                onClick={onCancel}
-                className="btn-brutal flex-1"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+      </form>
+    </Dialog>
   );
 }
 
