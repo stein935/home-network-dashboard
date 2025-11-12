@@ -131,7 +131,6 @@ export function SectionManager() {
               <tr>
                 <th className="text-left p-4 font-display uppercase text-text">Order</th>
                 <th className="text-left p-4 font-display uppercase text-text">Name</th>
-                <th className="text-left p-4 font-display uppercase text-text">Type</th>
                 <th className="text-right p-4 font-display uppercase text-text">Actions</th>
               </tr>
             </thead>
@@ -146,15 +145,6 @@ export function SectionManager() {
                   </td>
                   <td className="p-4 font-body text-text">
                     {section.name}
-                  </td>
-                  <td className="p-4 font-body text-sm text-text/70">
-                    {section.is_default ? (
-                      <span className="px-2 py-1 bg-accent1/20 text-accent1 border-2 border-accent1 uppercase text-xs">
-                        Default
-                      </span>
-                    ) : (
-                      <span className="text-text/60">Custom</span>
-                    )}
                   </td>
                   <td className="p-4 text-right">
                     <div className="flex justify-end gap-3">

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Edit, Trash2 } from 'lucide-react';
+import * as Icons from 'lucide-react';
 import { servicesApi } from '../utils/api';
 import UserManagement from './UserManagement';
 import ServiceForm from './ServiceForm';
@@ -170,7 +171,7 @@ export function AdminPanel() {
                 <table className="w-full">
                   <thead className="border-b-3 border-border">
                     <tr>
-                      <th className="text-left p-4 font-display uppercase text-text">Order</th>
+                      <th className="text-left p-4 font-display uppercase text-text">Type</th>
                       <th className="text-left p-4 font-display uppercase text-text">Name</th>
                       <th className="text-left p-4 font-display uppercase text-text">URL</th>
                       <th className="text-left p-4 font-display uppercase text-text">Icon</th>
@@ -184,7 +185,7 @@ export function AdminPanel() {
                         className="border-b border-border/30 last:border-0"
                       >
                         <td className="p-4 font-body text-text">
-                          {service.display_order}
+                          {service.card_type}
                         </td>
                         <td className="p-4 font-body text-text">
                           {service.name}
@@ -193,7 +194,10 @@ export function AdminPanel() {
                           {service.url}
                         </td>
                         <td className="p-4 font-body text-text">
-                          {service.icon}
+                          {(() => {
+                            const IconComponent = Icons[service.icon] || Icons.ExternalLink;
+                            return <IconComponent size={24} strokeWidth={2} />;
+                          })()}
                         </td>
                         <td className="p-4 text-right">
                           <div className="flex justify-end gap-3">

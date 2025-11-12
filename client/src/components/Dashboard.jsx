@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDown, ChevronRight, StickyNote, Plus } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { sectionsApi, notesApi } from '../utils/api';
+import { sectionsApi, notesApi, servicesApi } from '../utils/api';
 import ServiceCard from './ServiceCard';
 import StickyNoteCard from './StickyNoteCard';
 import NoteDialog from './NoteDialog';
@@ -19,6 +19,7 @@ export function Dashboard() {
   const [selectedNote, setSelectedNote] = useState(null);
   const [selectedSectionId, setSelectedSectionId] = useState(null);
   const [draggedNote, setDraggedNote] = useState(null);
+  const [draggedService, setDraggedService] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -211,6 +212,88 @@ export function Dashboard() {
     setDraggedNote(null);
   };
 
+  // Service drag and drop handlers
+  const handleServiceDragStart = (e, service) => {
+    setDraggedService(service);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleServiceDragEnd = () => {
+    setDraggedService(null);
+  };
+
+  const handleServiceDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleServiceDropOnService = async (e, targetService) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!draggedService || draggedService.id === targetService.id) {
+      setDraggedService(null);
+      return;
+    }
+
+    // Only allow reordering within the same section
+    if (draggedService.section_id !== targetService.section_id) {
+      setDraggedService(null);
+      return;
+    }
+
+    const targetSectionId = targetService.section_id;
+    const section = sectionsWithServices.find(s => s.id === targetSectionId);
+    if (!section) {
+      setDraggedService(null);
+      return;
+    }
+
+    const sectionServices = section.services;
+    const currentIndex = sectionServices.findIndex(s => s.id === draggedService.id);
+    const targetIndex = sectionServices.findIndex(s => s.id === targetService.id);
+
+    if (currentIndex !== targetIndex) {
+      try {
+        // Remove the dragged service from its current position
+        const reorderedServices = sectionServices.filter(s => s.id !== draggedService.id);
+        // Insert it at the target position
+        reorderedServices.splice(targetIndex, 0, draggedService);
+
+        // Create updates with new display orders
+        const updates = reorderedServices.map((service, index) => ({
+          id: service.id,
+          displayOrder: index
+        }));
+
+        // Optimistically update the UI
+        const updatedSections = sectionsWithServices.map(section => {
+          if (section.id === targetSectionId) {
+            return {
+              ...section,
+              services: reorderedServices.map((service, index) => ({
+                ...service,
+                display_order: index
+              }))
+            };
+          }
+          return section;
+        });
+        setSectionsWithServices(updatedSections);
+
+        // Send update to server in the background
+        await servicesApi.reorder(updates);
+      } catch (err) {
+        console.error('Error reordering services:', err);
+        alert('Failed to reorder services');
+        // Refetch on error to restore correct state
+        await fetchData();
+      }
+    }
+
+    setDraggedService(null);
+  };
+
   return (
     <div className="min-h-screen px-6 pt-6 pb-0 md:px-12 md:pt-12">
       <div className="max-w-7xl mx-auto">
@@ -291,7 +374,14 @@ export function Dashboard() {
                           <h3 className="font-display text-xl uppercase text-text/70 mb-4">Services</h3>
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {section.services.map((service) => (
-                              <ServiceCard key={service.id} service={service} />
+                              <ServiceCard
+                                key={service.id}
+                                service={service}
+                                onDragStart={handleServiceDragStart}
+                                onDragEnd={handleServiceDragEnd}
+                                onDragOver={handleServiceDragOver}
+                                onDrop={handleServiceDropOnService}
+                              />
                             ))}
                           </div>
                         </div>

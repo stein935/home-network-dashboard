@@ -191,11 +191,11 @@ export function UserManagement() {
                   <button
                     onClick={() => handleToggleRole(user.id, user.role)}
                     disabled={user.id === currentUser?.id}
-                    className={`flex items-center gap-2 ${
+                    className={`flex items-center gap-2 py-1 px-2 border-3 border-border ${
                       user.role === 'admin'
                         ? 'text-accent1'
                         : 'text-text/60'
-                    } ${user.id === currentUser?.id ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80'}`}
+                    } ${user.id === currentUser?.id ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80 hover:border-accent1'}`}
                   >
                     {user.role === 'admin' ? <Shield size={16} /> : <Eye size={16} />}
                     <span className="font-display uppercase text-sm">{user.role}</span>

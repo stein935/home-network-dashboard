@@ -6,12 +6,22 @@ const ServiceConfig = require('../models/ServiceConfig');
 const { isAuthenticated } = require('../middleware/auth');
 const isAdmin = require('../middleware/admin');
 
-// Validation middleware
-const validateService = [
+// Validation middleware for create
+const validateServiceCreate = [
   body('name').trim().isLength({ min: 1, max: 100 }).withMessage('Name is required and must be less than 100 characters'),
   body('url').optional({ checkFalsy: true }).trim().isURL().withMessage('Valid URL is required'),
   body('icon').trim().isLength({ min: 1 }).withMessage('Icon is required'),
-  body('display_order').isInt({ min: 0 }).withMessage('Display order must be a positive integer'),
+  body('section_id').isInt({ min: 1 }).withMessage('Section ID is required'),
+  body('card_type').optional().isIn(['link', 'calendar']).withMessage('Card type must be "link" or "calendar"'),
+  body('config.calendar_id').optional().trim(),
+  body('config.view_type').optional().isIn(['day', 'week', 'month']).withMessage('View type must be "day", "week", or "month"')
+];
+
+// Validation middleware for update
+const validateServiceUpdate = [
+  body('name').trim().isLength({ min: 1, max: 100 }).withMessage('Name is required and must be less than 100 characters'),
+  body('url').optional({ checkFalsy: true }).trim().isURL().withMessage('Valid URL is required'),
+  body('icon').trim().isLength({ min: 1 }).withMessage('Icon is required'),
   body('section_id').isInt({ min: 1 }).withMessage('Section ID is required'),
   body('card_type').optional().isIn(['link', 'calendar']).withMessage('Card type must be "link" or "calendar"'),
   body('config.calendar_id').optional().trim(),
@@ -30,15 +40,16 @@ router.get('/', isAuthenticated, (req, res) => {
 });
 
 // POST create service (admin only)
-router.post('/', isAdmin, validateService, (req, res) => {
+router.post('/', isAdmin, validateServiceCreate, (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { name, url = '', icon, display_order, section_id, card_type = 'link', config } = req.body;
-    const service = Service.create(name, url, icon, display_order, section_id, card_type);
+    const { name, url = '', icon, section_id, card_type = 'link', config } = req.body;
+    // Always create new services at the top (display_order = 0)
+    const service = Service.create(name, url, icon, 0, section_id, card_type);
 
     // If calendar card type, save config
     if (card_type === 'calendar' && config) {
@@ -57,7 +68,7 @@ router.post('/', isAdmin, validateService, (req, res) => {
 // PUT update service (admin only)
 router.put('/:id', isAdmin, [
   param('id').isInt().withMessage('Invalid service ID'),
-  ...validateService
+  ...validateServiceUpdate
 ], (req, res) => {
   try {
     const errors = validationResult(req);
@@ -66,14 +77,15 @@ router.put('/:id', isAdmin, [
     }
 
     const { id } = req.params;
-    const { name, url = '', icon, display_order, section_id, card_type = 'link', config } = req.body;
+    const { name, url = '', icon, section_id, card_type = 'link', config } = req.body;
 
     const existingService = Service.findById(id);
     if (!existingService) {
       return res.status(404).json({ error: 'Service not found' });
     }
 
-    const service = Service.update(id, name, url, icon, display_order, section_id, card_type);
+    // Preserve the existing display_order during updates (order only changes via drag-and-drop)
+    const service = Service.update(id, name, url, icon, existingService.display_order, section_id, card_type);
 
     // If calendar card type, save config
     if (card_type === 'calendar' && config) {

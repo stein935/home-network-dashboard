@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { SortAsc, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { sectionsApi, calendarApi } from '../utils/api';
 
 const POPULAR_ICONS = [
@@ -17,7 +17,6 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
     name: '',
     url: '',
     icon: 'Router',
-    display_order: 1,
     section_id: '',
     card_type: 'link',
     config: {
@@ -43,7 +42,6 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
         name: service.name,
         url: service.url || '',
         icon: service.icon,
-        display_order: service.display_order,
         section_id: service.section_id || '',
         card_type: service.card_type || 'link',
         config: service.config ? {
@@ -130,10 +128,6 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
       newErrors.icon = 'Icon is required';
     }
 
-    if (formData.display_order < 0) {
-      newErrors.display_order = 'Display order must be positive';
-    }
-
     if (!formData.section_id) {
       newErrors.section_id = 'Section is required';
     }
@@ -175,7 +169,7 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
     } else {
       setFormData(prev => ({
         ...prev,
-        [name]: name === 'display_order' || name === 'section_id' ? parseInt(value) || 0 : value
+        [name]: name === 'section_id' ? parseInt(value) || 0 : value
       }));
     }
 
@@ -358,23 +352,6 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
               )}
               {errors.section_id && (
                 <p className="mt-2 text-error text-sm">{errors.section_id}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block font-display uppercase text-sm mb-2 text-text">
-                Display Order
-              </label>
-              <input
-                type="number"
-                name="display_order"
-                value={formData.display_order}
-                onChange={handleChange}
-                className="input-brutal w-full"
-                min="0"
-              />
-              {errors.display_order && (
-                <p className="mt-2 text-error text-sm">{errors.display_order}</p>
               )}
             </div>
 
