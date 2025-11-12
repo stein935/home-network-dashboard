@@ -19,6 +19,7 @@ const servicesRoutes = require("./routes/services");
 const sectionsRoutes = require("./routes/sections");
 const usersRoutes = require("./routes/users");
 const calendarRoutes = require("./routes/calendar");
+const notesRoutes = require("./routes/notes");
 
 // Initialize database
 initializeDatabase();
@@ -77,6 +78,7 @@ app.use("/api/services", servicesRoutes);
 app.use("/api/sections", sectionsRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/calendar", calendarRoutes);
+app.use("/api/notes", notesRoutes);
 
 // Serve static frontend files
 app.use(express.static(path.join(__dirname, "../client/dist")));

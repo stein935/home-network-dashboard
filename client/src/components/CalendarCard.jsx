@@ -16,59 +16,28 @@ export function CalendarCard({ service }) {
   const [selectedViewType, setSelectedViewType] = useState(defaultViewType); // What user selected
   const [expandedDay, setExpandedDay] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [cardWidth, setCardWidth] = useState(null);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   const calendarId = config.calendar_id || 'primary';
 
-  // Responsive breakpoints
-  const MONTH_VIEW_MIN_WIDTH = 900;
-  const WEEK_STACK_WIDTH = 672;
-
-  // Callback ref to set initial width immediately when DOM node is attached
-  const cardRef = (node) => {
-    cardElementRef.current = node;
-
-    if (node) {
-      // Set initial width immediately
-      setCardWidth(node.offsetWidth);
-
-      // Clean up previous observer if it exists
-      if (resizeObserverRef.current) {
-        resizeObserverRef.current.disconnect();
-      }
-
-      // Set up ResizeObserver
-      resizeObserverRef.current = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          setCardWidth(entry.contentRect.width);
-        }
-      });
-
-      resizeObserverRef.current.observe(node);
-    } else {
-      // Cleanup when node is removed
-      if (resizeObserverRef.current) {
-        resizeObserverRef.current.disconnect();
-        resizeObserverRef.current = null;
-      }
-    }
-  };
-
-  // Cleanup on unmount
+  // Track window width on resize
   useEffect(() => {
-    return () => {
-      if (resizeObserverRef.current) {
-        resizeObserverRef.current.disconnect();
-      }
-    };
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Responsive breakpoints
+  const MONTH_VIEW_MIN_WIDTH = 950;
+  const WEEK_STACK_WIDTH = 800;
 
   // Calculate effective view type based on width constraints
   const getEffectiveViewType = () => {
-    if (!cardWidth) return selectedViewType;
+    if (!windowWidth) return selectedViewType;
 
     // If user selected month but width is too narrow, show week instead
-    if (selectedViewType === 'month' && cardWidth < MONTH_VIEW_MIN_WIDTH) {
+    if (selectedViewType === 'month' && windowWidth < MONTH_VIEW_MIN_WIDTH) {
+      setSelectedViewType('week')
       return 'week';
     }
 
@@ -252,7 +221,7 @@ export function CalendarCard({ service }) {
   };
 
   return (
-    <div ref={cardRef} className={`service-card calendar-card ${getColumnSpanClass()} relative`}>
+    <div className={`service-card calendar-card ${getColumnSpanClass()} relative`}>
       {/* Header with navigation */}
       <div className="flex items-center justify-between w-full mb-4">
         <h3 className="font-display text-2xl uppercase text-text">
@@ -264,7 +233,7 @@ export function CalendarCard({ service }) {
             disabled={isViewingToday()}
             className={`px-3 py-2 border-3 border-border font-display uppercase text-sm transition-colors ${
               isViewingToday()
-                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                ? ''
                 : 'bg-white hover:border-accent1 cursor-pointer'
             }`}
             aria-label="Go to today"
@@ -292,29 +261,29 @@ export function CalendarCard({ service }) {
       <div className="flex gap-2 mb-4">
         <button
           onClick={() => setSelectedViewType('day')}
-          className={`px-3 py-1 border-3 font-display uppercase text-sm bg-white text-text transition-colors ${
-            selectedViewType === 'day' ? 'border-accent1' : 'border-border'
+          className={`px-3 py-1 border-3 font-display uppercase text-sm text-text transition-colors ${
+            selectedViewType === 'day' ? 'border-accent1 bg-accent1 text-white' : 'border-border'
           }`}
         >
           Day
         </button>
         <button
           onClick={() => setSelectedViewType('week')}
-          className={`px-3 py-1 border-3 font-display uppercase text-sm bg-white text-text transition-colors ${
-            selectedViewType === 'week' ? 'border-accent1' : 'border-border'
+          className={`px-3 py-1 border-3 font-display uppercase text-sm text-text transition-colors ${
+            selectedViewType === 'week' ? 'border-accent1 bg-accent1 text-white' : 'border-border'
           }`}
         >
           Week
         </button>
         <button
           onClick={() => setSelectedViewType('month')}
-          disabled={cardWidth && cardWidth < MONTH_VIEW_MIN_WIDTH}
+          disabled={windowWidth && windowWidth < MONTH_VIEW_MIN_WIDTH}
           className={`px-3 py-1 border-3 font-display uppercase text-sm transition-colors ${
-            cardWidth && cardWidth < MONTH_VIEW_MIN_WIDTH
-              ? 'bg-gray-200 text-gray-400 cursor-not-allowed border-gray-300'
-              : 'bg-white text-text'
-          } ${selectedViewType === 'month' ? 'border-accent1' : 'border-border'}`}
-          title={cardWidth && cardWidth < MONTH_VIEW_MIN_WIDTH ? 'Month view requires more width' : ''}
+            windowWidth && windowWidth < MONTH_VIEW_MIN_WIDTH
+              ? ''
+              : 'text-text'
+          } ${selectedViewType === 'month' ? 'border-accent1 bg-accent1 text-white' : 'border-border'}`}
+          title={windowWidth && windowWidth < MONTH_VIEW_MIN_WIDTH ? 'Month view requires more width' : ''}
         >
           Month
         </button>
@@ -328,8 +297,8 @@ export function CalendarCard({ service }) {
       {/* Calendar view content */}
       <div className="calendar-content">
         {effectiveViewType === 'day' && <DayView events={events} currentDate={currentDate} formatDate={formatDate} setSelectedEvent={setSelectedEvent} />}
-        {effectiveViewType === 'week' && <WeekView events={events} currentDate={currentDate} formatDate={formatDate} getWeekStart={getWeekStart} setSelectedEvent={setSelectedEvent} cardWidth={cardWidth} weekStackWidth={WEEK_STACK_WIDTH} />}
-        {effectiveViewType === 'month' && <MonthView events={events} currentDate={currentDate} expandedDay={expandedDay} setExpandedDay={setExpandedDay} setSelectedEvent={setSelectedEvent} cardWidth={cardWidth} />}
+        {effectiveViewType === 'week' && <WeekView events={events} currentDate={currentDate} formatDate={formatDate} getWeekStart={getWeekStart} setSelectedEvent={setSelectedEvent} windowWidth={windowWidth} weekStackWidth={WEEK_STACK_WIDTH} />}
+        {effectiveViewType === 'month' && <MonthView events={events} currentDate={currentDate} expandedDay={expandedDay} setExpandedDay={setExpandedDay} setSelectedEvent={setSelectedEvent} windowWidth={windowWidth} />}
       </div>
 
       {/* Event detail dialog */}
@@ -436,7 +405,7 @@ function DayView({ events, currentDate, formatDate, setSelectedEvent }) {
 }
 
 // Week View Component
-function WeekView({ events, currentDate, formatDate, getWeekStart, setSelectedEvent, cardWidth, weekStackWidth }) {
+function WeekView({ events, currentDate, formatDate, getWeekStart, setSelectedEvent, windowWidth, weekStackWidth }) {
   const weekStart = getWeekStart(currentDate);
   const days = Array.from({ length: 7 }, (_, i) => {
     const day = new Date(weekStart);
@@ -452,7 +421,7 @@ function WeekView({ events, currentDate, formatDate, getWeekStart, setSelectedEv
   );
 
   // Stack vertically when narrow
-  const isNarrow = cardWidth && cardWidth < weekStackWidth;
+  const isNarrow = windowWidth && windowWidth < weekStackWidth;
 
   return (
     <div className={`grid gap-2 ${isNarrow ? 'grid-cols-1' : 'grid-cols-7'}`}>
@@ -500,11 +469,8 @@ function WeekView({ events, currentDate, formatDate, getWeekStart, setSelectedEv
             ) : (
               // Original stacked layout for wide view
               <>
-                <div className="font-display uppercase text-xs text-center mb-2">
-                  {dayNames[idx]}
-                </div>
-                <div className="font-display text-center text-lg mb-2 text-text">
-                  {day.getDate()}
+                <div className="flex items-center justify-between w-full font-display uppercase mb-2">
+                  <span className="text-xs">{dayNames[idx]}</span><span className="text-lg">{day.getDate()}</span>
                 </div>
               </>
             )}
@@ -531,7 +497,7 @@ function WeekView({ events, currentDate, formatDate, getWeekStart, setSelectedEv
 }
 
 // Month View Component
-function MonthView({ events, currentDate, setExpandedDay, setSelectedEvent, cardWidth }) {
+function MonthView({ events, currentDate, setExpandedDay, setSelectedEvent, windowWidth }) {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
@@ -561,7 +527,7 @@ function MonthView({ events, currentDate, setExpandedDay, setSelectedEvent, card
 
   // Stack days vertically when very narrow (< 400px)
   // Note: month view already switches to week view at 600px, so this is a fallback
-  const isVeryNarrow = cardWidth && cardWidth < 400;
+  const isVeryNarrow = windowWidth && windowWidth < 400;
 
   return (
     <div>
