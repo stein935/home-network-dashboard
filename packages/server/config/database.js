@@ -3,8 +3,12 @@ const path = require('path');
 const fs = require('fs');
 
 // Get database path from environment or use default
-const dbPath =
-  process.env.DATABASE_PATH || path.join(__dirname, '../../data/database.db');
+// Since .env is loaded from project root, resolve paths relative to project root
+const projectRoot = path.resolve(__dirname, '../../..');
+const rawPath = process.env.DATABASE_PATH || './data/database.db';
+const dbPath = path.isAbsolute(rawPath)
+  ? rawPath
+  : path.resolve(projectRoot, rawPath);
 
 // Ensure data directory exists
 const dataDir = path.dirname(dbPath);

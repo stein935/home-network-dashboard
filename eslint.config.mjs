@@ -6,7 +6,13 @@ import pluginReactHooks from 'eslint-plugin-react-hooks';
 export default [
   // Ignore patterns (must come first)
   {
-    ignores: ['node_modules/**', 'dist/**', 'build/**', 'client/dist/**', 'data/**'],
+    ignores: [
+      'node_modules/**',
+      'dist/**',
+      'build/**',
+      'client/dist/**',
+      'data/**',
+    ],
   },
 
   // JavaScript/JSX files - base config

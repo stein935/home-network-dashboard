@@ -1,11 +1,11 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 const express = require('express');
 const session = require('express-session');
 const SQLiteStore = require('connect-sqlite3')(session);
 const passport = require('passport');
 const helmet = require('helmet');
 const cors = require('cors');
-const path = require('path');
 
 // Import database initialization
 const initializeDatabase = require('./models/init-db');
@@ -50,11 +50,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Session configuration
+const projectRoot = path.resolve(__dirname, '../..');
 app.use(
   session({
     store: new SQLiteStore({
       db: 'sessions.db',
-      dir: './data',
+      dir: path.join(projectRoot, 'data'),
     }),
     secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
     resave: false,

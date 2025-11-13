@@ -20,58 +20,64 @@ Brutalist-designed home network dashboard with Google OAuth, role-based access c
 
 ## Architecture
 
+**Workspace Structure**: npm workspaces monorepo with client and server packages
+
 ```
 home-network-dashboard/
-├── server/
-│   ├── config/
-│   │   ├── database.js       # SQLite connection
-│   │   └── passport.js       # Google OAuth config with Calendar scope
-│   ├── middleware/
-│   │   ├── auth.js           # isAuthenticated check
-│   │   └── admin.js          # isAdmin check
-│   ├── models/
-│   │   ├── init-db.js        # DB schema & initialization
-│   │   ├── User.js           # User CRUD operations
-│   │   ├── Service.js        # Service CRUD operations
-│   │   ├── ServiceConfig.js  # Calendar config operations
-│   │   ├── Section.js        # Section CRUD with services
-│   │   └── Note.js           # Note CRUD operations
-│   ├── routes/
-│   │   ├── auth.js           # /auth/* - OAuth endpoints
-│   │   ├── services.js       # /api/services - CRUD with config
-│   │   ├── sections.js       # /api/sections - CRUD
-│   │   ├── users.js          # /api/users - admin only
-│   │   ├── calendar.js       # /api/calendar - Calendar API proxy
-│   │   └── notes.js          # /api/notes - CRUD for sticky notes
-│   ├── services/
-│   │   └── calendarService.js # Google Calendar API integration
-│   └── server.js             # Express app entry
-├── client/
-│   └── src/
-│       ├── components/
-│       │   ├── Dashboard.jsx          # Main view with collapsible sections
-│       │   ├── ServiceCard.jsx        # Routes card rendering by type
-│       │   ├── CalendarCard.jsx       # Calendar with responsive views
-│       │   ├── Dialog.jsx             # Unified dialog component (blue header)
-│       │   ├── EventDetailDialog.jsx  # Event details with attendees/links
-│       │   ├── StickyNoteCard.jsx     # Draggable sticky note display
-│       │   ├── NoteDialog.jsx         # Note create/edit/delete dialog
-│       │   ├── AdminPanel.jsx         # Admin interface tabs
-│       │   ├── ServiceForm.jsx        # Service CRUD with calendar config
-│       │   ├── SectionManager.jsx     # Section management
-│       │   ├── UserManagement.jsx     # User whitelist management
-│       │   └── ProtectedRoute.jsx     # Route protection HOC
-│       ├── context/
-│       │   └── AuthContext.jsx        # Auth provider (exports useAuth)
-│       ├── hooks/
-│       │   └── useAuth.js             # Re-exports useAuth from context
-│       └── utils/
-│           ├── api.js                 # Axios with API endpoints
-│           ├── dateUtils.js           # Due date formatting & categorization
-│           └── noteColors.js          # Sticky note color palette
+├── packages/
+│   ├── server/              # Backend workspace (home-dashboard-server)
+│   │   ├── config/
+│   │   │   ├── database.js       # SQLite connection
+│   │   │   └── passport.js       # Google OAuth config with Calendar scope
+│   │   ├── middleware/
+│   │   │   ├── auth.js           # isAuthenticated check
+│   │   │   └── admin.js          # isAdmin check
+│   │   ├── models/
+│   │   │   ├── init-db.js        # DB schema & initialization
+│   │   │   ├── User.js           # User CRUD operations
+│   │   │   ├── Service.js        # Service CRUD operations
+│   │   │   ├── ServiceConfig.js  # Calendar config operations
+│   │   │   ├── Section.js        # Section CRUD with services
+│   │   │   └── Note.js           # Note CRUD operations
+│   │   ├── routes/
+│   │   │   ├── auth.js           # /auth/* - OAuth endpoints
+│   │   │   ├── services.js       # /api/services - CRUD with config
+│   │   │   ├── sections.js       # /api/sections - CRUD
+│   │   │   ├── users.js          # /api/users - admin only
+│   │   │   ├── calendar.js       # /api/calendar - Calendar API proxy
+│   │   │   └── notes.js          # /api/notes - CRUD for sticky notes
+│   │   ├── services/
+│   │   │   └── calendarService.js # Google Calendar API integration
+│   │   ├── scripts/
+│   │   │   └── seed.js           # Add initial admin user
+│   │   ├── server.js             # Express app entry
+│   │   └── package.json          # Server dependencies
+│   └── client/              # Frontend workspace (home-dashboard-client)
+│       ├── src/
+│       │   ├── components/
+│       │   │   ├── Dashboard.jsx          # Main view with collapsible sections
+│       │   │   ├── ServiceCard.jsx        # Routes card rendering by type
+│       │   │   ├── CalendarCard.jsx       # Calendar with responsive views
+│       │   │   ├── Dialog.jsx             # Unified dialog component (blue header)
+│       │   │   ├── EventDetailDialog.jsx  # Event details with attendees/links
+│       │   │   ├── StickyNoteCard.jsx     # Draggable sticky note display
+│       │   │   ├── NoteDialog.jsx         # Note create/edit/delete dialog
+│       │   │   ├── AdminPanel.jsx         # Admin interface tabs
+│       │   │   ├── ServiceForm.jsx        # Service CRUD with calendar config
+│       │   │   ├── SectionManager.jsx     # Section management
+│       │   │   ├── UserManagement.jsx     # User whitelist management
+│       │   │   └── ProtectedRoute.jsx     # Route protection HOC
+│       │   ├── context/
+│       │   │   └── AuthContext.jsx        # Auth provider (exports useAuth)
+│       │   ├── hooks/
+│       │   │   └── useAuth.js             # Re-exports useAuth from context
+│       │   └── utils/
+│       │       ├── api.js                 # Axios with API endpoints
+│       │       ├── dateUtils.js           # Due date formatting & categorization
+│       │       └── noteColors.js          # Sticky note color palette
+│       └── package.json          # Client dependencies
 ├── data/                   # SQLite databases (runtime)
-├── scripts/
-│   └── seed.js            # Add initial admin user
+├── package.json            # Root workspace config & shared dev dependencies
 └── .env                   # Environment configuration
 ```
 
@@ -145,18 +151,31 @@ home-network-dashboard/
 
 ## Development
 
-**Start backend**: `npm run dev` (nodemon, port 3030)
-**Start frontend**: `cd client && npm run dev` (Vite, port 5173)
-**Seed admin**: `npm run seed`
+**Workspace Commands** (run from project root):
+
+- `npm run dev` or `npm run dev:server` - Start backend (nodemon, port 3030)
+- `npm run dev:client` - Start frontend (Vite, port 5173)
+- `npm run dev:all` - Start both backend and frontend concurrently
+- `npm run seed` - Seed admin user
+- `npm run build` - Build frontend for production
+- `npm run start` - Start backend in production mode
 
 **Code Quality**:
+
 - `npm run lint` - Run ESLint on entire codebase
 - `npm run lint:fix` - Auto-fix ESLint issues
 - `npm run format` - Format code with Prettier
 - `npm run format:check` - Check formatting without changes
-- `cd client && npm run lint` - Lint frontend code only
+
+**Workspace-specific Commands**:
+
+- `npm run dev --workspace=home-dashboard-server` - Run server dev script
+- `npm run dev --workspace=home-dashboard-client` - Run client dev script
+- `npm run lint --workspace=home-dashboard-client` - Lint frontend code only
 
 **ESLint Configuration**: Flat config (v9.x) with React, React Hooks, JSON, and Markdown plugins. All code follows best practices with zero lint errors.
+
+**Note on Paths**: The server now runs from `packages/server/` but loads `.env` from project root. Database and session paths are resolved relative to project root automatically.
 
 ## Environment Variables
 
@@ -288,10 +307,18 @@ All dialogs in the application use a shared Dialog component for consistency and
 
 ## Common Tasks
 
-**Add service field**: Update init-db.js (schema), Service.js (model), services.js (routes), ServiceForm.jsx (UI)
+**Note**: All server code is in `packages/server/`, all client code is in `packages/client/`.
 
-**Add note field**: Update init-db.js (schema), Note.js (model), notes.js (routes), NoteDialog.jsx (UI)
+**Add service field**: Update `packages/server/models/init-db.js` (schema), `packages/server/models/Service.js` (model), `packages/server/routes/services.js` (routes), `packages/client/src/components/ServiceForm.jsx` (UI)
 
-**Add admin feature**: Create model, add route with auth middleware, add AdminPanel tab, create management component
+**Add note field**: Update `packages/server/models/init-db.js` (schema), `packages/server/models/Note.js` (model), `packages/server/routes/notes.js` (routes), `packages/client/src/components/NoteDialog.jsx` (UI)
+
+**Add admin feature**: Create model in `packages/server/models/`, add route with auth middleware in `packages/server/routes/`, add AdminPanel tab in `packages/client/`, create management component
 
 **Add new dialog**: Use Dialog component with title, onClose, optional footer, and content as children
+
+**Add workspace dependency**:
+
+- Server: `npm install <package> --workspace=home-dashboard-server`
+- Client: `npm install <package> --workspace=home-dashboard-client`
+- Root (shared): `npm install <package> -D` (for dev tools like eslint, prettier)
