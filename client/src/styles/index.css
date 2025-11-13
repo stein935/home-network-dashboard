@@ -4,55 +4,33 @@
 
 @layer base {
   body {
-    @apply font-body bg-bg text-text;
+    @apply bg-bg font-body text-text;
   }
 }
 
 @layer components {
   .btn-brutal {
-    @apply border-3 border-border
-           bg-surface
-           px-6 py-3 font-display uppercase
-           shadow-brutal hover:shadow-none
-           hover:translate-x-1 hover:translate-y-1
-           active:translate-x-2 active:translate-y-2
-           transition-all duration-200
-           cursor-pointer;
+    @apply cursor-pointer border-3 border-border bg-surface px-6 py-3 font-display uppercase shadow-brutal transition-all duration-200 hover:translate-x-1 hover:translate-y-1 hover:shadow-none active:translate-x-2 active:translate-y-2;
   }
 
   .btn-brutal-primary {
-    @apply btn-brutal border-accent1
-           text-accent1;
+    @apply btn-brutal border-accent1 text-accent1;
   }
 
   .btn-brutal-danger {
-    @apply btn-brutal border-error
-           text-error;
+    @apply btn-brutal border-error text-error;
   }
 
   .input-brutal {
-    @apply border-3 border-border
-           bg-surface
-           text-text
-           px-4 py-2 font-body
-           focus:outline-none focus:border-accent1
-           transition-colors duration-200;
+    @apply border-3 border-border bg-surface px-4 py-2 font-body text-text transition-colors duration-200 focus:border-accent1 focus:outline-none;
   }
 
   .card-brutal {
-    @apply border-5 border-border
-           bg-surface
-           shadow-brutal
-           hover:shadow-none hover:translate-x-2 hover:translate-y-2
-           transition-all duration-200;
+    @apply border-5 border-border bg-surface shadow-brutal transition-all duration-200 hover:translate-x-2 hover:translate-y-2 hover:shadow-none;
   }
 
   .service-card {
-    @apply card-brutal
-           cursor-pointer
-           p-6
-           flex flex-col items-center justify-center
-           min-h-[200px];
+    @apply card-brutal flex min-h-[200px] cursor-pointer flex-col items-center justify-center p-6;
   }
 
   .service-card:hover {
@@ -60,8 +38,7 @@
   }
 
   .calendar-card {
-    @apply items-start justify-start
-           cursor-default;
+    @apply cursor-default items-start justify-start;
     /* Override card-brutal hover effects */
     transform: none !important;
     box-shadow: 4px 4px 0 0 rgb(0 0 0) !important;
@@ -83,11 +60,11 @@
   }
 
   .calendar-content::-webkit-scrollbar-track {
-    @apply bg-surface border-2 border-border;
+    @apply border-2 border-border bg-surface;
   }
 
   .calendar-content::-webkit-scrollbar-thumb {
-    @apply bg-accent1 border-2 border-border;
+    @apply border-2 border-border bg-accent1;
   }
 
   .calendar-content::-webkit-scrollbar-thumb:hover {
@@ -127,23 +104,11 @@
   }
 
   .sticky-note-card {
-    @apply border-4 border-black
-           shadow-[8px_8px_0_0_rgba(0,0,0,1)]
-           hover:shadow-[16px_16px_0_0_rgba(0,0,0,1)]
-           hover:-ml-[8px]
-           hover:-mt-[8px]
-           transition-all duration-200
-           w-full
-           h-full
-           aspect-square
-           overflow-hidden;
+    @apply aspect-square h-full w-full overflow-hidden border-4 border-black shadow-[8px_8px_0_0_rgba(0,0,0,1)] transition-all duration-200 hover:-ml-[8px] hover:-mt-[8px] hover:shadow-[16px_16px_0_0_rgba(0,0,0,1)];
   }
 
   button:disabled {
-    @apply border-gray-400
-           text-gray-400
-           bg-gray-200
-
+    @apply border-gray-400 bg-gray-200 text-gray-400;
   }
 
   .sticky-note-corner-outline {

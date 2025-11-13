@@ -20,7 +20,9 @@ router.get('/events', isAuthenticated, async (req, res) => {
     const { calendarId, timeMin, timeMax } = req.query;
 
     if (!timeMin || !timeMax) {
-      return res.status(400).json({ error: 'timeMin and timeMax are required' });
+      return res
+        .status(400)
+        .json({ error: 'timeMin and timeMax are required' });
     }
 
     const events = await CalendarService.getEvents(

@@ -7,8 +7,13 @@ const isAdmin = require('../middleware/admin');
 
 // Validation middleware
 const validateSection = [
-  body('name').trim().isLength({ min: 1, max: 100 }).withMessage('Name is required and must be less than 100 characters'),
-  body('display_order').isInt({ min: 0 }).withMessage('Display order must be a positive integer')
+  body('name')
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('Name is required and must be less than 100 characters'),
+  body('display_order')
+    .isInt({ min: 0 })
+    .withMessage('Display order must be a positive integer'),
 ];
 
 // GET all sections (requires authentication)
@@ -53,64 +58,75 @@ router.post('/', isAdmin, validateSection, (req, res) => {
 });
 
 // PUT update section (admin only)
-router.put('/:id', isAdmin, [
-  param('id').isInt().withMessage('Invalid section ID'),
-  ...validateSection
-], (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+router.put(
+  '/:id',
+  isAdmin,
+  [param('id').isInt().withMessage('Invalid section ID'), ...validateSection],
+  (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const { id } = req.params;
+      const { name, display_order } = req.body;
+
+      const existingSection = Section.findById(id);
+      if (!existingSection) {
+        return res.status(404).json({ error: 'Section not found' });
+      }
+
+      const section = Section.update(id, name, display_order);
+
+      console.log(`Section updated: ${name} by ${req.user.email}`);
+      res.json(section);
+    } catch (error) {
+      console.error('Error updating section:', error);
+      res.status(500).json({ error: 'Failed to update section' });
     }
-
-    const { id } = req.params;
-    const { name, display_order } = req.body;
-
-    const existingSection = Section.findById(id);
-    if (!existingSection) {
-      return res.status(404).json({ error: 'Section not found' });
-    }
-
-    const section = Section.update(id, name, display_order);
-
-    console.log(`Section updated: ${name} by ${req.user.email}`);
-    res.json(section);
-  } catch (error) {
-    console.error('Error updating section:', error);
-    res.status(500).json({ error: 'Failed to update section' });
   }
-});
+);
 
 // DELETE section (admin only)
-router.delete('/:id', isAdmin, [
-  param('id').isInt().withMessage('Invalid section ID')
-], (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+router.delete(
+  '/:id',
+  isAdmin,
+  [param('id').isInt().withMessage('Invalid section ID')],
+  (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const { id } = req.params;
+
+      const existingSection = Section.findById(id);
+      if (!existingSection) {
+        return res.status(404).json({ error: 'Section not found' });
+      }
+
+      if (existingSection.is_default) {
+        return res
+          .status(400)
+          .json({ error: 'Cannot delete the default section' });
+      }
+
+      Section.delete(id);
+
+      console.log(
+        `Section deleted: ${existingSection.name} by ${req.user.email}`
+      );
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting section:', error);
+      res
+        .status(500)
+        .json({ error: error.message || 'Failed to delete section' });
     }
-
-    const { id } = req.params;
-
-    const existingSection = Section.findById(id);
-    if (!existingSection) {
-      return res.status(404).json({ error: 'Section not found' });
-    }
-
-    if (existingSection.is_default) {
-      return res.status(400).json({ error: 'Cannot delete the default section' });
-    }
-
-    Section.delete(id);
-
-    console.log(`Section deleted: ${existingSection.name} by ${req.user.email}`);
-    res.status(204).send();
-  } catch (error) {
-    console.error('Error deleting section:', error);
-    res.status(500).json({ error: error.message || 'Failed to delete section' });
   }
-});
+);
 
 // PUT reorder sections (admin only)
 router.put('/reorder/bulk', isAdmin, (req, res) => {
@@ -124,7 +140,9 @@ router.put('/reorder/bulk', isAdmin, (req, res) => {
     // Validate each update has id and displayOrder
     for (const update of updates) {
       if (!update.id || typeof update.displayOrder !== 'number') {
-        return res.status(400).json({ error: 'Each update must have id and displayOrder' });
+        return res
+          .status(400)
+          .json({ error: 'Each update must have id and displayOrder' });
       }
     }
 

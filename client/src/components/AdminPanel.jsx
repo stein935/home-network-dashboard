@@ -90,18 +90,18 @@ export function AdminPanel() {
 
   return (
     <div className="min-h-[80vh] p-6 md:p-12">
-      <div className="max-w-7xl mx-auto">
+      <div className="mx-auto max-w-7xl">
         {/* Header */}
         <header className="mb-6 sm:mb-12">
           <button
             onClick={() => navigate('/')}
-            className="btn-brutal flex items-center justify-center gap-2 mb-6 w-full sm:w-auto"
+            className="btn-brutal mb-6 flex w-full items-center justify-center gap-2 sm:w-auto"
           >
             <ArrowLeft size={20} />
             Back to Dashboard
           </button>
 
-          <h1 className="font-display text-display-sm sm:text-display-lg uppercase text-text">
+          <h1 className="font-display text-display-sm uppercase text-text sm:text-display-lg">
             Admin <span className="text-accent1">Panel</span>
           </h1>
         </header>
@@ -110,7 +110,7 @@ export function AdminPanel() {
         <div className="mb-8 flex gap-4 border-b-5 border-border">
           <button
             onClick={() => setActiveTab('services')}
-            className={`font-display uppercase px-3 sm:px-6 py-1 sm:py-3 border-b-5 transition-colors ${
+            className={`border-b-5 px-3 py-1 font-display uppercase transition-colors sm:px-6 sm:py-3 ${
               activeTab === 'services'
                 ? 'border-accent1 text-accent1'
                 : 'border-transparent text-text/60 hover:text-text'
@@ -120,7 +120,7 @@ export function AdminPanel() {
           </button>
           <button
             onClick={() => setActiveTab('sections')}
-            className={`font-display uppercase px-3 sm:px-6 py-1 sm:py-3 border-b-5 transition-colors ${
+            className={`border-b-5 px-3 py-1 font-display uppercase transition-colors sm:px-6 sm:py-3 ${
               activeTab === 'sections'
                 ? 'border-accent1 text-accent1'
                 : 'border-transparent text-text/60 hover:text-text'
@@ -130,7 +130,7 @@ export function AdminPanel() {
           </button>
           <button
             onClick={() => setActiveTab('users')}
-            className={`font-display uppercase px-3 sm:px-6 py-1 sm:py-3 border-b-5 transition-colors ${
+            className={`border-b-5 px-3 py-1 font-display uppercase transition-colors sm:px-6 sm:py-3 ${
               activeTab === 'users'
                 ? 'border-accent1 text-accent1'
                 : 'border-transparent text-text/60 hover:text-text'
@@ -143,13 +143,13 @@ export function AdminPanel() {
         {/* Content */}
         {activeTab === 'services' ? (
           <div>
-            <div className="flex flex-wrap justify-between items-center mb-6">
-              <h2 className="font-display text-display-sm uppercase text-text w-full sm:w-auto mb-1 sm:mb-0">
+            <div className="mb-6 flex flex-wrap items-center justify-between">
+              <h2 className="mb-1 w-full font-display text-display-sm uppercase text-text sm:mb-0 sm:w-auto">
                 Manage Services
               </h2>
               <button
-                onClick={handleAddClick} 
-                className="btn-brutal-primary flex items-center justify-center gap-2 w-full sm:w-auto"
+                onClick={handleAddClick}
+                className="btn-brutal-primary flex w-full items-center justify-center gap-2 sm:w-auto"
               >
                 <Plus size={20} />
                 Add Service
@@ -157,7 +157,7 @@ export function AdminPanel() {
             </div>
 
             {loading ? (
-              <div className="text-center py-8">
+              <div className="py-8 text-center">
                 <p className="font-display text-xl uppercase text-accent1">
                   Loading Services...
                 </p>
@@ -167,15 +167,25 @@ export function AdminPanel() {
                 <p className="text-error">{error}</p>
               </div>
             ) : (
-              <div className="border-5 border-border bg-surface shadow-brutal overflow-x-auto">
+              <div className="overflow-x-auto border-5 border-border bg-surface shadow-brutal">
                 <table className="w-full">
                   <thead className="border-b-3 border-border">
                     <tr>
-                      <th className="text-left p-4 font-display uppercase text-text">Type</th>
-                      <th className="text-left p-4 font-display uppercase text-text">Name</th>
-                      <th className="text-left p-4 font-display uppercase text-text">URL</th>
-                      <th className="text-left p-4 font-display uppercase text-text">Icon</th>
-                      <th className="text-right p-4 font-display uppercase text-text">Actions</th>
+                      <th className="p-4 text-left font-display uppercase text-text">
+                        Type
+                      </th>
+                      <th className="p-4 text-left font-display uppercase text-text">
+                        Name
+                      </th>
+                      <th className="p-4 text-left font-display uppercase text-text">
+                        URL
+                      </th>
+                      <th className="p-4 text-left font-display uppercase text-text">
+                        Icon
+                      </th>
+                      <th className="p-4 text-right font-display uppercase text-text">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -190,12 +200,13 @@ export function AdminPanel() {
                         <td className="p-4 font-body text-text">
                           {service.name}
                         </td>
-                        <td className="p-4 font-body text-sm text-text/70 break-all max-w-xs">
+                        <td className="max-w-xs break-all p-4 font-body text-sm text-text/70">
                           {service.url}
                         </td>
                         <td className="p-4 font-body text-text">
                           {(() => {
-                            const IconComponent = Icons[service.icon] || Icons.ExternalLink;
+                            const IconComponent =
+                              Icons[service.icon] || Icons.ExternalLink;
                             return <IconComponent size={24} strokeWidth={2} />;
                           })()}
                         </td>
@@ -234,7 +245,9 @@ export function AdminPanel() {
         {showServiceForm && (
           <ServiceForm
             service={editingService}
-            onSubmit={editingService ? handleUpdateService : handleCreateService}
+            onSubmit={
+              editingService ? handleUpdateService : handleCreateService
+            }
             onCancel={handleCloseForm}
           />
         )}

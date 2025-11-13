@@ -2,8 +2,13 @@ import { useState } from 'react';
 import * as Icons from 'lucide-react';
 import { CalendarCard } from './CalendarCard';
 
-export function ServiceCard({ service, onDragStart, onDragEnd, onDragOver, onDrop }) {
-  const [imageError, setImageError] = useState(false);
+export function ServiceCard({
+  service,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDrop,
+}) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -84,13 +89,13 @@ export function ServiceCard({ service, onDragStart, onDragEnd, onDragOver, onDro
         }
       }}
     >
-      <div className="mb-4 text-accent1 group-hover:text-accent2 transition-colors">
+      <div className="mb-4 text-accent1 transition-colors group-hover:text-accent2">
         <IconComponent size={64} strokeWidth={2.5} />
       </div>
-      <h3 className="font-display text-2xl uppercase text-center text-text">
+      <h3 className="text-center font-display text-2xl uppercase text-text">
         {service.name}
       </h3>
-      <p className="font-body text-sm mt-2 text-text/70 text-center truncate w-full">
+      <p className="mt-2 w-full truncate text-center font-body text-sm text-text/70">
         {service.url}
       </p>
     </div>

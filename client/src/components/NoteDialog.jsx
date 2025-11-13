@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Save, Trash2 } from 'lucide-react';
 import { NOTE_COLORS, getRandomColor } from '../utils/noteColors';
 import { Dialog } from './Dialog';
@@ -9,20 +9,20 @@ export function NoteDialog({ note, sectionId, onSave, onDelete, onClose }) {
   // Form state
   const [title, setTitle] = useState(note?.title || '');
   const [message, setMessage] = useState(note?.message || '');
-  const [dueDate, setDueDate] = useState(note?.due_date ? note.due_date.split('T')[0] : '');
+  const [dueDate, setDueDate] = useState(
+    note?.due_date ? note.due_date.split('T')[0] : ''
+  );
   const [color, setColor] = useState(note?.color || getRandomColor());
-  const [isDirty, setIsDirty] = useState(false);
 
-  // Track if form has been modified (for edit mode)
-  useEffect(() => {
-    if (!isCreateMode) {
-      const hasChanged =
-        title !== note.title ||
-        message !== note.message ||
-        (dueDate || '') !== (note.due_date ? note.due_date.split('T')[0] : '') ||
-        color !== note.color;
-      setIsDirty(hasChanged);
-    }
+  // Track if form has been modified (for edit mode) - use useMemo instead of useEffect
+  const isDirty = useMemo(() => {
+    if (isCreateMode) return false;
+    return (
+      title !== note.title ||
+      message !== note.message ||
+      (dueDate || '') !== (note.due_date ? note.due_date.split('T')[0] : '') ||
+      color !== note.color
+    );
   }, [title, message, dueDate, color, note, isCreateMode]);
 
   const handleSave = () => {
@@ -68,7 +68,7 @@ export function NoteDialog({ note, sectionId, onSave, onDelete, onClose }) {
         {!isCreateMode && (
           <button
             onClick={handleDelete}
-            className="btn-brutal-danger flex items-center gap-2 min-h-[54px]"
+            className="btn-brutal-danger flex min-h-[54px] items-center gap-2"
           >
             <Trash2 size={20} />
             <span className="hidden sm:inline">Delete</span>
@@ -100,7 +100,9 @@ export function NoteDialog({ note, sectionId, onSave, onDelete, onClose }) {
     >
       {/* Title */}
       <div>
-        <label className="font-display text-sm uppercase mb-2 block">Title</label>
+        <label className="mb-2 block font-display text-sm uppercase">
+          Title
+        </label>
         <input
           type="text"
           value={title}
@@ -114,8 +116,10 @@ export function NoteDialog({ note, sectionId, onSave, onDelete, onClose }) {
       {/* Author (read-only in edit mode) */}
       {!isCreateMode && (
         <div>
-          <label className="font-display text-sm uppercase mb-2 block">Author</label>
-          <div className="input-brutal w-full bg-gray-100 cursor-not-allowed">
+          <label className="mb-2 block font-display text-sm uppercase">
+            Author
+          </label>
+          <div className="input-brutal w-full cursor-not-allowed bg-gray-100">
             {note.author_name}
           </div>
         </div>
@@ -124,8 +128,10 @@ export function NoteDialog({ note, sectionId, onSave, onDelete, onClose }) {
       {/* Date Created (read-only in edit mode) */}
       {!isCreateMode && (
         <div>
-          <label className="font-display text-sm uppercase mb-2 block">Date Created</label>
-          <div className="input-brutal w-full bg-gray-100 cursor-not-allowed">
+          <label className="mb-2 block font-display text-sm uppercase">
+            Date Created
+          </label>
+          <div className="input-brutal w-full cursor-not-allowed bg-gray-100">
             {formatDate(note.created_at)}
           </div>
         </div>
@@ -133,7 +139,9 @@ export function NoteDialog({ note, sectionId, onSave, onDelete, onClose }) {
 
       {/* Due Date */}
       <div>
-        <label className="font-display text-sm uppercase mb-2 block">Due Date (Optional)</label>
+        <label className="mb-2 block font-display text-sm uppercase">
+          Due Date (Optional)
+        </label>
         <input
           type="date"
           value={dueDate}
@@ -144,11 +152,13 @@ export function NoteDialog({ note, sectionId, onSave, onDelete, onClose }) {
 
       {/* Message */}
       <div>
-        <label className="font-display text-sm uppercase mb-2 block">Message</label>
+        <label className="mb-2 block font-display text-sm uppercase">
+          Message
+        </label>
         <textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          className="input-brutal w-full min-h-[150px] resize-y"
+          className="input-brutal min-h-[150px] w-full resize-y"
           placeholder="Enter note message..."
           maxLength={5000}
         />
@@ -156,15 +166,17 @@ export function NoteDialog({ note, sectionId, onSave, onDelete, onClose }) {
 
       {/* Color Picker */}
       <div>
-        <label className="font-display text-sm uppercase mb-2 block">Color</label>
-        <div className="grid grid-cols-5 sm:grid-cols-10 gap-3">
+        <label className="mb-2 block font-display text-sm uppercase">
+          Color
+        </label>
+        <div className="grid grid-cols-5 gap-3 sm:grid-cols-10">
           {NOTE_COLORS.map((noteColor) => (
             <button
               key={noteColor}
               onClick={() => setColor(noteColor)}
-              className={`w-12 h-12 border-4 border-black transition-all ${
+              className={`h-12 w-12 border-4 border-black transition-all ${
                 color === noteColor
-                  ? 'shadow-[4px_4px_0_0_rgba(0,0,0,1)] scale-110'
+                  ? 'scale-110 shadow-[4px_4px_0_0_rgba(0,0,0,1)]'
                   : 'shadow-[2px_2px_0_0_rgba(0,0,0,1)] hover:scale-105'
               }`}
               style={{ backgroundColor: noteColor }}

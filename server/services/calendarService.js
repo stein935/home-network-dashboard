@@ -6,12 +6,14 @@ class CalendarService {
     const tokens = User.getGoogleTokens(userId);
     console.log(`Getting OAuth client for user ${userId}:`, {
       hasAccessToken: !!tokens?.accessToken,
-      hasRefreshToken: !!tokens?.refreshToken
+      hasRefreshToken: !!tokens?.refreshToken,
     });
 
     if (!tokens || !tokens.accessToken) {
       console.error(`No tokens found for user ${userId}`);
-      throw new Error('No Google Calendar access. Please log out and log back in to grant calendar permissions.');
+      throw new Error(
+        'No Google Calendar access. Please log out and log back in to grant calendar permissions.'
+      );
     }
 
     const oauth2Client = new google.auth.OAuth2(
@@ -29,9 +31,17 @@ class CalendarService {
     oauth2Client.on('tokens', (newTokens) => {
       console.log(`Refreshing tokens for user ${userId}`);
       if (newTokens.refresh_token) {
-        User.updateGoogleTokens(userId, newTokens.access_token, newTokens.refresh_token);
+        User.updateGoogleTokens(
+          userId,
+          newTokens.access_token,
+          newTokens.refresh_token
+        );
       } else {
-        User.updateGoogleTokens(userId, newTokens.access_token, tokens.refreshToken);
+        User.updateGoogleTokens(
+          userId,
+          newTokens.access_token,
+          tokens.refreshToken
+        );
       }
     });
 
@@ -44,7 +54,7 @@ class CalendarService {
 
     try {
       const response = await calendar.calendarList.list();
-      return response.data.items.map(cal => ({
+      return response.data.items.map((cal) => ({
         id: cal.id,
         summary: cal.summary,
         description: cal.description,
@@ -71,7 +81,7 @@ class CalendarService {
         maxResults: 250,
       });
 
-      return response.data.items.map(event => ({
+      return response.data.items.map((event) => ({
         id: event.id,
         summary: event.summary || '(No title)',
         description: event.description,

@@ -14,7 +14,7 @@ export function UserManagement() {
   const [formData, setFormData] = useState({
     email: '',
     name: '',
-    role: 'readonly'
+    role: 'readonly',
   });
 
   useEffect(() => {
@@ -75,7 +75,7 @@ export function UserManagement() {
 
   if (loading) {
     return (
-      <div className="text-center py-8">
+      <div className="py-8 text-center">
         <p className="font-display text-xl uppercase text-accent1">
           Loading Users...
         </p>
@@ -85,13 +85,13 @@ export function UserManagement() {
 
   return (
     <div>
-      <div className="flex flex-wrap justify-between items-center mb-6">
-        <h2 className="font-display text-display-sm uppercase text-text w-full sm:w-auto mb-1 sm:mb-0">
+      <div className="mb-6 flex flex-wrap items-center justify-between">
+        <h2 className="mb-1 w-full font-display text-display-sm uppercase text-text sm:mb-0 sm:w-auto">
           User Management
         </h2>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="btn-brutal-primary flex items-center justify-center gap-2 w-full sm:w-auto"
+          className="btn-brutal-primary flex w-full items-center justify-center gap-2 sm:w-auto"
         >
           <UserPlus size={20} />
           Add User
@@ -130,40 +130,47 @@ export function UserManagement() {
           <form onSubmit={handleAddUser} className="space-y-4">
             <div className="grid grid-cols-1 gap-4">
               <div>
-                <label className="block font-display uppercase text-sm mb-2 text-text">
+                <label className="mb-2 block font-display text-sm uppercase text-text">
                   Email
                 </label>
                 <input
                   type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
                   className="input-brutal w-full"
                   required
                   placeholder="user@example.com"
                 />
                 <p className="mt-1 text-sm text-text/60">
-                  User will be able to login with their Google account using this email
+                  User will be able to login with their Google account using
+                  this email
                 </p>
               </div>
               <div>
-                <label className="block font-display uppercase text-sm mb-2 text-text">
+                <label className="mb-2 block font-display text-sm uppercase text-text">
                   Name (Optional)
                 </label>
                 <input
                   type="text"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   className="input-brutal w-full"
                   placeholder="John Doe"
                 />
               </div>
               <div>
-                <label className="block font-display uppercase text-sm mb-2 text-text">
+                <label className="mb-2 block font-display text-sm uppercase text-text">
                   Role
                 </label>
                 <select
                   value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, role: e.target.value })
+                  }
                   className="input-brutal w-full"
                 >
                   <option value="readonly">Read Only</option>
@@ -175,15 +182,25 @@ export function UserManagement() {
         </Dialog>
       )}
 
-      <div className="border-5 border-border bg-surface shadow-brutal overflow-x-auto">
+      <div className="overflow-x-auto border-5 border-border bg-surface shadow-brutal">
         <table className="w-full">
           <thead className="border-b-3 border-border">
             <tr>
-              <th className="text-left p-4 font-display uppercase text-text">Email</th>
-              <th className="text-left p-4 font-display uppercase text-text">Name</th>
-              <th className="text-left p-4 font-display uppercase text-text">Role</th>
-              <th className="text-left p-4 font-display uppercase text-text">Last Login</th>
-              <th className="text-right p-4 font-display uppercase text-text">Actions</th>
+              <th className="p-4 text-left font-display uppercase text-text">
+                Email
+              </th>
+              <th className="p-4 text-left font-display uppercase text-text">
+                Name
+              </th>
+              <th className="p-4 text-left font-display uppercase text-text">
+                Role
+              </th>
+              <th className="p-4 text-left font-display uppercase text-text">
+                Last Login
+              </th>
+              <th className="p-4 text-right font-display uppercase text-text">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -198,18 +215,24 @@ export function UserManagement() {
                   <button
                     onClick={() => handleToggleRole(user.id, user.role)}
                     disabled={user.id === currentUser?.id}
-                    className={`flex items-center gap-2 py-1 px-2 border-3 border-border ${
-                      user.role === 'admin'
-                        ? 'text-accent1'
-                        : 'text-text/60'
-                    } ${user.id === currentUser?.id ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80 hover:border-accent1'}`}
+                    className={`flex items-center gap-2 border-3 border-border px-2 py-1 ${
+                      user.role === 'admin' ? 'text-accent1' : 'text-text/60'
+                    } ${user.id === currentUser?.id ? 'cursor-not-allowed opacity-50' : 'hover:border-accent1 hover:opacity-80'}`}
                   >
-                    {user.role === 'admin' ? <Shield size={16} /> : <Eye size={16} />}
-                    <span className="font-display uppercase text-sm">{user.role}</span>
+                    {user.role === 'admin' ? (
+                      <Shield size={16} />
+                    ) : (
+                      <Eye size={16} />
+                    )}
+                    <span className="font-display text-sm uppercase">
+                      {user.role}
+                    </span>
                   </button>
                 </td>
                 <td className="p-4 font-body text-sm text-text/70">
-                  {user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'}
+                  {user.last_login
+                    ? new Date(user.last_login).toLocaleDateString()
+                    : 'Never'}
                 </td>
                 <td className="p-4 text-right">
                   <button
@@ -217,7 +240,7 @@ export function UserManagement() {
                     disabled={user.id === currentUser?.id}
                     className={`text-error ${
                       user.id === currentUser?.id
-                        ? 'opacity-30 cursor-not-allowed'
+                        ? 'cursor-not-allowed opacity-30'
                         : 'hover:opacity-80'
                     }`}
                     aria-label="Delete user"

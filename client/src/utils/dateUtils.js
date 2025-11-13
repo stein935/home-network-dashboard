@@ -60,36 +60,36 @@ export const getDueDateBadgeConfig = (category) => {
       textColor: 'text-white',
       icon: 'AlertTriangle',
       label: 'Overdue',
-      borderColor: 'border-red-500'
+      borderColor: 'border-red-500',
     },
     today: {
       bgColor: 'bg-orange-500',
       textColor: 'text-white',
       icon: 'AlertCircle',
       label: 'Due Today',
-      borderColor: 'border-orange-500'
+      borderColor: 'border-orange-500',
     },
     tomorrow: {
       bgColor: 'bg-yellow-400',
       textColor: 'text-black',
       icon: 'Clock',
       label: 'Due Tomorrow',
-      borderColor: 'border-yellow-400'
+      borderColor: 'border-yellow-400',
     },
     future: {
       bgColor: 'bg-gray-200',
       textColor: 'text-gray-700',
       icon: 'Calendar',
       label: 'Scheduled',
-      borderColor: 'border-gray-400'
+      borderColor: 'border-gray-400',
     },
     none: {
       bgColor: '',
       textColor: '',
       icon: '',
       label: '',
-      borderColor: ''
-    }
+      borderColor: '',
+    },
   };
 
   return configs[category] || configs.none;

@@ -2,7 +2,9 @@ const db = require('../config/database');
 
 class Section {
   static getAll() {
-    return db.prepare('SELECT * FROM sections ORDER BY display_order ASC').all();
+    return db
+      .prepare('SELECT * FROM sections ORDER BY display_order ASC')
+      .all();
   }
 
   static findById(id) {
@@ -74,9 +76,9 @@ class Section {
     const sections = this.getAll();
     const services = Service.getAllWithConfig();
 
-    return sections.map(section => ({
+    return sections.map((section) => ({
       ...section,
-      services: services.filter(service => service.section_id === section.id)
+      services: services.filter((service) => service.section_id === section.id),
     }));
   }
 }

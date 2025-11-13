@@ -108,6 +108,7 @@ npm run seed
 ```
 
 The script will prompt you for:
+
 - Your email address (the one you'll use to log in with Google)
 - Your name (optional)
 
@@ -169,12 +170,14 @@ As an admin user:
 The user's Google account details will be automatically linked when they first log in.
 
 **User Roles:**
+
 - **Admin**: Can manage services and users
 - **Read Only**: Can only view and access services
 
 ### Removing Access
 
 To remove a user's access:
+
 1. Go to Admin → Users
 2. Click the trash icon next to the user
 3. Confirm deletion
@@ -202,6 +205,45 @@ npm run dev
 
 Backend runs on `http://localhost:3030`
 Frontend dev server runs on `http://localhost:5173`
+
+### Code Quality Tools
+
+The project includes ESLint and Prettier for maintaining code quality:
+
+```bash
+# Run ESLint on entire codebase
+npm run lint
+
+# Auto-fix ESLint issues
+npm run lint:fix
+
+# Format code with Prettier
+npm run format
+
+# Check formatting without changes
+npm run format:check
+
+# Lint frontend code only
+cd client && npm run lint
+```
+
+**ESLint Setup**: Uses flat config (v9.x) with plugins for React, React Hooks, JSON, and Markdown. Code follows React best practices with proper hooks usage and zero lint errors.
+
+**Prettier Setup**: Configured with Tailwind CSS plugin for automatic class sorting.
+
+### Recommended VS Code Extensions
+
+The project includes extension recommendations in `.vscode/extensions.json`:
+
+- **Prettier** - Code formatting
+- **ESLint** - Real-time linting
+- **ES7+ React Snippets** - Quick React component scaffolding
+- **Tailwind CSS IntelliSense** - Autocomplete and class previews
+- **Path IntelliSense** - Import path autocomplete
+- **Code Spell Checker** - Catch typos
+- **GitLens** - Enhanced Git integration
+
+VS Code will prompt to install these when you open the project.
 
 ### Project Structure
 
@@ -294,6 +336,7 @@ Edit `server/models/init-db.js` to modify the default services that are seeded o
 ### Customizing Dialogs
 
 All dialogs use a unified `Dialog.jsx` component with consistent styling. To customize dialog appearance:
+
 - Edit `client/src/components/Dialog.jsx`
 - Modify header background color, border styles, or spacing
 - All existing dialogs (notes, events, forms) will automatically update
@@ -305,6 +348,7 @@ MIT License - Feel free to use and modify for your home network!
 ## Support
 
 For issues and questions, please check:
+
 - Google OAuth setup documentation
 - Docker documentation
 - Express.js documentation

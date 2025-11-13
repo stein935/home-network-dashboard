@@ -3,12 +3,14 @@ const ServiceConfig = require('./ServiceConfig');
 
 class Service {
   static getAll() {
-    return db.prepare('SELECT * FROM services ORDER BY display_order ASC').all();
+    return db
+      .prepare('SELECT * FROM services ORDER BY display_order ASC')
+      .all();
   }
 
   static getAllWithConfig() {
     const services = this.getAll();
-    return services.map(service => {
+    return services.map((service) => {
       const config = ServiceConfig.findByServiceId(service.id);
       return { ...service, config };
     });
@@ -28,29 +30,53 @@ class Service {
   }
 
   static create(name, url, icon, displayOrder, sectionId, cardType = 'link') {
-    const createWithShift = db.transaction((name, url, icon, displayOrder, sectionId, cardType) => {
-      // Shift all services in the same section down by 1
-      const shiftStmt = db.prepare(`
+    const createWithShift = db.transaction(
+      (name, url, icon, displayOrder, sectionId, cardType) => {
+        // Shift all services in the same section down by 1
+        const shiftStmt = db.prepare(`
         UPDATE services
         SET display_order = display_order + 1
         WHERE section_id = ?
       `);
-      shiftStmt.run(sectionId);
+        shiftStmt.run(sectionId);
 
-      // Insert the new service at display_order = 0
-      const insertStmt = db.prepare(`
+        // Insert the new service at display_order = 0
+        const insertStmt = db.prepare(`
         INSERT INTO services (name, url, icon, display_order, section_id, card_type)
         VALUES (?, ?, ?, ?, ?, ?)
       `);
-      const result = insertStmt.run(name, url, icon, displayOrder, sectionId, cardType);
-      return result.lastInsertRowid;
-    });
+        const result = insertStmt.run(
+          name,
+          url,
+          icon,
+          displayOrder,
+          sectionId,
+          cardType
+        );
+        return result.lastInsertRowid;
+      }
+    );
 
-    const lastId = createWithShift(name, url, icon, displayOrder, sectionId, cardType);
+    const lastId = createWithShift(
+      name,
+      url,
+      icon,
+      displayOrder,
+      sectionId,
+      cardType
+    );
     return this.findById(lastId);
   }
 
-  static update(id, name, url, icon, displayOrder, sectionId, cardType = 'link') {
+  static update(
+    id,
+    name,
+    url,
+    icon,
+    displayOrder,
+    sectionId,
+    cardType = 'link'
+  ) {
     const stmt = db.prepare(`
       UPDATE services
       SET name = ?, url = ?, icon = ?, display_order = ?, section_id = ?, card_type = ?, updated_at = CURRENT_TIMESTAMP

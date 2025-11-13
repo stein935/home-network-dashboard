@@ -1,7 +1,13 @@
-import { MapPin, Clock, Calendar as CalendarIcon, Link as LinkIcon, Users } from 'lucide-react';
+import {
+  MapPin,
+  Clock,
+  Calendar as CalendarIcon,
+  Link as LinkIcon,
+  Users,
+} from 'lucide-react';
 import { Dialog } from './Dialog';
 
-export function EventDetailDialog({ event, onClose, containerRef }) {
+export function EventDetailDialog({ event, onClose }) {
   if (!event) return null;
 
   const formatDateTime = (dateString, isAllDay) => {
@@ -16,7 +22,7 @@ export function EventDetailDialog({ event, onClose, containerRef }) {
       year: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true
+      hour12: true,
     });
   };
 
@@ -26,7 +32,7 @@ export function EventDetailDialog({ event, onClose, containerRef }) {
       weekday: 'long',
       month: 'long',
       day: 'numeric',
-      year: 'numeric'
+      year: 'numeric',
     });
   };
 
@@ -42,12 +48,14 @@ export function EventDetailDialog({ event, onClose, containerRef }) {
           <Clock size={20} className="text-accent1" strokeWidth={3} />
         </div>
         <div>
-          <div className="font-display uppercase text-sm text-text/70 mb-1">Time</div>
+          <div className="mb-1 font-display text-sm uppercase text-text/70">
+            Time
+          </div>
           {event.allDay ? (
             <div className="font-body text-text">
               <div>{formatDateOnly(event.start)}</div>
               {event.start !== event.end && (
-                <div className="text-sm text-text/70 mt-1">
+                <div className="mt-1 text-sm text-text/70">
                   Ends: {formatDateOnly(event.end)}
                 </div>
               )}
@@ -55,7 +63,7 @@ export function EventDetailDialog({ event, onClose, containerRef }) {
           ) : (
             <div className="font-body text-text">
               <div>{formatDateTime(event.start)}</div>
-              <div className="text-sm text-text/70 mt-1">
+              <div className="mt-1 text-sm text-text/70">
                 to {formatDateTime(event.end)}
               </div>
             </div>
@@ -70,7 +78,9 @@ export function EventDetailDialog({ event, onClose, containerRef }) {
             <MapPin size={20} className="text-accent1" strokeWidth={3} />
           </div>
           <div>
-            <div className="font-display uppercase text-sm text-text/70 mb-1">Location</div>
+            <div className="mb-1 font-display text-sm uppercase text-text/70">
+              Location
+            </div>
             <div className="font-body text-text">{event.location}</div>
           </div>
         </div>
@@ -79,8 +89,10 @@ export function EventDetailDialog({ event, onClose, containerRef }) {
       {/* Description */}
       {event.description && (
         <div className="border-3 border-border bg-white p-4">
-          <div className="font-display uppercase text-sm text-text/70 mb-2">Description</div>
-          <div className="font-body text-text whitespace-pre-wrap">
+          <div className="mb-2 font-display text-sm uppercase text-text/70">
+            Description
+          </div>
+          <div className="whitespace-pre-wrap font-body text-text">
             {event.description}
           </div>
         </div>
@@ -93,23 +105,33 @@ export function EventDetailDialog({ event, onClose, containerRef }) {
             <Users size={20} className="text-accent1" strokeWidth={3} />
           </div>
           <div className="flex-1">
-            <div className="font-display uppercase text-sm text-text/70 mb-2">Attendees</div>
+            <div className="mb-2 font-display text-sm uppercase text-text/70">
+              Attendees
+            </div>
             <div className="space-y-2">
               {event.attendees.map((attendee, idx) => (
-                <div key={idx} className="font-body text-sm text-text flex items-center gap-2">
+                <div
+                  key={idx}
+                  className="flex items-center gap-2 font-body text-sm text-text"
+                >
                   <span>{attendee.email}</span>
                   {attendee.organizer && (
-                    <span className="text-xs bg-accent1 text-white px-2 py-0.5 uppercase font-display">
+                    <span className="bg-accent1 px-2 py-0.5 font-display text-xs uppercase text-white">
                       Organizer
                     </span>
                   )}
                   {attendee.responseStatus && (
-                    <span className={`text-xs px-2 py-0.5 uppercase font-display ${
-                      attendee.responseStatus === 'accepted' ? 'bg-green-500 text-white' :
-                      attendee.responseStatus === 'declined' ? 'bg-red-500 text-white' :
-                      attendee.responseStatus === 'tentative' ? 'bg-yellow-500 text-white' :
-                      'bg-gray-300 text-text'
-                    }`}>
+                    <span
+                      className={`px-2 py-0.5 font-display text-xs uppercase ${
+                        attendee.responseStatus === 'accepted'
+                          ? 'bg-green-500 text-white'
+                          : attendee.responseStatus === 'declined'
+                            ? 'bg-red-500 text-white'
+                            : attendee.responseStatus === 'tentative'
+                              ? 'bg-yellow-500 text-white'
+                              : 'bg-gray-300 text-text'
+                      }`}
+                    >
                       {attendee.responseStatus}
                     </span>
                   )}
@@ -127,12 +149,14 @@ export function EventDetailDialog({ event, onClose, containerRef }) {
             <LinkIcon size={20} className="text-accent1" strokeWidth={3} />
           </div>
           <div>
-            <div className="font-display uppercase text-sm text-text/70 mb-1">Meeting Link</div>
+            <div className="mb-1 font-display text-sm uppercase text-text/70">
+              Meeting Link
+            </div>
             <a
               href={event.hangoutLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-body text-accent1 hover:text-accent2 underline"
+              className="font-body text-accent1 underline hover:text-accent2"
             >
               Join meeting
             </a>
@@ -147,7 +171,7 @@ export function EventDetailDialog({ event, onClose, containerRef }) {
             href={event.htmlLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 border-3 border-border bg-white hover:border-accent1 transition-colors font-display uppercase text-sm"
+            className="inline-flex items-center gap-2 border-3 border-border bg-white px-4 py-2 font-display text-sm uppercase transition-colors hover:border-accent1"
           >
             <CalendarIcon size={16} />
             View in Google Calendar

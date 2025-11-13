@@ -2,7 +2,9 @@ const db = require('../config/database');
 
 class ServiceConfig {
   static findByServiceId(serviceId) {
-    return db.prepare('SELECT * FROM service_config WHERE service_id = ?').get(serviceId);
+    return db
+      .prepare('SELECT * FROM service_config WHERE service_id = ?')
+      .get(serviceId);
   }
 
   static create(serviceId, calendarId, viewType = 'week') {
@@ -10,7 +12,7 @@ class ServiceConfig {
       INSERT INTO service_config (service_id, calendar_id, view_type)
       VALUES (?, ?, ?)
     `);
-    const result = stmt.run(serviceId, calendarId, viewType);
+    stmt.run(serviceId, calendarId, viewType);
     return this.findByServiceId(serviceId);
   }
 

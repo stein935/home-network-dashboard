@@ -2,20 +2,38 @@ const db = require('../config/database');
 
 class Note {
   static findAll() {
-    return db.prepare('SELECT * FROM notes ORDER BY section_id, display_order ASC').all();
+    return db
+      .prepare('SELECT * FROM notes ORDER BY section_id, display_order ASC')
+      .all();
   }
 
   static findBySection(sectionId) {
-    return db.prepare('SELECT * FROM notes WHERE section_id = ? ORDER BY display_order ASC').all(sectionId);
+    return db
+      .prepare(
+        'SELECT * FROM notes WHERE section_id = ? ORDER BY display_order ASC'
+      )
+      .all(sectionId);
   }
 
   static findById(id) {
     return db.prepare('SELECT * FROM notes WHERE id = ?').get(id);
   }
 
-  static create({ sectionId, title, message, authorEmail, authorName, dueDate, color }) {
+  static create({
+    sectionId,
+    title,
+    message,
+    authorEmail,
+    authorName,
+    dueDate,
+    color,
+  }) {
     // Get the highest display_order for this section and add 1
-    const maxOrder = db.prepare('SELECT MAX(display_order) as max FROM notes WHERE section_id = ?').get(sectionId);
+    const maxOrder = db
+      .prepare(
+        'SELECT MAX(display_order) as max FROM notes WHERE section_id = ?'
+      )
+      .get(sectionId);
     const displayOrder = (maxOrder.max !== null ? maxOrder.max : -1) + 1;
 
     const now = new Date().toISOString();
@@ -23,7 +41,18 @@ class Note {
       INSERT INTO notes (section_id, title, message, author_email, author_name, due_date, color, display_order, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    const result = stmt.run(sectionId, title, message, authorEmail, authorName, dueDate || null, color, displayOrder, now, now);
+    const result = stmt.run(
+      sectionId,
+      title,
+      message,
+      authorEmail,
+      authorName,
+      dueDate || null,
+      color,
+      displayOrder,
+      now,
+      now
+    );
     return this.findById(result.lastInsertRowid);
   }
 

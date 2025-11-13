@@ -4,12 +4,16 @@ function initializeDatabase() {
   console.log('Initializing database...');
 
   // Check if users table needs migration for optional google_id and OAuth tokens
-  const usersTableInfo = db.prepare("PRAGMA table_info(users)").all();
+  const usersTableInfo = db.prepare('PRAGMA table_info(users)').all();
   const usersTableExists = usersTableInfo.length > 0;
-  const googleIdColumn = usersTableInfo.find(col => col.name === 'google_id');
+  const googleIdColumn = usersTableInfo.find((col) => col.name === 'google_id');
   const googleIdIsNotNull = googleIdColumn && googleIdColumn.notnull === 1;
-  const hasAccessToken = usersTableInfo.find(col => col.name === 'google_access_token');
-  const hasRefreshToken = usersTableInfo.find(col => col.name === 'google_refresh_token');
+  const hasAccessToken = usersTableInfo.find(
+    (col) => col.name === 'google_access_token'
+  );
+  const hasRefreshToken = usersTableInfo.find(
+    (col) => col.name === 'google_refresh_token'
+  );
 
   if (usersTableExists && googleIdIsNotNull) {
     // Migrate existing users table to make google_id optional
@@ -98,10 +102,10 @@ function initializeDatabase() {
   `);
 
   // Check if we need to migrate services table
-  const tableInfo = db.prepare("PRAGMA table_info(services)").all();
+  const tableInfo = db.prepare('PRAGMA table_info(services)').all();
   const servicesTableExists = tableInfo.length > 0;
-  const hasSectionId = tableInfo.some(col => col.name === 'section_id');
-  const hasCardType = tableInfo.some(col => col.name === 'card_type');
+  const hasSectionId = tableInfo.some((col) => col.name === 'section_id');
+  const hasCardType = tableInfo.some((col) => col.name === 'card_type');
 
   if (servicesTableExists && !hasSectionId) {
     console.log('Migrating services table to add section_id...');
@@ -123,11 +127,17 @@ function initializeDatabase() {
     `);
 
     // Ensure default section exists
-    const defaultSection = db.prepare('SELECT id FROM sections WHERE is_default = 1').get();
+    const defaultSection = db
+      .prepare('SELECT id FROM sections WHERE is_default = 1')
+      .get();
     if (!defaultSection) {
-      db.prepare('INSERT INTO sections (name, display_order, is_default) VALUES (?, ?, ?)').run('Default', 1, 1);
+      db.prepare(
+        'INSERT INTO sections (name, display_order, is_default) VALUES (?, ?, ?)'
+      ).run('Default', 1, 1);
     }
-    const defaultSectionId = db.prepare('SELECT id FROM sections WHERE is_default = 1').get().id;
+    const defaultSectionId = db
+      .prepare('SELECT id FROM sections WHERE is_default = 1')
+      .get().id;
 
     // Copy existing services to new table with default section
     const existingServices = db.prepare('SELECT * FROM services').all();
@@ -163,7 +173,9 @@ function initializeDatabase() {
   } else if (servicesTableExists && !hasCardType) {
     // Services table has section_id but not card_type - add it
     console.log('Adding card_type column to services table...');
-    db.exec(`ALTER TABLE services ADD COLUMN card_type TEXT NOT NULL DEFAULT 'link' CHECK(card_type IN ('link', 'calendar'))`);
+    db.exec(
+      `ALTER TABLE services ADD COLUMN card_type TEXT NOT NULL DEFAULT 'link' CHECK(card_type IN ('link', 'calendar'))`
+    );
     console.log('card_type column added');
   } else if (!servicesTableExists) {
     // No services table exists - create it from scratch
@@ -243,18 +255,26 @@ function initializeDatabase() {
   `);
 
   // Ensure default section exists
-  const sectionCount = db.prepare('SELECT COUNT(*) as count FROM sections').get();
+  const sectionCount = db
+    .prepare('SELECT COUNT(*) as count FROM sections')
+    .get();
   if (sectionCount.count === 0) {
     console.log('Creating default section...');
-    db.prepare('INSERT INTO sections (name, display_order, is_default) VALUES (?, ?, ?)').run('Default', 1, 1);
+    db.prepare(
+      'INSERT INTO sections (name, display_order, is_default) VALUES (?, ?, ?)'
+    ).run('Default', 1, 1);
   }
 
   // Get default section ID
-  const defaultSection = db.prepare('SELECT id FROM sections WHERE is_default = 1').get();
+  const defaultSection = db
+    .prepare('SELECT id FROM sections WHERE is_default = 1')
+    .get();
   const defaultSectionId = defaultSection ? defaultSection.id : 1;
 
   // Check if services table is empty and seed with default services
-  const serviceCount = db.prepare('SELECT COUNT(*) as count FROM services').get();
+  const serviceCount = db
+    .prepare('SELECT COUNT(*) as count FROM services')
+    .get();
 
   if (serviceCount.count === 0) {
     console.log('Seeding default services...');
@@ -264,14 +284,39 @@ function initializeDatabase() {
     `);
 
     const services = [
-      { name: 'Router Admin', url: 'http://192.168.1.1', icon: 'Router', displayOrder: 1, cardType: 'link' },
-      { name: 'Pi-hole Admin', url: 'http://pi.hole/admin', icon: 'Shield', displayOrder: 2, cardType: 'link' },
-      { name: 'Network Monitor', url: 'http://192.168.1.100:8080', icon: 'Activity', displayOrder: 3, cardType: 'link' }
+      {
+        name: 'Router Admin',
+        url: 'http://192.168.1.1',
+        icon: 'Router',
+        displayOrder: 1,
+        cardType: 'link',
+      },
+      {
+        name: 'Pi-hole Admin',
+        url: 'http://pi.hole/admin',
+        icon: 'Shield',
+        displayOrder: 2,
+        cardType: 'link',
+      },
+      {
+        name: 'Network Monitor',
+        url: 'http://192.168.1.100:8080',
+        icon: 'Activity',
+        displayOrder: 3,
+        cardType: 'link',
+      },
     ];
 
     const insertMany = db.transaction((services) => {
       for (const service of services) {
-        insertService.run(service.name, service.url, service.icon, service.displayOrder, defaultSectionId, service.cardType);
+        insertService.run(
+          service.name,
+          service.url,
+          service.icon,
+          service.displayOrder,
+          defaultSectionId,
+          service.cardType
+        );
       }
     });
 

@@ -18,7 +18,7 @@ export function Dialog({
   footer,
   maxWidth = 'max-w-2xl',
   contentClassName = '',
-  zIndex = 50
+  zIndex = 50,
 }) {
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget) {
@@ -32,15 +32,17 @@ export function Dialog({
       style={{ zIndex: zIndex === 9999 ? 9999 : zIndex }}
       onClick={handleBackdropClick}
     >
-      <div className={`bg-surface border-5 border-border shadow-brutal ${maxWidth} w-full`}>
+      <div
+        className={`border-5 border-border bg-surface shadow-brutal ${maxWidth} w-full`}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-6 border-b-4 border-border bg-accent1 text-white">
-          <h2 className="font-display text-xl sm:text-2xl md:text-3xl uppercase">
+        <div className="flex items-center justify-between border-b-4 border-border bg-accent1 p-4 text-white sm:p-6">
+          <h2 className="font-display text-xl uppercase sm:text-2xl md:text-3xl">
             {title}
           </h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-accent1/20 transition-colors flex-shrink-0"
+            className="flex-shrink-0 p-2 transition-colors hover:bg-accent1/20"
             aria-label="Close dialog"
           >
             <X size={24} />
@@ -48,15 +50,15 @@ export function Dialog({
         </div>
 
         {/* Content */}
-        <div className={`p-4 sm:p-6 space-y-4 sm:space-y-6 max-h-[70vh] sm:max-h-[80vh] overflow-y-auto ${contentClassName}`}>
+        <div
+          className={`max-h-[70vh] space-y-4 overflow-y-auto p-4 sm:max-h-[80vh] sm:space-y-6 sm:p-6 ${contentClassName}`}
+        >
           {children}
         </div>
 
         {/* Footer */}
         {footer && (
-          <div className="p-4 sm:p-6 border-t-4 border-border">
-            {footer}
-          </div>
+          <div className="border-t-4 border-border p-4 sm:p-6">{footer}</div>
         )}
       </div>
     </div>

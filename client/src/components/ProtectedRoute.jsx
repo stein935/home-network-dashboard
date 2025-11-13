@@ -6,7 +6,7 @@ export function ProtectedRoute({ children, requireAdmin = false }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
           <div className="border-5 border-border bg-surface p-8 shadow-brutal">
             <h1 className="font-display text-display-sm uppercase text-accent1">
@@ -20,6 +20,7 @@ export function ProtectedRoute({ children, requireAdmin = false }) {
 
   if (!user) {
     // Redirect to Google OAuth
+    // eslint-disable-next-line react-hooks/immutability
     window.location.href = '/auth/google';
     return null;
   }

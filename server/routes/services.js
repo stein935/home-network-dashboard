@@ -8,24 +8,50 @@ const isAdmin = require('../middleware/admin');
 
 // Validation middleware for create
 const validateServiceCreate = [
-  body('name').trim().isLength({ min: 1, max: 100 }).withMessage('Name is required and must be less than 100 characters'),
-  body('url').optional({ checkFalsy: true }).trim().isURL().withMessage('Valid URL is required'),
+  body('name')
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('Name is required and must be less than 100 characters'),
+  body('url')
+    .optional({ checkFalsy: true })
+    .trim()
+    .isURL()
+    .withMessage('Valid URL is required'),
   body('icon').trim().isLength({ min: 1 }).withMessage('Icon is required'),
   body('section_id').isInt({ min: 1 }).withMessage('Section ID is required'),
-  body('card_type').optional().isIn(['link', 'calendar']).withMessage('Card type must be "link" or "calendar"'),
+  body('card_type')
+    .optional()
+    .isIn(['link', 'calendar'])
+    .withMessage('Card type must be "link" or "calendar"'),
   body('config.calendar_id').optional().trim(),
-  body('config.view_type').optional().isIn(['day', 'week', 'month']).withMessage('View type must be "day", "week", or "month"')
+  body('config.view_type')
+    .optional()
+    .isIn(['day', 'week', 'month'])
+    .withMessage('View type must be "day", "week", or "month"'),
 ];
 
 // Validation middleware for update
 const validateServiceUpdate = [
-  body('name').trim().isLength({ min: 1, max: 100 }).withMessage('Name is required and must be less than 100 characters'),
-  body('url').optional({ checkFalsy: true }).trim().isURL().withMessage('Valid URL is required'),
+  body('name')
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('Name is required and must be less than 100 characters'),
+  body('url')
+    .optional({ checkFalsy: true })
+    .trim()
+    .isURL()
+    .withMessage('Valid URL is required'),
   body('icon').trim().isLength({ min: 1 }).withMessage('Icon is required'),
   body('section_id').isInt({ min: 1 }).withMessage('Section ID is required'),
-  body('card_type').optional().isIn(['link', 'calendar']).withMessage('Card type must be "link" or "calendar"'),
+  body('card_type')
+    .optional()
+    .isIn(['link', 'calendar'])
+    .withMessage('Card type must be "link" or "calendar"'),
   body('config.calendar_id').optional().trim(),
-  body('config.view_type').optional().isIn(['day', 'week', 'month']).withMessage('View type must be "day", "week", or "month"')
+  body('config.view_type')
+    .optional()
+    .isIn(['day', 'week', 'month'])
+    .withMessage('View type must be "day", "week", or "month"'),
 ];
 
 // GET all services (requires authentication)
@@ -47,13 +73,24 @@ router.post('/', isAdmin, validateServiceCreate, (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { name, url = '', icon, section_id, card_type = 'link', config } = req.body;
+    const {
+      name,
+      url = '',
+      icon,
+      section_id,
+      card_type = 'link',
+      config,
+    } = req.body;
     // Always create new services at the top (display_order = 0)
     const service = Service.create(name, url, icon, 0, section_id, card_type);
 
     // If calendar card type, save config
     if (card_type === 'calendar' && config) {
-      ServiceConfig.upsert(service.id, config.calendar_id, config.view_type || 'week');
+      ServiceConfig.upsert(
+        service.id,
+        config.calendar_id,
+        config.view_type || 'week'
+      );
     }
 
     const serviceWithConfig = Service.findByIdWithConfig(service.id);
@@ -66,70 +103,99 @@ router.post('/', isAdmin, validateServiceCreate, (req, res) => {
 });
 
 // PUT update service (admin only)
-router.put('/:id', isAdmin, [
-  param('id').isInt().withMessage('Invalid service ID'),
-  ...validateServiceUpdate
-], (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+router.put(
+  '/:id',
+  isAdmin,
+  [
+    param('id').isInt().withMessage('Invalid service ID'),
+    ...validateServiceUpdate,
+  ],
+  (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const { id } = req.params;
+      const {
+        name,
+        url = '',
+        icon,
+        section_id,
+        card_type = 'link',
+        config,
+      } = req.body;
+
+      const existingService = Service.findById(id);
+      if (!existingService) {
+        return res.status(404).json({ error: 'Service not found' });
+      }
+
+      // Preserve the existing display_order during updates (order only changes via drag-and-drop)
+      Service.update(
+        id,
+        name,
+        url,
+        icon,
+        existingService.display_order,
+        section_id,
+        card_type
+      );
+
+      // If calendar card type, save config
+      if (card_type === 'calendar' && config) {
+        ServiceConfig.upsert(
+          id,
+          config.calendar_id,
+          config.view_type || 'week'
+        );
+      } else if (card_type !== 'calendar') {
+        // Delete config if switching away from calendar
+        ServiceConfig.delete(id);
+      }
+
+      const serviceWithConfig = Service.findByIdWithConfig(id);
+      console.log(`Service updated: ${name} by ${req.user.email}`);
+      res.json(serviceWithConfig);
+    } catch (error) {
+      console.error('Error updating service:', error);
+      res.status(500).json({ error: 'Failed to update service' });
     }
-
-    const { id } = req.params;
-    const { name, url = '', icon, section_id, card_type = 'link', config } = req.body;
-
-    const existingService = Service.findById(id);
-    if (!existingService) {
-      return res.status(404).json({ error: 'Service not found' });
-    }
-
-    // Preserve the existing display_order during updates (order only changes via drag-and-drop)
-    const service = Service.update(id, name, url, icon, existingService.display_order, section_id, card_type);
-
-    // If calendar card type, save config
-    if (card_type === 'calendar' && config) {
-      ServiceConfig.upsert(id, config.calendar_id, config.view_type || 'week');
-    } else if (card_type !== 'calendar') {
-      // Delete config if switching away from calendar
-      ServiceConfig.delete(id);
-    }
-
-    const serviceWithConfig = Service.findByIdWithConfig(id);
-    console.log(`Service updated: ${name} by ${req.user.email}`);
-    res.json(serviceWithConfig);
-  } catch (error) {
-    console.error('Error updating service:', error);
-    res.status(500).json({ error: 'Failed to update service' });
   }
-});
+);
 
 // DELETE service (admin only)
-router.delete('/:id', isAdmin, [
-  param('id').isInt().withMessage('Invalid service ID')
-], (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+router.delete(
+  '/:id',
+  isAdmin,
+  [param('id').isInt().withMessage('Invalid service ID')],
+  (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const { id } = req.params;
+
+      const existingService = Service.findById(id);
+      if (!existingService) {
+        return res.status(404).json({ error: 'Service not found' });
+      }
+
+      Service.delete(id);
+
+      console.log(
+        `Service deleted: ${existingService.name} by ${req.user.email}`
+      );
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting service:', error);
+      res.status(500).json({ error: 'Failed to delete service' });
     }
-
-    const { id } = req.params;
-
-    const existingService = Service.findById(id);
-    if (!existingService) {
-      return res.status(404).json({ error: 'Service not found' });
-    }
-
-    Service.delete(id);
-
-    console.log(`Service deleted: ${existingService.name} by ${req.user.email}`);
-    res.status(204).send();
-  } catch (error) {
-    console.error('Error deleting service:', error);
-    res.status(500).json({ error: 'Failed to delete service' });
   }
-});
+);
 
 // PUT reorder services (admin only)
 router.put('/reorder/bulk', isAdmin, (req, res) => {
@@ -143,7 +209,9 @@ router.put('/reorder/bulk', isAdmin, (req, res) => {
     // Validate each update has id and displayOrder
     for (const update of updates) {
       if (!update.id || typeof update.displayOrder !== 'number') {
-        return res.status(400).json({ error: 'Each update must have id and displayOrder' });
+        return res
+          .status(400)
+          .json({ error: 'Each update must have id and displayOrder' });
       }
     }
 

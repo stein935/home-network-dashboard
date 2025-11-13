@@ -47,7 +47,7 @@ export function AuthProvider({ children }) {
     error,
     fetchUser,
     logout,
-    isAdmin: user?.role === 'admin'
+    isAdmin: user?.role === 'admin',
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

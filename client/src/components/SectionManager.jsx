@@ -32,9 +32,10 @@ export function SectionManager() {
 
   const handleAddClick = () => {
     setEditingSection(null);
-    const nextOrder = sections.length > 0
-      ? Math.max(...sections.map(s => s.display_order)) + 1
-      : 1;
+    const nextOrder =
+      sections.length > 0
+        ? Math.max(...sections.map((s) => s.display_order)) + 1
+        : 1;
     setFormData({ name: '', display_order: nextOrder });
     setShowForm(true);
     setFormError(null);
@@ -44,7 +45,7 @@ export function SectionManager() {
     setEditingSection(section);
     setFormData({
       name: section.name,
-      display_order: section.display_order
+      display_order: section.display_order,
     });
     setShowForm(true);
     setFormError(null);
@@ -64,7 +65,7 @@ export function SectionManager() {
     try {
       const submitData = {
         name: formData.name.trim(),
-        display_order: parseInt(formData.display_order, 10)
+        display_order: parseInt(formData.display_order, 10),
       };
 
       if (editingSection) {
@@ -87,7 +88,11 @@ export function SectionManager() {
       return;
     }
 
-    if (!confirm(`Are you sure you want to delete "${section.name}"? Services in this section will be moved to the default section.`)) {
+    if (
+      !confirm(
+        `Are you sure you want to delete "${section.name}"? Services in this section will be moved to the default section.`
+      )
+    ) {
       return;
     }
 
@@ -102,13 +107,13 @@ export function SectionManager() {
 
   return (
     <div>
-      <div className="flex flex-wrap justify-between items-center mb-6">
-        <h2 className="font-display text-display-sm uppercase text-text w-full sm:w-auto mb-1 sm:mb-0">
+      <div className="mb-6 flex flex-wrap items-center justify-between">
+        <h2 className="mb-1 w-full font-display text-display-sm uppercase text-text sm:mb-0 sm:w-auto">
           Manage Sections
         </h2>
         <button
           onClick={handleAddClick}
-          className="btn-brutal-primary flex items-center justify-center gap-2 w-full sm:w-auto"
+          className="btn-brutal-primary flex w-full items-center justify-center gap-2 sm:w-auto"
         >
           <Plus size={20} />
           Add Section
@@ -116,7 +121,7 @@ export function SectionManager() {
       </div>
 
       {loading ? (
-        <div className="text-center py-8">
+        <div className="py-8 text-center">
           <p className="font-display text-xl uppercase text-accent1">
             Loading Sections...
           </p>
@@ -126,13 +131,19 @@ export function SectionManager() {
           <p className="text-error">{error}</p>
         </div>
       ) : (
-        <div className="border-5 border-border bg-surface shadow-brutal overflow-x-auto">
+        <div className="overflow-x-auto border-5 border-border bg-surface shadow-brutal">
           <table className="w-full">
             <thead className="border-b-3 border-border">
               <tr>
-                <th className="text-left p-4 font-display uppercase text-text">Order</th>
-                <th className="text-left p-4 font-display uppercase text-text">Name</th>
-                <th className="text-right p-4 font-display uppercase text-text">Actions</th>
+                <th className="p-4 text-left font-display uppercase text-text">
+                  Order
+                </th>
+                <th className="p-4 text-left font-display uppercase text-text">
+                  Name
+                </th>
+                <th className="p-4 text-right font-display uppercase text-text">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -144,9 +155,7 @@ export function SectionManager() {
                   <td className="p-4 font-body text-text">
                     {section.display_order}
                   </td>
-                  <td className="p-4 font-body text-text">
-                    {section.name}
-                  </td>
+                  <td className="p-4 font-body text-text">{section.name}</td>
                   <td className="p-4 text-right">
                     <div className="flex justify-end gap-3">
                       <button
@@ -201,30 +210,40 @@ export function SectionManager() {
         >
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="name" className="block font-display uppercase text-sm text-text mb-2">
+              <label
+                htmlFor="name"
+                className="mb-2 block font-display text-sm uppercase text-text"
+              >
                 Section Name
               </label>
               <input
                 type="text"
                 id="name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-2 border-3 border-border bg-background text-text focus:border-accent1 focus:outline-none"
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                className="bg-background w-full border-3 border-border px-4 py-2 text-text focus:border-accent1 focus:outline-none"
                 required
                 maxLength={100}
               />
             </div>
 
             <div>
-              <label htmlFor="display_order" className="block font-display uppercase text-sm text-text mb-2">
+              <label
+                htmlFor="display_order"
+                className="mb-2 block font-display text-sm uppercase text-text"
+              >
                 Display Order
               </label>
               <input
                 type="number"
                 id="display_order"
                 value={formData.display_order}
-                onChange={(e) => setFormData({ ...formData, display_order: e.target.value })}
-                className="w-full px-4 py-2 border-3 border-border bg-background text-text focus:border-accent1 focus:outline-none"
+                onChange={(e) =>
+                  setFormData({ ...formData, display_order: e.target.value })
+                }
+                className="bg-background w-full border-3 border-border px-4 py-2 text-text focus:border-accent1 focus:outline-none"
                 required
                 min="0"
               />
@@ -232,7 +251,7 @@ export function SectionManager() {
 
             {formError && (
               <div className="border-2 border-error bg-error/10 p-3">
-                <p className="text-error text-sm">{formError}</p>
+                <p className="text-sm text-error">{formError}</p>
               </div>
             )}
           </form>

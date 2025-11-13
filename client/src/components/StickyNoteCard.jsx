@@ -1,8 +1,19 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Clock, AlertCircle, AlertTriangle, Calendar } from 'lucide-react';
-import { getDueDateCategory, formatDueDate, getDueDateBadgeConfig } from '../utils/dateUtils';
+import {
+  getDueDateCategory,
+  formatDueDate,
+  getDueDateBadgeConfig,
+} from '../utils/dateUtils';
 
-export function StickyNoteCard({ note, onEdit, onDragStart, onDragEnd, onDragOver, onDrop }) {
+export function StickyNoteCard({
+  note,
+  onEdit,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDrop,
+}) {
   const [isDragOver, setIsDragOver] = useState(false);
 
   const handleClick = () => {
@@ -51,8 +62,8 @@ export function StickyNoteCard({ note, onEdit, onDragStart, onDragEnd, onDragOve
   const formattedDueDate = formatDueDate(note.due_date);
   const badgeConfig = getDueDateBadgeConfig(dueDateCategory);
 
-  // Get icon component based on category
-  const getIconComponent = () => {
+  // Get icon component based on category - memoized to prevent recreation on each render
+  const IconComponent = useMemo(() => {
     switch (badgeConfig.icon) {
       case 'Clock':
         return Clock;
@@ -65,9 +76,7 @@ export function StickyNoteCard({ note, onEdit, onDragStart, onDragEnd, onDragOve
       default:
         return null;
     }
-  };
-
-  const IconComponent = getIconComponent();
+  }, [badgeConfig.icon]);
 
   return (
     <div
@@ -93,7 +102,7 @@ export function StickyNoteCard({ note, onEdit, onDragStart, onDragEnd, onDragOve
       {/* Due date badge - only show if not 'none' or 'future' */}
       {dueDateCategory !== 'none' && dueDateCategory !== 'future' && (
         <div
-          className={`absolute top-2 right-2 ${badgeConfig.bgColor} ${badgeConfig.textColor} px-2 py-1 text-xs font-body font-bold flex items-center gap-1 border-2 border-black z-10`}
+          className={`absolute right-2 top-2 ${badgeConfig.bgColor} ${badgeConfig.textColor} z-10 flex items-center gap-1 border-2 border-black px-2 py-1 font-body text-xs font-bold`}
         >
           {IconComponent && <IconComponent size={12} />}
           <span>{badgeConfig.label}</span>
@@ -101,27 +110,28 @@ export function StickyNoteCard({ note, onEdit, onDragStart, onDragEnd, onDragOve
       )}
 
       {/* Main content */}
-      <div className="p-4 h-full flex flex-col">
+      <div className="flex h-full flex-col p-4">
         {/* Title */}
-        <h3 className="font-display text-lg uppercase text-black mb-2 line-clamp-2 break-words">
+        <h3 className="mb-2 line-clamp-2 break-words font-display text-lg uppercase text-black">
           {note.title}
         </h3>
 
         {/* Author */}
-        <p className="font-body text-xs text-black/70 mb-2">
+        <p className="mb-2 font-body text-xs text-black/70">
           {note.author_name}
         </p>
 
         {/* Due date display (for future dates or when no urgent badge) */}
-        {note.due_date && (dueDateCategory === 'future' || dueDateCategory === 'none') && (
-          <p className="font-body text-xs text-black/60 mb-2 flex items-center gap-1">
-            <Calendar size={12} />
-            {formattedDueDate}
-          </p>
-        )}
+        {note.due_date &&
+          (dueDateCategory === 'future' || dueDateCategory === 'none') && (
+            <p className="mb-2 flex items-center gap-1 font-body text-xs text-black/60">
+              <Calendar size={12} />
+              {formattedDueDate}
+            </p>
+          )}
 
         {/* Message */}
-        <p className="font-body text-sm text-black flex-1 break-words whitespace-pre-wrap truncate">
+        <p className="flex-1 truncate whitespace-pre-wrap break-words font-body text-sm text-black">
           {note.message}
         </p>
       </div>

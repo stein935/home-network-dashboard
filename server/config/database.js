@@ -3,7 +3,8 @@ const path = require('path');
 const fs = require('fs');
 
 // Get database path from environment or use default
-const dbPath = process.env.DATABASE_PATH || path.join(__dirname, '../../data/database.db');
+const dbPath =
+  process.env.DATABASE_PATH || path.join(__dirname, '../../data/database.db');
 
 // Ensure data directory exists
 const dataDir = path.dirname(dbPath);

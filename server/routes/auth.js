@@ -3,25 +3,30 @@ const passport = require('passport');
 const router = express.Router();
 
 // Initiate Google OAuth flow
-router.get('/google',
+router.get(
+  '/google',
   passport.authenticate('google', {
-    scope: ['profile', 'email', 'https://www.googleapis.com/auth/calendar.readonly'],
+    scope: [
+      'profile',
+      'email',
+      'https://www.googleapis.com/auth/calendar.readonly',
+    ],
     accessType: 'offline',
-    prompt: 'consent'
+    prompt: 'consent',
   })
 );
 
 // Google OAuth callback
-router.get('/google/callback',
+router.get(
+  '/google/callback',
   passport.authenticate('google', {
-    failureRedirect: '/auth/failure'
+    failureRedirect: '/auth/failure',
   }),
   (req, res) => {
     // Successful authentication, redirect to dashboard
     // In development, redirect to Vite dev server
-    const redirectUrl = process.env.NODE_ENV === 'production'
-      ? '/'
-      : 'http://localhost:5173/';
+    const redirectUrl =
+      process.env.NODE_ENV === 'production' ? '/' : 'http://localhost:5173/';
     res.redirect(redirectUrl);
   }
 );
@@ -92,7 +97,7 @@ router.get('/user', (req, res) => {
       id: req.user.id,
       email: req.user.email,
       name: req.user.name,
-      role: req.user.role
+      role: req.user.role,
     });
   } else {
     res.status(401).json({ error: 'Not authenticated' });

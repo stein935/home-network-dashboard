@@ -5,12 +5,14 @@ Brutalist-designed home network dashboard with Google OAuth, role-based access c
 ## Tech Stack
 
 **Backend** (Express/Node.js)
+
 - SQLite database via better-sqlite3
 - Passport.js + Google OAuth 2.0
 - Session management with connect-sqlite3
 - Models: User, Service, ServiceConfig, Section, Note
 
 **Frontend** (React + Vite)
+
 - React Router for navigation
 - Axios for API calls
 - Tailwind CSS for styling
@@ -98,12 +100,14 @@ home-network-dashboard/
 ## API Endpoints
 
 **Auth**
+
 - GET `/auth/google` - Initiate OAuth
 - GET `/auth/google/callback` - OAuth callback
 - GET `/auth/user` - Current user info
 - POST `/auth/logout` - End session
 
 **Services** (authenticated)
+
 - GET `/api/services` - List all services with config
 - POST `/api/services` - Create with optional calendar config (admin only)
 - PUT `/api/services/:id` - Update with optional calendar config (admin only)
@@ -111,6 +115,7 @@ home-network-dashboard/
 - PUT `/api/services/reorder` - Update display order (admin only)
 
 **Sections** (authenticated)
+
 - GET `/api/sections` - List all sections
 - GET `/api/sections/with-services` - Sections with nested services
 - POST `/api/sections` - Create (admin only)
@@ -119,15 +124,18 @@ home-network-dashboard/
 - PUT `/api/sections/reorder` - Update display order (admin only)
 
 **Users** (admin only)
+
 - GET `/api/users` - List all users
 - POST `/api/users` - Add user to whitelist
 - DELETE `/api/users/:id` - Remove user
 
 **Calendar** (authenticated)
+
 - GET `/api/calendar/calendars` - List user's Google calendars
 - GET `/api/calendar/events` - Get events for a calendar (params: calendarId, timeMin, timeMax)
 
 **Notes** (authenticated)
+
 - GET `/api/notes` - List all notes
 - GET `/api/notes/section/:sectionId` - Get notes for a specific section
 - POST `/api/notes` - Create note (requires: title, message, color, sectionId; optional: dueDate)
@@ -141,9 +149,19 @@ home-network-dashboard/
 **Start frontend**: `cd client && npm run dev` (Vite, port 5173)
 **Seed admin**: `npm run seed`
 
+**Code Quality**:
+- `npm run lint` - Run ESLint on entire codebase
+- `npm run lint:fix` - Auto-fix ESLint issues
+- `npm run format` - Format code with Prettier
+- `npm run format:check` - Check formatting without changes
+- `cd client && npm run lint` - Lint frontend code only
+
+**ESLint Configuration**: Flat config (v9.x) with React, React Hooks, JSON, and Markdown plugins. All code follows best practices with zero lint errors.
+
 ## Environment Variables
 
 Required in `.env`:
+
 - `GOOGLE_CLIENT_ID` - OAuth client ID
 - `GOOGLE_CLIENT_SECRET` - OAuth client secret
 - `GOOGLE_CALLBACK_URL` - OAuth redirect URI
@@ -156,15 +174,19 @@ Required in `.env`:
 
 Fully functional with Google OAuth, role-based access, link/calendar card types, sticky notes with drag-and-drop reordering, collapsible sections, admin panel, and responsive brutalist design. Calendar integration includes day/week/month views with event details. Sticky notes support due dates with urgency indicators and customizable colors. All dialogs use a unified Dialog component with consistent blue header design and mobile-responsive layouts.
 
+**Code Quality**: Full ESLint and Prettier setup with zero lint errors. Code follows React best practices including proper hooks usage (useCallback, useMemo), no unused variables, and optimized component rendering.
+
 ## Card Types
 
 The service card system supports different card types via the `card_type` field:
 
 **Currently Supported:**
+
 - `link` (default) - Opens URL in new tab when clicked
 - `calendar` - Displays Google Calendar events with day, week, or month views
 
 **Calendar Card Features:**
+
 - Three view modes: Day, Week (Sunday-Saturday), Month (traditional grid)
 - Event detail dialog with attendees, response status, organizer, meeting/hangout links
 - Responsive layouts: Month view disabled <900px, week view stacks <672px (ResizeObserver)
@@ -173,6 +195,7 @@ The service card system supports different card types via the `card_type` field:
 - Configurable calendar selection and default view type
 
 **Adding New Card Types:**
+
 1. Update CHECK constraint in `server/models/init-db.js` and add migration
 2. Update validation in `server/routes/services.js`
 3. Add option to ServiceForm dropdown, implement rendering in ServiceCard
@@ -183,6 +206,7 @@ The service card system supports different card types via the `card_type` field:
 Sticky notes are section-specific notes that appear alongside services within collapsible sections.
 
 **Features:**
+
 - Drag-and-drop reordering within sections
 - Customizable colors (10 color palette: yellows, pinks, blues, greens)
 - Optional due dates with intelligent categorization
@@ -195,6 +219,7 @@ Sticky notes are section-specific notes that appear alongside services within co
 - Character limits: title (200 chars), message (5000 chars)
 
 **Due Date Categories:**
+
 - `overdue` - Past due (red badge with AlertTriangle icon)
 - `today` - Due today (red badge with AlertCircle icon)
 - `soon` - Due within 3 days (orange badge with Clock icon)
@@ -202,6 +227,7 @@ Sticky notes are section-specific notes that appear alongside services within co
 - `none` - No due date set
 
 **Display Rules:**
+
 - Notes shown in masonry grid layout
 - Aspect ratio: square (1:1)
 - Size range: min 200px, max 280px
@@ -213,6 +239,7 @@ Sticky notes are section-specific notes that appear alongside services within co
 All dialogs in the application use a shared Dialog component for consistency and maintainability.
 
 **Features:**
+
 - Blue header (bg-accent1) with white text and close button
 - Scrollable content section with customizable spacing
 - Optional footer section for action buttons
@@ -221,6 +248,7 @@ All dialogs in the application use a shared Dialog component for consistency and
 - Configurable max width and z-index
 
 **Props:**
+
 - `title` (string) - Dialog title displayed in header
 - `onClose` (function) - Handler called when dialog is closed
 - `children` (ReactNode) - Content section of dialog
@@ -230,24 +258,28 @@ All dialogs in the application use a shared Dialog component for consistency and
 - `zIndex` (number, optional) - Z-index for dialog (default: 50)
 
 **Usage Example:**
+
 ```jsx
 <Dialog
   title="Edit Service"
   onClose={handleClose}
   footer={
     <div className="flex gap-3">
-      <button onClick={handleSave} className="btn-brutal-primary">Save</button>
-      <button onClick={handleClose} className="btn-brutal">Cancel</button>
+      <button onClick={handleSave} className="btn-brutal-primary">
+        Save
+      </button>
+      <button onClick={handleClose} className="btn-brutal">
+        Cancel
+      </button>
     </div>
   }
 >
-  <form className="space-y-4">
-    {/* Form fields */}
-  </form>
+  <form className="space-y-4">{/* Form fields */}</form>
 </Dialog>
 ```
 
 **Used By:**
+
 - NoteDialog - Create/edit sticky notes
 - EventDetailDialog - Display calendar event details
 - ServiceForm - Add/edit services

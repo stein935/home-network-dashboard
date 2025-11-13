@@ -6,7 +6,7 @@ export function Footer() {
   const { isAdmin, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const hideOnAdmin = location.pathname === "/admin"
+  const hideOnAdmin = location.pathname === '/admin';
 
   const handleAdminClick = () => {
     navigate('/admin');
@@ -14,7 +14,7 @@ export function Footer() {
 
   return (
     <div className="px-6 pb-6 pt-0 md:px-12 md:pb-12">
-      <div className="max-w-7xl mx-auto pt-3 md:pt-6 border-t-5 border-black">
+      <div className="mx-auto max-w-7xl border-t-5 border-black pt-3 md:pt-6">
         <div className="flex gap-4">
           {isAdmin && !hideOnAdmin && (
             <button

@@ -16,5 +16,5 @@ function isAuthorized(req, res, next) {
 
 module.exports = {
   isAuthenticated,
-  isAuthorized
+  isAuthorized,
 };

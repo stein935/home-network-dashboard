@@ -1,9 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
       colors: {
@@ -26,14 +23,14 @@ export default {
         'display-sm': ['2rem', { lineHeight: '1.2', fontWeight: '900' }],
       },
       borderWidth: {
-        '3': '3px',
-        '5': '5px',
+        3: '3px',
+        5: '5px',
       },
       boxShadow: {
-        'brutal': '8px 8px 0px 0px rgba(0,0,0,0.8)',
+        brutal: '8px 8px 0px 0px rgba(0,0,0,0.8)',
         'brutal-sm': '4px 4px 0px 0px rgba(0,0,0,0.8)',
       },
     },
   },
   plugins: [],
-}
+};

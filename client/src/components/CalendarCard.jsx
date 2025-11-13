@@ -1,12 +1,15 @@
-import { useState, useEffect, useLayoutEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Calendar as CalendarIcon,
+} from 'lucide-react';
 import { calendarApi } from '../utils/api';
 import { EventDetailDialog } from './EventDetailDialog';
 
 export function CalendarCard({ service }) {
   const config = service.config || {};
   const defaultViewType = config.view_type || 'week';
-  const resizeObserverRef = useRef(null);
   const cardElementRef = useRef(null);
 
   const [events, setEvents] = useState([]);
@@ -37,7 +40,7 @@ export function CalendarCard({ service }) {
 
     // If user selected month but width is too narrow, show week instead
     if (selectedViewType === 'month' && windowWidth < MONTH_VIEW_MIN_WIDTH) {
-      setSelectedViewType('week')
+      setSelectedViewType('week');
       return 'week';
     }
 
@@ -46,50 +49,16 @@ export function CalendarCard({ service }) {
 
   const effectiveViewType = getEffectiveViewType();
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadEvents = async () => {
-      if (calendarId && isMounted) {
-        await fetchEvents();
-      }
-    };
-
-    loadEvents();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [currentDate, effectiveViewType, calendarId]);
-
-  const fetchEvents = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const { timeMin, timeMax } = getTimeRange();
-
-      const response = await calendarApi.getEvents(calendarId, timeMin, timeMax);
-
-      // Deduplicate events at the source
-      const uniqueEvents = response.data.filter((event, index, self) =>
-        index === self.findIndex(e =>
-          e.id === event.id ||
-          (e.summary === event.summary && e.start === event.start && e.end === event.end)
-        )
-      );
-
-      setEvents(uniqueEvents);
-    } catch (err) {
-      console.error('Error fetching calendar events:', err);
-      console.error('Error details:', err.response?.data);
-      setError(err.response?.data?.error || 'Failed to load calendar events');
-    } finally {
-      setLoading(false);
-    }
+  const getWeekStart = (date) => {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day; // Get Sunday
+    const start = new Date(d.setDate(diff));
+    start.setHours(0, 0, 0, 0);
+    return start;
   };
 
-  const getTimeRange = () => {
+  const getTimeRange = useCallback(() => {
     let timeMin, timeMax;
 
     if (effectiveViewType === 'day') {
@@ -106,24 +75,65 @@ export function CalendarCard({ service }) {
       timeMin = start.toISOString();
       timeMax = end.toISOString();
     } else if (effectiveViewType === 'month') {
-      const start = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-      const end = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+      const start = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        1
+      );
+      const end = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth() + 1,
+        0
+      );
       end.setHours(23, 59, 59, 999);
       timeMin = start.toISOString();
       timeMax = end.toISOString();
     }
 
     return { timeMin, timeMax };
-  };
+  }, [currentDate, effectiveViewType]);
 
-  const getWeekStart = (date) => {
-    const d = new Date(date);
-    const day = d.getDay();
-    const diff = d.getDate() - day; // Get Sunday
-    const start = new Date(d.setDate(diff));
-    start.setHours(0, 0, 0, 0);
-    return start;
-  };
+  const fetchEvents = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { timeMin, timeMax } = getTimeRange();
+
+      const response = await calendarApi.getEvents(
+        calendarId,
+        timeMin,
+        timeMax
+      );
+
+      // Deduplicate events at the source
+      const uniqueEvents = response.data.filter(
+        (event, index, self) =>
+          index ===
+          self.findIndex(
+            (e) =>
+              e.id === event.id ||
+              (e.summary === event.summary &&
+                e.start === event.start &&
+                e.end === event.end)
+          )
+      );
+
+      setEvents(uniqueEvents);
+    } catch (err) {
+      console.error('Error fetching calendar events:', err);
+      console.error('Error details:', err.response?.data);
+      setError(err.response?.data?.error || 'Failed to load calendar events');
+    } finally {
+      setLoading(false);
+    }
+  }, [calendarId, getTimeRange]);
+
+  useEffect(() => {
+    if (calendarId) {
+      fetchEvents();
+    }
+  }, [calendarId, fetchEvents]);
 
   const navigate = (direction) => {
     const newDate = new Date(currentDate);
@@ -131,7 +141,7 @@ export function CalendarCard({ service }) {
     if (effectiveViewType === 'day') {
       newDate.setDate(newDate.getDate() + direction);
     } else if (effectiveViewType === 'week') {
-      newDate.setDate(newDate.getDate() + (direction * 7));
+      newDate.setDate(newDate.getDate() + direction * 7);
     } else if (effectiveViewType === 'month') {
       newDate.setMonth(newDate.getMonth() + direction);
     }
@@ -143,14 +153,14 @@ export function CalendarCard({ service }) {
     return new Date(dateString).toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true
+      hour12: true,
     });
   };
 
   const formatDateShort = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
@@ -160,7 +170,7 @@ export function CalendarCard({ service }) {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
-        day: 'numeric'
+        day: 'numeric',
       });
     } else if (effectiveViewType === 'week') {
       const weekStart = getWeekStart(currentDate);
@@ -170,7 +180,7 @@ export function CalendarCard({ service }) {
     } else if (effectiveViewType === 'month') {
       return currentDate.toLocaleDateString('en-US', {
         year: 'numeric',
-        month: 'long'
+        month: 'long',
       });
     }
   };
@@ -178,7 +188,7 @@ export function CalendarCard({ service }) {
   if (loading) {
     return (
       <div className="service-card">
-        <div className="flex items-center justify-center h-full">
+        <div className="flex h-full items-center justify-center">
           <p className="text-text">Loading calendar...</p>
         </div>
       </div>
@@ -188,9 +198,9 @@ export function CalendarCard({ service }) {
   if (error) {
     return (
       <div className="service-card">
-        <div className="flex flex-col items-center justify-center h-full">
-          <CalendarIcon size={48} className="text-error mb-4" />
-          <p className="text-error text-center">{error}</p>
+        <div className="flex h-full flex-col items-center justify-center">
+          <CalendarIcon size={48} className="mb-4 text-error" />
+          <p className="text-center text-error">{error}</p>
         </div>
       </div>
     );
@@ -199,8 +209,10 @@ export function CalendarCard({ service }) {
   // Determine column span based on view type
   const getColumnSpanClass = () => {
     if (effectiveViewType === 'day') return 'col-span-1';
-    if (effectiveViewType === 'week') return 'col-span-1 md:col-span-2 lg:col-span-3';
-    if (effectiveViewType === 'month') return 'col-span-1 md:col-span-2 lg:col-span-3';
+    if (effectiveViewType === 'week')
+      return 'col-span-1 md:col-span-2 lg:col-span-3';
+    if (effectiveViewType === 'month')
+      return 'col-span-1 md:col-span-2 lg:col-span-3';
     return 'col-span-1';
   };
 
@@ -215,15 +227,20 @@ export function CalendarCard({ service }) {
       weekEnd.setDate(weekEnd.getDate() + 6);
       return today >= weekStart && today <= weekEnd;
     } else if (effectiveViewType === 'month') {
-      return currentDate.getMonth() === today.getMonth() && currentDate.getFullYear() === today.getFullYear();
+      return (
+        currentDate.getMonth() === today.getMonth() &&
+        currentDate.getFullYear() === today.getFullYear()
+      );
     }
     return false;
   };
 
   return (
-    <div className={`service-card calendar-card ${getColumnSpanClass()} relative`}>
+    <div
+      className={`service-card calendar-card ${getColumnSpanClass()} relative`}
+    >
       {/* Header with navigation */}
-      <div className="flex items-center justify-between w-full mb-4">
+      <div className="mb-4 flex w-full items-center justify-between">
         <h3 className="font-display text-2xl uppercase text-text">
           {service.name}
         </h3>
@@ -231,10 +248,10 @@ export function CalendarCard({ service }) {
           <button
             onClick={() => setCurrentDate(new Date())}
             disabled={isViewingToday()}
-            className={`px-3 py-2 border-3 border-border font-display uppercase text-sm transition-colors ${
+            className={`border-3 border-border px-3 py-2 font-display text-sm uppercase transition-colors ${
               isViewingToday()
                 ? ''
-                : 'bg-white hover:border-accent1 cursor-pointer'
+                : 'cursor-pointer bg-white hover:border-accent1'
             }`}
             aria-label="Go to today"
           >
@@ -242,14 +259,14 @@ export function CalendarCard({ service }) {
           </button>
           <button
             onClick={() => navigate(-1)}
-            className="p-2 border-3 border-border bg-white hover:border-accent1 transition-colors"
+            className="border-3 border-border bg-white p-2 transition-colors hover:border-accent1"
             aria-label="Previous"
           >
             <ChevronLeft size={20} strokeWidth={3} />
           </button>
           <button
             onClick={() => navigate(1)}
-            className="p-2 border-3 border-border bg-white hover:border-accent1 transition-colors"
+            className="border-3 border-border bg-white p-2 transition-colors hover:border-accent1"
             aria-label="Next"
           >
             <ChevronRight size={20} strokeWidth={3} />
@@ -258,19 +275,23 @@ export function CalendarCard({ service }) {
       </div>
 
       {/* View type selector */}
-      <div className="flex gap-2 mb-4">
+      <div className="mb-4 flex gap-2">
         <button
           onClick={() => setSelectedViewType('day')}
-          className={`px-3 py-1 border-3 font-display uppercase text-sm text-text transition-colors ${
-            selectedViewType === 'day' ? 'border-accent1 bg-accent1 text-white' : 'border-border'
+          className={`border-3 px-3 py-1 font-display text-sm uppercase text-text transition-colors ${
+            selectedViewType === 'day'
+              ? 'border-accent1 bg-accent1 text-white'
+              : 'border-border'
           }`}
         >
           Day
         </button>
         <button
           onClick={() => setSelectedViewType('week')}
-          className={`px-3 py-1 border-3 font-display uppercase text-sm text-text transition-colors ${
-            selectedViewType === 'week' ? 'border-accent1 bg-accent1 text-white' : 'border-border'
+          className={`border-3 px-3 py-1 font-display text-sm uppercase text-text transition-colors ${
+            selectedViewType === 'week'
+              ? 'border-accent1 bg-accent1 text-white'
+              : 'border-border'
           }`}
         >
           Week
@@ -278,41 +299,89 @@ export function CalendarCard({ service }) {
         <button
           onClick={() => setSelectedViewType('month')}
           disabled={windowWidth && windowWidth < MONTH_VIEW_MIN_WIDTH}
-          className={`px-3 py-1 border-3 font-display uppercase text-sm transition-colors ${
-            windowWidth && windowWidth < MONTH_VIEW_MIN_WIDTH
-              ? ''
-              : 'text-text'
+          className={`border-3 px-3 py-1 font-display text-sm uppercase transition-colors ${
+            windowWidth && windowWidth < MONTH_VIEW_MIN_WIDTH ? '' : 'text-text'
           } ${selectedViewType === 'month' ? 'border-accent1 bg-accent1 text-white' : 'border-border'}`}
-          title={windowWidth && windowWidth < MONTH_VIEW_MIN_WIDTH ? 'Month view requires more width' : ''}
+          title={
+            windowWidth && windowWidth < MONTH_VIEW_MIN_WIDTH
+              ? 'Month view requires more width'
+              : ''
+          }
         >
           Month
         </button>
       </div>
 
       {/* Date header */}
-      <div className="text-center font-display text-lg mb-4 text-text uppercase">
+      <div className="mb-4 text-center font-display text-lg uppercase text-text">
         {getHeaderText()}
       </div>
 
       {/* Calendar view content */}
       <div className="calendar-content">
-        {effectiveViewType === 'day' && <DayView events={events} currentDate={currentDate} formatDate={formatDate} setSelectedEvent={setSelectedEvent} />}
-        {effectiveViewType === 'week' && <WeekView events={events} currentDate={currentDate} formatDate={formatDate} getWeekStart={getWeekStart} setSelectedEvent={setSelectedEvent} windowWidth={windowWidth} weekStackWidth={WEEK_STACK_WIDTH} />}
-        {effectiveViewType === 'month' && <MonthView events={events} currentDate={currentDate} expandedDay={expandedDay} setExpandedDay={setExpandedDay} setSelectedEvent={setSelectedEvent} windowWidth={windowWidth} />}
+        {effectiveViewType === 'day' && (
+          <DayView
+            events={events}
+            currentDate={currentDate}
+            formatDate={formatDate}
+            setSelectedEvent={setSelectedEvent}
+          />
+        )}
+        {effectiveViewType === 'week' && (
+          <WeekView
+            events={events}
+            currentDate={currentDate}
+            formatDate={formatDate}
+            getWeekStart={getWeekStart}
+            setSelectedEvent={setSelectedEvent}
+            windowWidth={windowWidth}
+            weekStackWidth={WEEK_STACK_WIDTH}
+          />
+        )}
+        {effectiveViewType === 'month' && (
+          <MonthView
+            events={events}
+            currentDate={currentDate}
+            expandedDay={expandedDay}
+            setExpandedDay={setExpandedDay}
+            setSelectedEvent={setSelectedEvent}
+            windowWidth={windowWidth}
+          />
+        )}
       </div>
 
       {/* Event detail dialog */}
-      {selectedEvent && <EventDetailDialog event={selectedEvent} onClose={() => setSelectedEvent(null)} containerRef={cardElementRef} />}
+      {selectedEvent && (
+        <EventDetailDialog
+          event={selectedEvent}
+          onClose={() => setSelectedEvent(null)}
+          containerRef={cardElementRef}
+        />
+      )}
 
       {/* Event modal */}
       {expandedDay && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center" style={{ zIndex: 9998 }} onClick={() => setExpandedDay(null)}>
-          <div className="bg-surface border-5 border-border p-6 max-w-md w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-4">
+        <div
+          className="fixed inset-0 flex items-center justify-center bg-black/50"
+          style={{ zIndex: 9998 }}
+          onClick={() => setExpandedDay(null)}
+        >
+          <div
+            className="max-h-[80vh] w-full max-w-md overflow-y-auto border-5 border-border bg-surface p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-center justify-between">
               <h3 className="font-display text-xl uppercase text-text">
-                {expandedDay.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                {expandedDay.date.toLocaleDateString('en-US', {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
               </h3>
-              <button onClick={() => setExpandedDay(null)} className="text-text hover:text-accent1">
+              <button
+                onClick={() => setExpandedDay(null)}
+                className="text-text hover:text-accent1"
+              >
                 ✕
               </button>
             </div>
@@ -320,20 +389,24 @@ export function CalendarCard({ service }) {
               {expandedDay.events.map((event, idx) => (
                 <div
                   key={idx}
-                  className="border-3 border-border bg-white p-3 cursor-pointer hover:bg-accent1/10 transition-colors"
+                  className="cursor-pointer border-3 border-border bg-white p-3 transition-colors hover:bg-accent1/10"
                   onClick={(e) => {
                     e.stopPropagation();
                     setExpandedDay(null);
                     setSelectedEvent(event);
                   }}
                 >
-                  <div className="font-display uppercase text-sm text-accent1 flex items-center gap-1">
+                  <div className="flex items-center gap-1 font-display text-sm uppercase text-accent1">
                     {event.allDay && <CalendarIcon size={14} />}
                     {event.allDay ? 'All Day' : formatDate(event.start)}
                   </div>
-                  <div className="font-body text-text mt-1">{event.summary}</div>
+                  <div className="mt-1 font-body text-text">
+                    {event.summary}
+                  </div>
                   {event.location && (
-                    <div className="font-body text-xs text-text/70 mt-1">{event.location}</div>
+                    <div className="mt-1 font-body text-xs text-text/70">
+                      {event.location}
+                    </div>
                   )}
                 </div>
               ))}
@@ -348,16 +421,24 @@ export function CalendarCard({ service }) {
 // Day View Component
 function DayView({ events, currentDate, formatDate, setSelectedEvent }) {
   // Remove duplicates and filter events for this day
-  const uniqueEvents = events.filter((event, index, self) =>
-    index === self.findIndex(e => e.id === event.id || (e.summary === event.summary && e.start === event.start))
+  const uniqueEvents = events.filter(
+    (event, index, self) =>
+      index ===
+      self.findIndex(
+        (e) =>
+          e.id === event.id ||
+          (e.summary === event.summary && e.start === event.start)
+      )
   );
 
-  const dayEvents = uniqueEvents.filter(event => {
+  const dayEvents = uniqueEvents.filter((event) => {
     // Parse dates - for all-day events, parse as local date, not UTC
     let eventStart, eventEnd;
     if (event.allDay) {
       // Parse as local date by using the date parts directly
-      const [startYear, startMonth, startDay] = event.start.split('-').map(Number);
+      const [startYear, startMonth, startDay] = event.start
+        .split('-')
+        .map(Number);
       const [endYear, endMonth, endDay] = event.end.split('-').map(Number);
       eventStart = new Date(startYear, startMonth - 1, startDay);
       eventEnd = new Date(endYear, endMonth - 1, endDay);
@@ -381,21 +462,23 @@ function DayView({ events, currentDate, formatDate, setSelectedEvent }) {
   return (
     <div className="space-y-2">
       {dayEvents.length === 0 ? (
-        <p className="text-text/70 text-center py-8">No events today</p>
+        <p className="py-8 text-center text-text/70">No events today</p>
       ) : (
         dayEvents.map((event, idx) => (
           <div
             key={idx}
-            className="border-3 border-border bg-surface p-3 hover:bg-accent1/10 transition-colors cursor-pointer"
+            className="cursor-pointer border-3 border-border bg-surface p-3 transition-colors hover:bg-accent1/10"
             onClick={() => setSelectedEvent(event)}
           >
-            <div className="font-display uppercase text-sm text-accent1 flex items-center gap-1">
+            <div className="flex items-center gap-1 font-display text-sm uppercase text-accent1">
               {event.allDay && <CalendarIcon size={14} />}
               {event.allDay ? 'All Day' : formatDate(event.start)}
             </div>
-            <div className="font-body text-text mt-1">{event.summary}</div>
+            <div className="mt-1 font-body text-text">{event.summary}</div>
             {event.location && (
-              <div className="font-body text-xs text-text/70 mt-1">{event.location}</div>
+              <div className="mt-1 font-body text-xs text-text/70">
+                {event.location}
+              </div>
             )}
           </div>
         ))
@@ -405,7 +488,15 @@ function DayView({ events, currentDate, formatDate, setSelectedEvent }) {
 }
 
 // Week View Component
-function WeekView({ events, currentDate, formatDate, getWeekStart, setSelectedEvent, windowWidth, weekStackWidth }) {
+function WeekView({
+  events,
+  currentDate,
+  formatDate,
+  getWeekStart,
+  setSelectedEvent,
+  windowWidth,
+  weekStackWidth,
+}) {
   const weekStart = getWeekStart(currentDate);
   const days = Array.from({ length: 7 }, (_, i) => {
     const day = new Date(weekStart);
@@ -416,8 +507,14 @@ function WeekView({ events, currentDate, formatDate, getWeekStart, setSelectedEv
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   // Remove duplicates from events array
-  const uniqueEvents = events.filter((event, index, self) =>
-    index === self.findIndex(e => e.id === event.id || (e.summary === event.summary && e.start === event.start))
+  const uniqueEvents = events.filter(
+    (event, index, self) =>
+      index ===
+      self.findIndex(
+        (e) =>
+          e.id === event.id ||
+          (e.summary === event.summary && e.start === event.start)
+      )
   );
 
   // Stack vertically when narrow
@@ -426,13 +523,17 @@ function WeekView({ events, currentDate, formatDate, getWeekStart, setSelectedEv
   return (
     <div className={`grid gap-2 ${isNarrow ? 'grid-cols-1' : 'grid-cols-7'}`}>
       {days.map((day, idx) => {
-        const dayEvents = uniqueEvents.filter(event => {
+        const dayEvents = uniqueEvents.filter((event) => {
           // Parse dates - for all-day events, parse as local date, not UTC
           let eventStart, eventEnd;
           if (event.allDay) {
             // Parse as local date by using the date parts directly
-            const [startYear, startMonth, startDay] = event.start.split('-').map(Number);
-            const [endYear, endMonth, endDay] = event.end.split('-').map(Number);
+            const [startYear, startMonth, startDay] = event.start
+              .split('-')
+              .map(Number);
+            const [endYear, endMonth, endDay] = event.end
+              .split('-')
+              .map(Number);
             eventStart = new Date(startYear, startMonth - 1, startDay);
             eventEnd = new Date(endYear, endMonth - 1, endDay);
             // Adjust end date - Google returns exclusive end date (next day)
@@ -455,36 +556,49 @@ function WeekView({ events, currentDate, formatDate, getWeekStart, setSelectedEv
         const isToday = day.toDateString() === new Date().toDateString();
 
         return (
-          <div key={idx} className={`border-3 ${isToday ? 'border-accent1' : 'border-border'} bg-surface p-2`}>
+          <div
+            key={idx}
+            className={`border-3 ${isToday ? 'border-accent1' : 'border-border'} bg-surface p-2`}
+          >
             {isNarrow ? (
               // Horizontal layout for narrow view
-              <div className="flex items-center gap-3 mb-2">
-                <div className="font-display uppercase text-sm min-w-[60px]">
+              <div className="mb-2 flex items-center gap-3">
+                <div className="min-w-[60px] font-display text-sm uppercase">
                   {dayNames[idx]}
                 </div>
                 <div className="font-display text-lg text-text">
-                  {day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  {day.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                  })}
                 </div>
               </div>
             ) : (
               // Original stacked layout for wide view
               <>
-                <div className="flex items-center justify-between w-full font-display uppercase mb-2">
-                  <span className="text-xs">{dayNames[idx]}</span><span className="text-lg">{day.getDate()}</span>
+                <div className="mb-2 flex w-full items-center justify-between font-display uppercase">
+                  <span className="text-xs">{dayNames[idx]}</span>
+                  <span className="text-lg">{day.getDate()}</span>
                 </div>
               </>
             )}
-            <div className={`divide-y ${isToday ? 'divide-accent1' : 'divide-border' }`}>
+            <div
+              className={`divide-y ${isToday ? 'divide-accent1' : 'divide-border'}`}
+            >
               {dayEvents.map((event, eventIdx) => (
                 <div
                   key={eventIdx}
-                  className="text-text text-xs py-1 font-body truncate flex items-center gap-1 cursor-pointer hover:bg-accent1/10 transition-colors"
+                  className="flex cursor-pointer items-center gap-1 truncate py-1 font-body text-xs text-text transition-colors hover:bg-accent1/10"
                   title={event.summary}
                   onClick={() => setSelectedEvent(event)}
                 >
-                  {event.allDay && <CalendarIcon size={12} className="flex-shrink-0" />}
+                  {event.allDay && (
+                    <CalendarIcon size={12} className="flex-shrink-0" />
+                  )}
                   <span className="truncate">
-                    {event.allDay ? event.summary : `${formatDate(event.start)} ${event.summary}`}
+                    {event.allDay
+                      ? event.summary
+                      : `${formatDate(event.start)} ${event.summary}`}
                   </span>
                 </div>
               ))}
@@ -497,7 +611,13 @@ function WeekView({ events, currentDate, formatDate, getWeekStart, setSelectedEv
 }
 
 // Month View Component
-function MonthView({ events, currentDate, setExpandedDay, setSelectedEvent, windowWidth }) {
+function MonthView({
+  events,
+  currentDate,
+  setExpandedDay,
+  setSelectedEvent,
+  windowWidth,
+}) {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
@@ -521,8 +641,14 @@ function MonthView({ events, currentDate, setExpandedDay, setSelectedEvent, wind
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   // Remove duplicates from events array
-  const uniqueEvents = events.filter((event, index, self) =>
-    index === self.findIndex(e => e.id === event.id || (e.summary === event.summary && e.start === event.start))
+  const uniqueEvents = events.filter(
+    (event, index, self) =>
+      index ===
+      self.findIndex(
+        (e) =>
+          e.id === event.id ||
+          (e.summary === event.summary && e.start === event.start)
+      )
   );
 
   // Stack days vertically when very narrow (< 400px)
@@ -532,29 +658,40 @@ function MonthView({ events, currentDate, setExpandedDay, setSelectedEvent, wind
   return (
     <div>
       {/* Day headers */}
-      <div className={`grid gap-1 mb-2 ${isVeryNarrow ? 'grid-cols-3' : 'grid-cols-7'}`}>
-        {dayNames.map(name => (
-          <div key={name} className="font-display uppercase text-xs text-center text-text">
+      <div
+        className={`mb-2 grid gap-1 ${isVeryNarrow ? 'grid-cols-3' : 'grid-cols-7'}`}
+      >
+        {dayNames.map((name) => (
+          <div
+            key={name}
+            className="text-center font-display text-xs uppercase text-text"
+          >
             {isVeryNarrow ? name.slice(0, 1) : name}
           </div>
         ))}
       </div>
 
       {/* Calendar grid */}
-      <div className={`grid gap-1 ${isVeryNarrow ? 'grid-cols-3' : 'grid-cols-7'}`}>
+      <div
+        className={`grid gap-1 ${isVeryNarrow ? 'grid-cols-3' : 'grid-cols-7'}`}
+      >
         {days.map((day, idx) => {
           if (!day) {
             return <div key={idx} />;
           }
 
           const date = new Date(year, month, day);
-          const dayEvents = uniqueEvents.filter(event => {
+          const dayEvents = uniqueEvents.filter((event) => {
             // Parse dates - for all-day events, parse as local date, not UTC
             let eventStart, eventEnd;
             if (event.allDay) {
               // Parse as local date by using the date parts directly
-              const [startYear, startMonth, startDay] = event.start.split('-').map(Number);
-              const [endYear, endMonth, endDay] = event.end.split('-').map(Number);
+              const [startYear, startMonth, startDay] = event.start
+                .split('-')
+                .map(Number);
+              const [endYear, endMonth, endDay] = event.end
+                .split('-')
+                .map(Number);
               eventStart = new Date(startYear, startMonth - 1, startDay);
               eventEnd = new Date(endYear, endMonth - 1, endDay);
               // Adjust end date - Google returns exclusive end date (next day)
@@ -579,30 +716,32 @@ function MonthView({ events, currentDate, setExpandedDay, setSelectedEvent, wind
           return (
             <div
               key={idx}
-              className={`border-3 ${isToday ? 'border-accent1' : 'border-border'} bg-surface p-2 flex flex-col min-h-[120px]`}
+              className={`border-3 ${isToday ? 'border-accent1' : 'border-border'} flex min-h-[120px] flex-col bg-surface p-2`}
             >
-              <div className="font-display text-sm text-text mb-1">
-                {day}
-              </div>
-              <div className={`flex-1 overflow-hidden divide-y ${isToday ? 'divide-accent1' : 'divide-border' }`}>
+              <div className="mb-1 font-display text-sm text-text">{day}</div>
+              <div
+                className={`flex-1 divide-y overflow-hidden ${isToday ? 'divide-accent1' : 'divide-border'}`}
+              >
                 {dayEvents.slice(0, 2).map((event, eventIdx) => (
                   <div
                     key={eventIdx}
-                    className="text-text text-xs py-1 truncate flex items-center gap-1 cursor-pointer hover:bg-accent1/10 transition-colors"
+                    className="flex cursor-pointer items-center gap-1 truncate py-1 text-xs text-text transition-colors hover:bg-accent1/10"
                     title={event.summary}
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedEvent(event);
                     }}
                   >
-                    {event.allDay && <CalendarIcon size={10} className="flex-shrink-0" />}
+                    {event.allDay && (
+                      <CalendarIcon size={10} className="flex-shrink-0" />
+                    )}
                     <span className="truncate">{event.summary}</span>
                   </div>
                 ))}
                 {dayEvents.length > 2 && (
                   <button
                     onClick={() => setExpandedDay({ date, events: dayEvents })}
-                    className="text-xs text-accent1 hover:text-accent2 py-1 cursor-pointer"
+                    className="cursor-pointer py-1 text-xs text-accent1 hover:text-accent2"
                   >
                     +{dayEvents.length - 2} more
                   </button>
