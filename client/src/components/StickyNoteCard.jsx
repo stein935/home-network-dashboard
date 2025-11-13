@@ -121,7 +121,7 @@ export function StickyNoteCard({ note, onEdit, onDragStart, onDragEnd, onDragOve
         )}
 
         {/* Message */}
-        <p className="font-body text-sm text-black flex-1 line-clamp-4 break-words whitespace-pre-wrap">
+        <p className="font-body text-sm text-black flex-1 break-words whitespace-pre-wrap truncate">
           {note.message}
         </p>
       </div>

@@ -255,6 +255,9 @@ export function Dashboard() {
 
     if (currentIndex !== targetIndex) {
       try {
+        // Save scroll position
+        const scrollY = window.scrollY;
+
         // Remove the dragged service from its current position
         const reorderedServices = sectionServices.filter(s => s.id !== draggedService.id);
         // Insert it at the target position
@@ -266,28 +269,14 @@ export function Dashboard() {
           displayOrder: index
         }));
 
-        // Optimistically update the UI
-        const updatedSections = sectionsWithServices.map(section => {
-          if (section.id === targetSectionId) {
-            return {
-              ...section,
-              services: reorderedServices.map((service, index) => ({
-                ...service,
-                display_order: index
-              }))
-            };
-          }
-          return section;
-        });
-        setSectionsWithServices(updatedSections);
-
-        // Send update to server in the background
         await servicesApi.reorder(updates);
+        await fetchData();
+
+        // Restore scroll position
+        window.scrollTo(0, scrollY);
       } catch (err) {
         console.error('Error reordering services:', err);
         alert('Failed to reorder services');
-        // Refetch on error to restore correct state
-        await fetchData();
       }
     }
 
@@ -371,7 +360,6 @@ export function Dashboard() {
                       {/* Services Grid */}
                       {section.services.length > 0 && (
                         <div>
-                          <h3 className="font-display text-xl uppercase text-text/70 mb-4">Services</h3>
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {section.services.map((service) => (
                               <ServiceCard
