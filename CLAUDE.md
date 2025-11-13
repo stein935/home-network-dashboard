@@ -177,17 +177,55 @@ home-network-dashboard/
 
 **Note on Paths**: The server now runs from `packages/server/` but loads `.env` from project root. Database and session paths are resolved relative to project root automatically.
 
+## Docker Deployment
+
+**Production deployment** uses Docker with port 3031:
+
+```bash
+# Build and start
+docker-compose up -d --build
+
+# View logs
+docker-compose logs -f
+
+# Stop
+docker-compose down
+
+# Rebuild from scratch
+docker-compose down && docker-compose build --no-cache && docker-compose up -d
+```
+
+**Docker configuration**:
+- Port: 3031 (production), 3030 (local dev)
+- NODE_ENV automatically set to `production`
+- Frontend built and served as static files from backend
+- Data persisted in `./data` volume
+- Environment variables set in `docker-compose.yml`
+
+**OAuth Configuration for Docker**:
+Update Google OAuth Console with production URL:
+- Authorized JavaScript origins: `http://yourdomain.com:3031`
+- Authorized redirect URIs: `http://yourdomain.com:3031/auth/google/callback`
+
+**Multi-domain Support**:
+The app automatically detects the domain used to access it and redirects accordingly after OAuth. In development, it uses referer detection to support both `localhost` and custom local domains (e.g., `home-dashboard.local`).
+
 ## Environment Variables
 
 Required in `.env`:
 
 - `GOOGLE_CLIENT_ID` - OAuth client ID
 - `GOOGLE_CLIENT_SECRET` - OAuth client secret
-- `GOOGLE_CALLBACK_URL` - OAuth redirect URI
+- `GOOGLE_CALLBACK_URL` - OAuth redirect URI (e.g., `http://localhost:3030/auth/google/callback` for dev, `http://yourdomain.com:3031/auth/google/callback` for production)
 - `SESSION_SECRET` - Session encryption key
 - `DATABASE_PATH` - SQLite database path
 - `NODE_ENV` - production/development
-- `PORT` - Server port (default 3030)
+- `PORT` - Server port (default 3030 for dev, 3031 for Docker production)
+
+Optional in `.env`:
+
+- `CLIENT_URL` - Frontend URL to redirect to after OAuth (auto-detected from referer if not set)
+- `VITE_API_URL` - Backend API URL for Vite proxy (defaults to `http://localhost:3030`, useful for custom domains)
 
 ## Current State
 

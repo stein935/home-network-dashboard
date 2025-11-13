@@ -51,17 +51,22 @@ app.use(express.urlencoded({ extended: true }));
 
 // Session configuration
 const projectRoot = path.resolve(__dirname, '../..');
+// Use absolute path for session DB in production, relative path for dev
+const sessionDbDir =
+  process.env.NODE_ENV === 'production'
+    ? '/data'
+    : path.join(projectRoot, 'data');
 app.use(
   session({
     store: new SQLiteStore({
       db: 'sessions.db',
-      dir: path.join(projectRoot, 'data'),
+      dir: sessionDbDir,
     }),
     secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // Set to true only when using HTTPS in production
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       sameSite: 'lax',

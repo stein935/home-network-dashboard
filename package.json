@@ -7,12 +7,14 @@
     "packages/*"
   ],
   "scripts": {
+    "deploy": "npm run build && docker-compose down && docker-compose build --no-cache && docker-compose up -d",
     "dev": "npm run dev:server & npm run dev:client",
     "dev:server": "npm run dev --workspace=home-dashboard-server",
     "dev:client": "npm run dev --workspace=home-dashboard-client",
     "start": "npm run start --workspace=home-dashboard-server",
     "seed": "npm run seed --workspace=home-dashboard-server",
     "build": "npm run build --workspace=home-dashboard-client",
+    "preview": "npm run preview --workspace=home-dashboard-client",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",

@@ -24,9 +24,22 @@ router.get(
   }),
   (req, res) => {
     // Successful authentication, redirect to dashboard
-    // In development, redirect to Vite dev server
-    const redirectUrl =
-      process.env.NODE_ENV === 'production' ? '/' : 'http://localhost:5173/';
+    if (process.env.NODE_ENV === 'production') {
+      return res.redirect('/');
+    }
+
+    // In development, use CLIENT_URL if set, otherwise detect from referer
+    let redirectUrl = process.env.CLIENT_URL;
+
+    if (!redirectUrl && req.get('referer')) {
+      // Extract origin from referer (e.g., http://home-dashboard.local:5173/)
+      const referer = new URL(req.get('referer'));
+      redirectUrl = `${referer.protocol}//${referer.host}/`;
+    }
+
+    // Final fallback to localhost
+    redirectUrl = redirectUrl || 'http://localhost:5173/';
+
     res.redirect(redirectUrl);
   }
 );
