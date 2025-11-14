@@ -73,7 +73,7 @@ export default function RichTextEditor({
         HTMLAttributes: {
           class: 'flex items-start gap-2',
         },
-        onReadOnlyChecked: (node, checked) => {
+        onReadOnlyChecked: () => {
           // This fires when checkbox is clicked in read-only mode
           // We'll handle it in our click handler instead
           return false;

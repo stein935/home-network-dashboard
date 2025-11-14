@@ -5,7 +5,7 @@ import {
   formatDueDate,
   getDueDateBadgeConfig,
 } from '../utils/dateUtils';
-import { stripHtml, sanitizeHtml } from '../utils/htmlUtils';
+import { sanitizeHtml } from '../utils/htmlUtils';
 
 export function StickyNoteCard({
   note,

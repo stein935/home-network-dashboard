@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Save, Trash2 } from 'lucide-react';
 import { NOTE_COLORS, getRandomColor } from '../utils/noteColors';
 import { Dialog } from './Dialog';
@@ -12,7 +12,7 @@ export function NoteDialog({ note, sectionId, onSave, onDelete, onClose }) {
   const initialMessage = useMemo(() => {
     if (!note?.message) return '<p></p>';
     return isHtml(note.message) ? note.message : textToHtml(note.message);
-  }, [note?.message]);
+  }, [note]);
 
   // Form state
   const [title, setTitle] = useState(note?.title || '');
