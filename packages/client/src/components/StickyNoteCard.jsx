@@ -1,5 +1,11 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { Clock, AlertCircle, AlertTriangle, Calendar } from 'lucide-react';
+import {
+  Clock,
+  AlertCircle,
+  AlertTriangle,
+  Calendar,
+  MoreVertical,
+} from 'lucide-react';
 import {
   getDueDateCategory,
   formatDueDate,
@@ -17,7 +23,9 @@ export function StickyNoteCard({
   onDrop,
 }) {
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isDragHandleHovered, setIsDragHandleHovered] = useState(false);
   const messageRef = useRef(null);
+  const cardRef = useRef(null);
 
   const handleClick = (e) => {
     // Don't open edit dialog if clicking on links or checkboxes
@@ -34,7 +42,9 @@ export function StickyNoteCard({
   useEffect(() => {
     if (!messageRef.current) return;
 
-    const taskLists = messageRef.current.querySelectorAll('ul[data-type="taskList"]');
+    const taskLists = messageRef.current.querySelectorAll(
+      'ul[data-type="taskList"]'
+    );
     taskLists.forEach((taskList) => {
       const taskItems = taskList.querySelectorAll('li');
       taskItems.forEach((taskItem) => {
@@ -69,7 +79,9 @@ export function StickyNoteCard({
         taskItem.setAttribute('data-checked', newChecked ? 'true' : 'false');
 
         // Get all task items from ALL task lists to find the global index
-        const allTaskLists = messageRef.current.querySelectorAll('ul[data-type="taskList"]');
+        const allTaskLists = messageRef.current.querySelectorAll(
+          'ul[data-type="taskList"]'
+        );
         let allTaskItems = [];
         allTaskLists.forEach((tl) => {
           const items = tl.querySelectorAll('li');
@@ -91,6 +103,10 @@ export function StickyNoteCard({
   }, [note.id, onCheckboxToggle, note.message]);
 
   const handleDragStart = (e) => {
+    // Set the drag image to the entire card
+    if (cardRef.current) {
+      e.dataTransfer.setDragImage(cardRef.current, 50, 50);
+    }
     if (onDragStart) {
       onDragStart(e, note);
     }
@@ -148,14 +164,12 @@ export function StickyNoteCard({
 
   return (
     <div
+      ref={cardRef}
       className={`sticky-note-card relative cursor-pointer select-none ${
         isDragOver ? 'ring-4 ring-accent3' : ''
-      }`}
+      } ${isDragHandleHovered ? 'sticky-note-card-hover' : ''}`}
       style={{ backgroundColor: note.color }}
       onClick={handleClick}
-      draggable="true"
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -167,10 +181,27 @@ export function StickyNoteCard({
         }
       }}
     >
+      {/* Drag handle icon */}
+      <div
+        className="absolute right-[-25px] top-[-20px] z-20 flex h-[80px] w-[80px] cursor-move items-center justify-center"
+        draggable="true"
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onMouseEnter={() => setIsDragHandleHovered(true)}
+        onMouseLeave={() => setIsDragHandleHovered(false)}
+        onClick={(e) => {
+          e.stopPropagation(); // Prevent card click when clicking drag handle
+        }}
+      >
+        <MoreVertical
+          size={20}
+          className="text-black/40 transition-colors hover:text-black/70"
+        />
+      </div>
       {/* Due date badge - only show if not 'none' or 'future' */}
       {dueDateCategory !== 'none' && dueDateCategory !== 'future' && (
         <div
-          className={`absolute right-2 top-2 ${badgeConfig.bgColor} ${badgeConfig.textColor} z-10 flex items-center gap-1 border-2 border-black px-2 py-1 font-body text-xs font-bold`}
+          className={`absolute left-2 top-2 ${badgeConfig.bgColor} ${badgeConfig.textColor} z-10 flex items-center gap-1 border-2 border-black px-2 py-1 font-body text-xs font-bold`}
         >
           {IconComponent && <IconComponent size={12} />}
           <span>{badgeConfig.label}</span>

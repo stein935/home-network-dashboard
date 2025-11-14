@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import * as Icons from 'lucide-react';
+import { MoreVertical } from 'lucide-react';
 import { CalendarCard } from './CalendarCard';
 
 export function ServiceCard({
@@ -11,10 +12,20 @@ export function ServiceCard({
 }) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isDragHandleHovered, setIsDragHandleHovered] = useState(false);
+  const cardRef = useRef(null);
 
   // Render calendar card for calendar type
   if (service.card_type === 'calendar') {
-    return <CalendarCard service={service} />;
+    return (
+      <CalendarCard
+        service={service}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
+      />
+    );
   }
 
   // Default link card behavior
@@ -31,6 +42,10 @@ export function ServiceCard({
   // Drag handlers
   const handleDragStart = (e) => {
     setIsDragging(true);
+    // Set the drag image to the entire card
+    if (cardRef.current) {
+      e.dataTransfer.setDragImage(cardRef.current, 100, 100);
+    }
     if (onDragStart) {
       onDragStart(e, service);
     }
@@ -73,11 +88,9 @@ export function ServiceCard({
 
   return (
     <div
-      className={`service-card group ${isDragOver ? 'ring-4 ring-accent3' : ''}`}
+      ref={cardRef}
+      className={`service-card relative ${isDragOver ? 'ring-4 ring-accent3' : ''}`}
       onClick={handleClick}
-      draggable="true"
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -89,7 +102,27 @@ export function ServiceCard({
         }
       }}
     >
-      <div className="mb-4 text-accent1 transition-colors group-hover:text-accent2">
+      {/* Drag handle icon */}
+      <div
+        className="absolute right-4 top-4 z-20 cursor-move"
+        draggable="true"
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onMouseEnter={() => setIsDragHandleHovered(true)}
+        onMouseLeave={() => setIsDragHandleHovered(false)}
+        onClick={(e) => {
+          e.stopPropagation(); // Prevent card click when clicking drag handle
+        }}
+      >
+        <MoreVertical
+          size={24}
+          className="text-text/40 transition-colors hover:text-text/70"
+        />
+      </div>
+
+      <div
+        className={`mb-4 text-accent1 transition-colors ${isDragHandleHovered ? 'text-accent2' : ''}`}
+      >
         <IconComponent size={64} strokeWidth={2.5} />
       </div>
       <h3 className="text-center font-display text-2xl uppercase text-text">

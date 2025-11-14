@@ -104,7 +104,11 @@
   }
 
   .sticky-note-card {
-    @apply aspect-square h-full w-full overflow-hidden border-4 border-black shadow-[8px_8px_0_0_rgba(0,0,0,1)] transition-all duration-200 hover:-ml-[8px] hover:-mt-[8px] hover:shadow-[16px_16px_0_0_rgba(0,0,0,1)];
+    @apply aspect-square h-full w-full overflow-hidden border-4 border-black shadow-[8px_8px_0_0_rgba(0,0,0,1)] transition-all duration-200;
+  }
+
+  .sticky-note-card-hover {
+    @apply -ml-[8px] -mt-[8px] shadow-[16px_16px_0_0_rgba(0,0,0,1)];
   }
 
   button:disabled {

@@ -3,14 +3,22 @@ import {
   ChevronLeft,
   ChevronRight,
   Calendar as CalendarIcon,
+  MoreVertical,
 } from 'lucide-react';
 import { calendarApi } from '../utils/api';
 import { EventDetailDialog } from './EventDetailDialog';
 
-export function CalendarCard({ service }) {
+export function CalendarCard({
+  service,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDrop,
+}) {
   const config = service.config || {};
   const defaultViewType = config.view_type || 'week';
   const cardElementRef = useRef(null);
+  const cardRef = useRef(null);
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,6 +28,7 @@ export function CalendarCard({ service }) {
   const [expandedDay, setExpandedDay] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const calendarId = config.calendar_id || 'primary';
 
@@ -149,6 +158,47 @@ export function CalendarCard({ service }) {
     setCurrentDate(newDate);
   };
 
+  // Drag handlers
+  const handleDragStart = (e) => {
+    // Set the drag image to the entire card
+    if (cardRef.current) {
+      e.dataTransfer.setDragImage(cardRef.current, 150, 100);
+    }
+    if (onDragStart) {
+      onDragStart(e, service);
+    }
+  };
+
+  const handleDragEnd = (e) => {
+    if (onDragEnd) {
+      onDragEnd(e);
+    }
+    setIsDragOver(false);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+    if (onDragOver) {
+      onDragOver(e);
+    }
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    if (onDrop) {
+      onDrop(e, service);
+    }
+  };
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleTimeString('en-US', {
       hour: 'numeric',
@@ -208,11 +258,11 @@ export function CalendarCard({ service }) {
 
   // Determine column span based on view type
   const getColumnSpanClass = () => {
-    if (effectiveViewType === 'day') return 'col-span-1';
+    if (effectiveViewType === 'day') return 'col-span-1 md:col-span-2';
     if (effectiveViewType === 'week')
-      return 'col-span-1 md:col-span-2 lg:col-span-3';
+      return 'col-span-1 md:col-span-3 lg:col-span-4';
     if (effectiveViewType === 'month')
-      return 'col-span-1 md:col-span-2 lg:col-span-3';
+      return 'col-span-1 md:col-span-3 lg:col-span-4';
     return 'col-span-1';
   };
 
@@ -237,14 +287,76 @@ export function CalendarCard({ service }) {
 
   return (
     <div
-      className={`service-card calendar-card ${getColumnSpanClass()} relative`}
+      ref={cardRef}
+      className={`service-card calendar-card ${getColumnSpanClass()} relative ${isDragOver ? 'ring-4 ring-accent3' : ''}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
     >
+      {/* Drag handle icon */}
+      <div
+        className="absolute right-4 top-4 z-30 cursor-move"
+        draggable="true"
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onClick={(e) => {
+          e.stopPropagation(); // Prevent any card interactions when clicking drag handle
+        }}
+      >
+        <MoreVertical
+          size={24}
+          className="text-text/40 transition-colors hover:text-text/70"
+        />
+      </div>
+
       {/* Header with navigation */}
       <div className="mb-4 flex w-full items-center justify-between">
         <h3 className="font-display text-2xl uppercase text-text">
           {service.name}
         </h3>
-        <div className="flex gap-2">
+      </div>
+
+      {/* View type selector */}
+      <div className="item-center flex w-full flex-wrap justify-between gap-2">
+        <div className="mb-4 flex flex-wrap gap-2">
+          <button
+            onClick={() => setSelectedViewType('day')}
+            className={`border-3 px-3 py-1 font-display text-sm uppercase text-text transition-colors ${
+              selectedViewType === 'day'
+                ? 'border-accent1 bg-accent1 text-white'
+                : 'border-border'
+            }`}
+          >
+            Day
+          </button>
+          <button
+            onClick={() => setSelectedViewType('week')}
+            className={`border-3 px-3 py-1 font-display text-sm uppercase text-text transition-colors ${
+              selectedViewType === 'week'
+                ? 'border-accent1 bg-accent1 text-white'
+                : 'border-border'
+            }`}
+          >
+            Week
+          </button>
+          <button
+            onClick={() => setSelectedViewType('month')}
+            disabled={windowWidth && windowWidth < MONTH_VIEW_MIN_WIDTH}
+            className={`border-3 px-3 py-1 font-display text-sm uppercase transition-colors ${
+              windowWidth && windowWidth < MONTH_VIEW_MIN_WIDTH
+                ? ''
+                : 'text-text'
+            } ${selectedViewType === 'month' ? 'border-accent1 bg-accent1 text-white' : 'border-border'}`}
+            title={
+              windowWidth && windowWidth < MONTH_VIEW_MIN_WIDTH
+                ? 'Month view requires more width'
+                : ''
+            }
+          >
+            Month
+          </button>
+        </div>
+        <div className="mb-4 flex flex-wrap gap-2">
           <button
             onClick={() => setCurrentDate(new Date())}
             disabled={isViewingToday()}
@@ -255,7 +367,7 @@ export function CalendarCard({ service }) {
             }`}
             aria-label="Go to today"
           >
-            Today
+            <CalendarIcon size={20} strokeWidth={3} />
           </button>
           <button
             onClick={() => navigate(-1)}
@@ -272,44 +384,6 @@ export function CalendarCard({ service }) {
             <ChevronRight size={20} strokeWidth={3} />
           </button>
         </div>
-      </div>
-
-      {/* View type selector */}
-      <div className="mb-4 flex gap-2">
-        <button
-          onClick={() => setSelectedViewType('day')}
-          className={`border-3 px-3 py-1 font-display text-sm uppercase text-text transition-colors ${
-            selectedViewType === 'day'
-              ? 'border-accent1 bg-accent1 text-white'
-              : 'border-border'
-          }`}
-        >
-          Day
-        </button>
-        <button
-          onClick={() => setSelectedViewType('week')}
-          className={`border-3 px-3 py-1 font-display text-sm uppercase text-text transition-colors ${
-            selectedViewType === 'week'
-              ? 'border-accent1 bg-accent1 text-white'
-              : 'border-border'
-          }`}
-        >
-          Week
-        </button>
-        <button
-          onClick={() => setSelectedViewType('month')}
-          disabled={windowWidth && windowWidth < MONTH_VIEW_MIN_WIDTH}
-          className={`border-3 px-3 py-1 font-display text-sm uppercase transition-colors ${
-            windowWidth && windowWidth < MONTH_VIEW_MIN_WIDTH ? '' : 'text-text'
-          } ${selectedViewType === 'month' ? 'border-accent1 bg-accent1 text-white' : 'border-border'}`}
-          title={
-            windowWidth && windowWidth < MONTH_VIEW_MIN_WIDTH
-              ? 'Month view requires more width'
-              : ''
-          }
-        >
-          Month
-        </button>
       </div>
 
       {/* Date header */}
