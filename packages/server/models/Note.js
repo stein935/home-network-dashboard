@@ -58,12 +58,41 @@ class Note {
 
   static update(id, { title, message, dueDate, color }) {
     const now = new Date().toISOString();
+
+    // Build dynamic UPDATE query based on provided fields
+    const updates = [];
+    const values = [];
+
+    if (title !== undefined) {
+      updates.push('title = ?');
+      values.push(title);
+    }
+    if (message !== undefined) {
+      updates.push('message = ?');
+      values.push(message);
+    }
+    if (dueDate !== undefined) {
+      updates.push('due_date = ?');
+      values.push(dueDate || null);
+    }
+    if (color !== undefined) {
+      updates.push('color = ?');
+      values.push(color);
+    }
+
+    // Always update the updated_at timestamp
+    updates.push('updated_at = ?');
+    values.push(now);
+
+    // Add id for WHERE clause
+    values.push(id);
+
     const stmt = db.prepare(`
       UPDATE notes
-      SET title = ?, message = ?, due_date = ?, color = ?, updated_at = ?
+      SET ${updates.join(', ')}
       WHERE id = ?
     `);
-    stmt.run(title, message, dueDate || null, color, now, id);
+    stmt.run(...values);
     return this.findById(id);
   }
 

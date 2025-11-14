@@ -1,8 +1,66 @@
 const express = require('express');
 const { body, param, validationResult } = require('express-validator');
+const sanitizeHtml = require('sanitize-html');
 const router = express.Router();
 const Note = require('../models/Note');
 const { isAuthenticated } = require('../middleware/auth');
+
+// HTML sanitization configuration
+const sanitizeOptions = {
+  allowedTags: [
+    'p',
+    'br',
+    'strong',
+    'em',
+    'u',
+    'h1',
+    'h2',
+    'h3',
+    'ul',
+    'ol',
+    'li',
+    'a',
+    'span',
+    'input',
+    'label',
+  ],
+  allowedAttributes: {
+    a: ['href', 'target', 'rel'],
+    span: ['class'],
+    li: ['data-type', 'data-checked'],
+    ul: ['data-type'],
+    input: ['type', 'checked'],
+  },
+  allowedClasses: {
+    span: ['formatted-date'],
+  },
+  // Only allow specific input types (checkboxes for task lists)
+  transformTags: {
+    input: (tagName, attribs) => {
+      if (attribs.type === 'checkbox') {
+        return {
+          tagName: 'input',
+          attribs: {
+            type: 'checkbox',
+            ...(attribs.checked && { checked: 'checked' }),
+          },
+        };
+      }
+      return { tagName: '', attribs: {} }; // Remove non-checkbox inputs
+    },
+  },
+};
+
+// Helper to sanitize HTML message
+function sanitizeMessage(html) {
+  return sanitizeHtml(html, sanitizeOptions);
+}
+
+// Helper to count visible characters (strip HTML tags)
+function countVisibleChars(html) {
+  const text = sanitizeHtml(html, { allowedTags: [], allowedAttributes: {} });
+  return text.length;
+}
 
 // Validation middleware
 const validateNote = [
@@ -12,9 +70,12 @@ const validateNote = [
     .isLength({ min: 1, max: 200 })
     .withMessage('Title is required and must be less than 200 characters'),
   body('message')
-    .trim()
-    .isLength({ min: 1, max: 5000 })
-    .withMessage('Message is required and must be less than 5000 characters'),
+    .isString()
+    .custom((value) => {
+      const visibleChars = countVisibleChars(value);
+      return visibleChars >= 1 && visibleChars <= 5000;
+    })
+    .withMessage('Message is required and must be less than 5000 visible characters'),
   body('dueDate')
     .optional({ checkFalsy: true })
     .isISO8601()
@@ -27,18 +88,24 @@ const validateNote = [
 
 const validateNoteUpdate = [
   body('title')
+    .optional()
     .trim()
     .isLength({ min: 1, max: 200 })
-    .withMessage('Title is required and must be less than 200 characters'),
+    .withMessage('Title must be less than 200 characters'),
   body('message')
-    .trim()
-    .isLength({ min: 1, max: 5000 })
-    .withMessage('Message is required and must be less than 5000 characters'),
+    .optional()
+    .isString()
+    .custom((value) => {
+      const visibleChars = countVisibleChars(value);
+      return visibleChars >= 1 && visibleChars <= 5000;
+    })
+    .withMessage('Message must be less than 5000 visible characters'),
   body('dueDate')
     .optional({ checkFalsy: true })
     .isISO8601()
     .withMessage('Due date must be a valid ISO date'),
   body('color')
+    .optional()
     .trim()
     .matches(/^#[0-9A-Fa-f]{6}$/)
     .withMessage('Color must be a valid hex color code'),
@@ -87,6 +154,9 @@ router.post('/', isAuthenticated, validateNote, (req, res) => {
 
     const { sectionId, title, message, dueDate, color } = req.body;
 
+    // Sanitize HTML message to prevent XSS
+    const sanitizedMessage = sanitizeMessage(message);
+
     // Extract author info from authenticated user
     const authorEmail = req.user.email;
     const authorName = req.user.name || req.user.email;
@@ -94,7 +164,7 @@ router.post('/', isAuthenticated, validateNote, (req, res) => {
     const note = Note.create({
       sectionId,
       title,
-      message,
+      message: sanitizedMessage,
       authorEmail,
       authorName,
       dueDate: dueDate || null,
@@ -129,14 +199,17 @@ router.put(
         return res.status(404).json({ error: 'Note not found' });
       }
 
+      // Sanitize HTML message if provided
+      const sanitizedMessage = message ? sanitizeMessage(message) : undefined;
+
       const note = Note.update(id, {
         title,
-        message,
+        message: sanitizedMessage,
         dueDate: dueDate || null,
         color,
       });
 
-      console.log(`Note updated: "${title}" by ${req.user.email}`);
+      console.log(`Note updated: "${note.title}" by ${req.user.email}`);
       res.json(note);
     } catch (error) {
       console.error('Error updating note:', error);

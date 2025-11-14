@@ -196,6 +196,7 @@ docker-compose down && docker-compose build --no-cache && docker-compose up -d
 ```
 
 **Docker configuration**:
+
 - Port: 3031 (production), 3030 (local dev)
 - NODE_ENV automatically set to `production`
 - Frontend built and served as static files from backend
@@ -204,6 +205,7 @@ docker-compose down && docker-compose build --no-cache && docker-compose up -d
 
 **OAuth Configuration for Docker**:
 Update Google OAuth Console with production URL:
+
 - Authorized JavaScript origins: `http://yourdomain.com:3031`
 - Authorized redirect URIs: `http://yourdomain.com:3031/auth/google/callback`
 

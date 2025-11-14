@@ -113,6 +113,54 @@ export function Dashboard() {
     setSelectedSectionId(null);
   };
 
+  const handleCheckboxToggle = async (noteId, checkboxIndex, checked) => {
+    try {
+      // Find the note
+      const note = notes.find((n) => n.id === noteId);
+      if (!note) return;
+
+      // Parse HTML and update checkbox state
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(note.message, 'text/html');
+
+      // Get all task lists and find all task items
+      const taskLists = doc.querySelectorAll('ul[data-type="taskList"]');
+      let allTaskItems = [];
+      taskLists.forEach((taskList) => {
+        const items = taskList.querySelectorAll('li');
+        allTaskItems = allTaskItems.concat(Array.from(items));
+      });
+
+      if (allTaskItems[checkboxIndex]) {
+        const taskItem = allTaskItems[checkboxIndex];
+        const checkbox = taskItem.querySelector('input[type="checkbox"]');
+
+        // Update the data-checked attribute on the li
+        taskItem.setAttribute('data-checked', checked ? 'true' : 'false');
+
+        // Update the checked attribute on the input
+        if (checkbox) {
+          if (checked) {
+            checkbox.setAttribute('checked', 'checked');
+          } else {
+            checkbox.removeAttribute('checked');
+          }
+        }
+      }
+
+      // Serialize back to HTML
+      const updatedMessage = doc.body.innerHTML;
+
+      // Update the note via API
+      await notesApi.update(noteId, { message: updatedMessage });
+
+      // Refresh notes
+      await fetchNotes();
+    } catch (err) {
+      console.error('Error toggling checkbox:', err);
+    }
+  };
+
   // Get notes for a specific section
   const getSectionNotes = (sectionId) => {
     return notes.filter((note) => note.section_id === sectionId);
@@ -421,6 +469,7 @@ export function Dashboard() {
                                   key={note.id}
                                   note={note}
                                   onEdit={handleEditNote}
+                                  onCheckboxToggle={handleCheckboxToggle}
                                   onDragStart={handleDragStart}
                                   onDragEnd={handleDragEnd}
                                   onDrop={handleNoteDropOnNote}

@@ -1,26 +1,94 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Clock, AlertCircle, AlertTriangle, Calendar } from 'lucide-react';
 import {
   getDueDateCategory,
   formatDueDate,
   getDueDateBadgeConfig,
 } from '../utils/dateUtils';
+import { stripHtml, sanitizeHtml } from '../utils/htmlUtils';
 
 export function StickyNoteCard({
   note,
   onEdit,
+  onCheckboxToggle,
   onDragStart,
   onDragEnd,
   onDragOver,
   onDrop,
 }) {
   const [isDragOver, setIsDragOver] = useState(false);
+  const messageRef = useRef(null);
 
-  const handleClick = () => {
+  const handleClick = (e) => {
+    // Don't open edit dialog if clicking on links or checkboxes
+    if (e.target.tagName === 'A' || e.target.tagName === 'INPUT') {
+      return;
+    }
+
     if (onEdit) {
       onEdit(note);
     }
   };
+
+  // Sync checkbox states based on data-checked attribute
+  useEffect(() => {
+    if (!messageRef.current) return;
+
+    const taskLists = messageRef.current.querySelectorAll('ul[data-type="taskList"]');
+    taskLists.forEach((taskList) => {
+      const taskItems = taskList.querySelectorAll('li');
+      taskItems.forEach((taskItem) => {
+        const checkbox = taskItem.querySelector('input[type="checkbox"]');
+        if (checkbox) {
+          const isChecked = taskItem.getAttribute('data-checked') === 'true';
+          checkbox.checked = isChecked;
+        }
+      });
+    });
+  }, [note.message]);
+
+  // Handle checkbox clicks
+  useEffect(() => {
+    if (!messageRef.current || !onCheckboxToggle) return;
+
+    const handleCheckboxClick = (e) => {
+      if (e.target.type === 'checkbox') {
+        e.stopPropagation(); // Prevent edit dialog from opening
+
+        // Find the task item element
+        const taskList = e.target.closest('ul[data-type="taskList"]');
+        if (!taskList) return;
+
+        const taskItem = e.target.closest('li');
+        if (!taskItem) return;
+
+        // Toggle checkbox state
+        const newChecked = e.target.checked;
+
+        // Immediately update the data-checked attribute for instant visual feedback
+        taskItem.setAttribute('data-checked', newChecked ? 'true' : 'false');
+
+        // Get all task items from ALL task lists to find the global index
+        const allTaskLists = messageRef.current.querySelectorAll('ul[data-type="taskList"]');
+        let allTaskItems = [];
+        allTaskLists.forEach((tl) => {
+          const items = tl.querySelectorAll('li');
+          allTaskItems = allTaskItems.concat(Array.from(items));
+        });
+        const checkboxIndex = allTaskItems.indexOf(taskItem);
+
+        // Call callback with note ID, checkbox index, and new state
+        onCheckboxToggle(note.id, checkboxIndex, newChecked);
+      }
+    };
+
+    const messageEl = messageRef.current;
+    messageEl.addEventListener('click', handleCheckboxClick);
+
+    return () => {
+      messageEl.removeEventListener('click', handleCheckboxClick);
+    };
+  }, [note.id, onCheckboxToggle, note.message]);
 
   const handleDragStart = (e) => {
     if (onDragStart) {
@@ -131,9 +199,17 @@ export function StickyNoteCard({
           )}
 
         {/* Message */}
-        <p className="flex-1 truncate whitespace-pre-wrap break-words font-body text-sm text-black">
-          {note.message}
-        </p>
+        <div
+          ref={messageRef}
+          className="note-message-content flex-1 overflow-hidden font-body text-sm text-black"
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(note.message) }}
+          style={{
+            display: '-webkit-box',
+            WebkitLineClamp: 6,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+          }}
+        />
       </div>
 
       {/* Folded corner */}

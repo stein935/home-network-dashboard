@@ -1,14 +1,22 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Save, Trash2 } from 'lucide-react';
 import { NOTE_COLORS, getRandomColor } from '../utils/noteColors';
 import { Dialog } from './Dialog';
+import RichTextEditor from './RichTextEditor';
+import { isHtml, textToHtml, countHtmlChars } from '../utils/htmlUtils';
 
 export function NoteDialog({ note, sectionId, onSave, onDelete, onClose }) {
   const isCreateMode = note === null;
 
+  // Convert plain text to HTML on first load if needed
+  const initialMessage = useMemo(() => {
+    if (!note?.message) return '<p></p>';
+    return isHtml(note.message) ? note.message : textToHtml(note.message);
+  }, [note?.message]);
+
   // Form state
   const [title, setTitle] = useState(note?.title || '');
-  const [message, setMessage] = useState(note?.message || '');
+  const [message, setMessage] = useState(initialMessage);
   const [dueDate, setDueDate] = useState(
     note?.due_date ? note.due_date.split('T')[0] : ''
   );
@@ -19,21 +27,34 @@ export function NoteDialog({ note, sectionId, onSave, onDelete, onClose }) {
     if (isCreateMode) return false;
     return (
       title !== note.title ||
-      message !== note.message ||
+      message !== initialMessage ||
       (dueDate || '') !== (note.due_date ? note.due_date.split('T')[0] : '') ||
       color !== note.color
     );
-  }, [title, message, dueDate, color, note, isCreateMode]);
+  }, [title, message, dueDate, color, note, isCreateMode, initialMessage]);
 
   const handleSave = () => {
-    if (!title.trim() || !message.trim()) {
-      alert('Title and message are required');
+    if (!title.trim()) {
+      alert('Title is required');
+      return;
+    }
+
+    // Check if message has actual content (not just empty HTML tags)
+    const messageCharCount = countHtmlChars(message);
+    if (messageCharCount === 0) {
+      alert('Message is required');
+      return;
+    }
+
+    // Validate character limit (count visible text only)
+    if (messageCharCount > 5000) {
+      alert('Message exceeds 5000 character limit');
       return;
     }
 
     const noteData = {
       title: title.trim(),
-      message: message.trim(),
+      message: message, // Keep HTML as-is
       dueDate: dueDate || null,
       color,
     };
@@ -155,10 +176,9 @@ export function NoteDialog({ note, sectionId, onSave, onDelete, onClose }) {
         <label className="mb-2 block font-display text-sm uppercase">
           Message
         </label>
-        <textarea
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          className="input-brutal min-h-[150px] w-full resize-y"
+        <RichTextEditor
+          content={message}
+          onChange={setMessage}
           placeholder="Enter note message..."
           maxLength={5000}
         />
