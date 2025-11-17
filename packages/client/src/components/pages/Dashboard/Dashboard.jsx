@@ -363,11 +363,11 @@ export function Dashboard() {
             <span className="text-accent1"> STEINECKS</span>
           </h1>
           <p className="font-accent text-accent-md inline text-accent2">
-            {getRandomGreeting() || 'Hello'}, {user?.name || user?.email}
+            {getRandomGreeting() || 'Hello'}, {user?.name || user?.email}!
             <CornerDownLeft
               size={32}
               strokeWidth={3}
-              className="-mt-2 ml-2 inline text-accent3"
+              className="-mt-2 ml-4 inline text-accent3"
             />
           </p>
         </header>

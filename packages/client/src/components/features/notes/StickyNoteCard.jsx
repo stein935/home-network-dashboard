@@ -226,14 +226,14 @@ export function StickyNoteCard({
           {/* Title */}
           <h3
             ref={titleRef}
-            className="mb-2 line-clamp-2 break-words font-display text-lg uppercase text-black"
+            className="mb-1 line-clamp-2 break-words font-display text-lg uppercase text-black"
           >
             {note.title}
           </h3>
 
           {/* Author */}
-          <p className="mb-2 font-body text-xs text-black/70">
-            {note.author_name}
+          <p className="mb-2 border-b-2 border-black pb-1 font-body text-xs text-black/70">
+            From: {note.author_name}
           </p>
 
           {/* Due date display (for future dates or when no urgent badge) */}
@@ -253,7 +253,8 @@ export function StickyNoteCard({
             style={{
               overflow: 'hidden',
               lineHeight: '1.5em',
-              maskImage: 'linear-gradient(to bottom, black 0%, black 70%, transparent 100%)',
+              maskImage:
+                'linear-gradient(to bottom, black 0%, black 70%, transparent 100%)',
               WebkitMaskImage:
                 'linear-gradient(to bottom, black 0%, black 70%, transparent 100%)',
             }}
