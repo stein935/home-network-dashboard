@@ -11,13 +11,13 @@ const FormattedDate = Mark.create({
     return {
       class: {
         default: 'formatted-date',
-        parseHTML: element => element.getAttribute('class'),
-        renderHTML: attributes => {
+        parseHTML: (element) => element.getAttribute('class'),
+        renderHTML: (attributes) => {
           return {
-            class: attributes.class
+            class: attributes.class,
           };
-        }
-      }
+        },
+      },
     };
   },
 
@@ -26,20 +26,24 @@ const FormattedDate = Mark.create({
     return [
       {
         tag: 'span.formatted-date',
-        getAttrs: element => {
+        getAttrs: (element) => {
           return element.classList.contains('formatted-date') ? {} : false;
-        }
-      }
+        },
+      },
     ];
   },
 
   // Render as <span class="formatted-date">
   renderHTML({ HTMLAttributes }) {
-    return ['span', mergeAttributes(HTMLAttributes, { class: 'formatted-date' }), 0];
+    return [
+      'span',
+      mergeAttributes(HTMLAttributes, { class: 'formatted-date' }),
+      0,
+    ];
   },
 
   // Make it inclusive so it wraps the text
-  inclusive: true
+  inclusive: true,
 });
 
 export default FormattedDate;

@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import * as Icons from 'lucide-react';
 import { MoreVertical } from 'lucide-react';
-import { CalendarCard } from './CalendarCard';
+import { CalendarCard } from '@features/calendar/CalendarCard';
 
 export function ServiceCard({
   service,

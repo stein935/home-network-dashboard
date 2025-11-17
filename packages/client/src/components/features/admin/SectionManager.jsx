@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2 } from 'lucide-react';
-import { sectionsApi } from '../utils/api';
-import { Dialog } from './Dialog';
+import { sectionsApi } from '@utils/api';
+import { Dialog } from '@common/Dialog';
 
 export function SectionManager() {
   const [sections, setSections] = useState([]);

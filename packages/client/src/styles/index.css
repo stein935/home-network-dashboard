@@ -141,14 +141,14 @@
   }
 
   /* Remove margins when content is truncated to prevent overlap */
-  .note-message-content.truncated p,
+  /* .note-message-content.truncated p,
   .note-message-content.truncated h1,
   .note-message-content.truncated h2,
   .note-message-content.truncated h3,
   .note-message-content.truncated ul,
   .note-message-content.truncated ol {
     margin: 0 !important;
-  }
+  } */
 
   .note-message-content p {
     @apply mb-2;

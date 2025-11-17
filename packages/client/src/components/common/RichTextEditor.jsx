@@ -23,7 +23,7 @@ import {
   countHtmlChars,
   insertFormattedDate,
   formatDateShort,
-} from '../utils/htmlUtils';
+} from '@utils/htmlUtils';
 
 /**
  * Rich text editor component with brutalist toolbar

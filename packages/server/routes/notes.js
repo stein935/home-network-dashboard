@@ -75,7 +75,9 @@ const validateNote = [
       const visibleChars = countVisibleChars(value);
       return visibleChars >= 1 && visibleChars <= 5000;
     })
-    .withMessage('Message is required and must be less than 5000 visible characters'),
+    .withMessage(
+      'Message is required and must be less than 5000 visible characters'
+    ),
   body('dueDate')
     .optional({ checkFalsy: true })
     .isISO8601()

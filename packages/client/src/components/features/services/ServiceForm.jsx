@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { sectionsApi, calendarApi } from '../utils/api';
-import { Dialog } from './Dialog';
+import { sectionsApi, calendarApi } from '@utils/api';
+import { Dialog } from '@common/Dialog';
 
 const POPULAR_ICONS = [
   'Router',

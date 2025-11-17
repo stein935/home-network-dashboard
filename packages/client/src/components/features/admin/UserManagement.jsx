@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { UserPlus, Trash2, Shield, Eye } from 'lucide-react';
-import { usersApi } from '../utils/api';
-import { useAuth } from '../hooks/useAuth';
-import { Dialog } from './Dialog';
+import { usersApi } from '@utils/api';
+import { useAuth } from '@hooks/useAuth';
+import { Dialog } from '@common/Dialog';
 
 export function UserManagement() {
   const { user: currentUser } = useAuth();
