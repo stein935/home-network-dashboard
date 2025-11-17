@@ -50,23 +50,6 @@ description: Running list of tasks I would like to make to the project. When run
 
 ## Ready
 
-### Make the universal dialog full screen on mobile
-
-> #### Goal
->
-> When used on a mobile device, the dialog utility should be full screen. With the dialog header and footer fixed to the top and bottom respectively/
->
-> #### Requirements
->
-> 1. Dialog is 100% of screen height
-> 2. Dialog is 100% of screen width
-> 3. Header is fixed to the top of the screen. Always visible and never moves
-> 4. Footer is fixed to the bottom of the screen. Always visible and never moves
-> 5. Content section is 100% of the hight between the header and footer.
-> 6. Content section is scrollable
-> 7. Only apply these changes to mobile
-> 8. Non-mobile stays as-is
-
 ## Draft
 
 ### Recipe Box Card
@@ -116,6 +99,36 @@ description: Running list of tasks I would like to make to the project. When run
 > ...
 
 ## Complete
+
+### Make the universal dialog full screen on mobile
+
+> #### Goal
+>
+> When used on a mobile device, the dialog utility should be full screen. With the dialog header and footer fixed to the top and bottom respectively.
+>
+> #### Requirements
+>
+> 1. Dialog is 100% of screen height
+> 2. Dialog is 100% of screen width
+> 3. Header is fixed to the top of the screen. Always visible and never moves
+> 4. Footer is fixed to the bottom of the screen. Always visible and never moves
+> 5. Content section is 100% of the height between the header and footer
+> 6. Content section is scrollable
+> 7. Only apply these changes to mobile
+> 8. Non-mobile stays as-is
+>
+> #### Completed
+>
+> - Implemented mobile-optimized full-screen dialog layout using Tailwind's `sm:` breakpoint (< 640px)
+> - Dialog container uses flexbox column layout with `flex h-screen w-screen flex-col` on mobile
+> - Header and footer remain in document flow with `flex-shrink-0` to prevent compression
+> - Content section uses `flex-1` to fill remaining space and `overflow-y-auto` for scrolling
+> - Desktop behavior preserved: centered modal with max-width constraint and original styling
+> - Updated Dialog.jsx with responsive Tailwind classes
+> - Updated documentation in CLAUDE.md and README.md
+> - All dialogs (notes, events, services, sections, users) automatically inherit mobile-optimized behavior
+
+---
 
 ### Add 'Edit' and 'See more' Buttons to Note Cards
 
