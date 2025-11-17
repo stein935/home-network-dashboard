@@ -137,6 +137,17 @@
   /* Rich text content in sticky notes */
   .note-message-content {
     @apply break-words;
+    line-height: 1.5;
+  }
+
+  /* Remove margins when content is truncated to prevent overlap */
+  .note-message-content.truncated p,
+  .note-message-content.truncated h1,
+  .note-message-content.truncated h2,
+  .note-message-content.truncated h3,
+  .note-message-content.truncated ul,
+  .note-message-content.truncated ol {
+    margin: 0 !important;
   }
 
   .note-message-content p {
@@ -194,7 +205,9 @@
 
   /* Checked state for task items - apply strikethrough to entire item */
   .note-message-content ul[data-type='taskList'] > li[data-checked='true'],
-  .note-message-content ul[data-type='taskList'] > li:has(input[type='checkbox']:checked) {
+  .note-message-content
+    ul[data-type='taskList']
+    > li:has(input[type='checkbox']:checked) {
     color: #6b7280;
     text-decoration: line-through;
   }
@@ -274,19 +287,27 @@
     @apply flex items-start gap-2;
   }
 
-  .rich-text-editor-content ul[data-type='taskList'] > li input[type='checkbox'] {
+  .rich-text-editor-content
+    ul[data-type='taskList']
+    > li
+    input[type='checkbox'] {
     @apply mt-1 h-4 w-4 flex-shrink-0 cursor-pointer border-2 border-black;
   }
 
   /* Checked state for task items - apply strikethrough to entire item */
   .rich-text-editor-content ul[data-type='taskList'] > li[data-checked='true'],
-  .rich-text-editor-content ul[data-type='taskList'] > li:has(input[type='checkbox']:checked) {
+  .rich-text-editor-content
+    ul[data-type='taskList']
+    > li:has(input[type='checkbox']:checked) {
     color: #6b7280;
     text-decoration: line-through;
   }
 
   /* Keep checkbox itself not struck through */
-  .rich-text-editor-content ul[data-type='taskList'] > li input[type='checkbox'] {
+  .rich-text-editor-content
+    ul[data-type='taskList']
+    > li
+    input[type='checkbox'] {
     text-decoration: none !important;
   }
 

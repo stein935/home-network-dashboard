@@ -273,9 +273,12 @@ Sticky notes are section-specific notes that appear alongside services within co
 - Future dates displayed without badge
 - Author attribution (automatic from authenticated user)
 - Folded corner design element (bottom-right)
-- Click to edit/view details
+- Edit and "See more" buttons (hover on desktop, always visible on mobile)
+- "See more" detail view for notes with overflowing content
+- Gradient text fade effect on truncated content
 - Author or admin can delete notes
 - Character limits: title (200 chars), message (5000 chars)
+- Rich text content support with automatic line-height optimization
 
 **Due Date Categories:**
 

@@ -5,6 +5,9 @@ import {
   AlertTriangle,
   Calendar,
   MoreVertical,
+  Edit2,
+  Maximize2,
+  X,
 } from 'lucide-react';
 import {
   getDueDateCategory,
@@ -24,19 +27,34 @@ export function StickyNoteCard({
 }) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isDragHandleHovered, setIsDragHandleHovered] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [hasOverflow, setHasOverflow] = useState(false);
+  const [showDetailView, setShowDetailView] = useState(false);
   const messageRef = useRef(null);
   const cardRef = useRef(null);
+  const titleRef = useRef(null);
 
-  const handleClick = (e) => {
-    // Don't open edit dialog if clicking on links or checkboxes
-    if (e.target.tagName === 'A' || e.target.tagName === 'INPUT') {
-      return;
-    }
+  // Detect content overflow
+  useEffect(() => {
+    const checkOverflow = () => {
+      if (!messageRef.current || !titleRef.current) return;
 
-    if (onEdit) {
-      onEdit(note);
-    }
-  };
+      // Check if title is clamped (line-clamp-2)
+      const titleOverflow =
+        titleRef.current.scrollHeight > titleRef.current.clientHeight;
+
+      // Check if message is clamped (WebkitLineClamp: 6)
+      const messageOverflow =
+        messageRef.current.scrollHeight > messageRef.current.clientHeight;
+
+      setHasOverflow(titleOverflow || messageOverflow);
+    };
+
+    checkOverflow();
+    // Recheck on window resize
+    window.addEventListener('resize', checkOverflow);
+    return () => window.removeEventListener('resize', checkOverflow);
+  }, [note.title, note.message]);
 
   // Sync checkbox states based on data-checked attribute
   useEffect(() => {
@@ -163,91 +181,202 @@ export function StickyNoteCard({
   }, [badgeConfig.icon]);
 
   return (
-    <div
-      ref={cardRef}
-      className={`sticky-note-card relative cursor-pointer select-none ${
-        isDragOver ? 'ring-4 ring-accent3' : ''
-      } ${isDragHandleHovered ? 'sticky-note-card-hover' : ''}`}
-      style={{ backgroundColor: note.color }}
-      onClick={handleClick}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-      role="button"
-      tabIndex={0}
-      onKeyPress={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          handleClick();
-        }
-      }}
-    >
-      {/* Drag handle icon */}
+    <>
       <div
-        className="absolute right-[-25px] top-[-20px] z-20 flex h-[80px] w-[80px] cursor-move items-center justify-center"
-        draggable="true"
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-        onMouseEnter={() => setIsDragHandleHovered(true)}
-        onMouseLeave={() => setIsDragHandleHovered(false)}
-        onClick={(e) => {
-          e.stopPropagation(); // Prevent card click when clicking drag handle
-        }}
+        ref={cardRef}
+        className={`sticky-note-card relative select-none ${
+          isDragOver ? 'ring-4 ring-accent3' : ''
+        } ${isDragHandleHovered ? 'sticky-note-card-hover' : ''}`}
+        style={{ backgroundColor: note.color }}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
-        <MoreVertical
-          size={20}
-          className="text-black/40 transition-colors hover:text-black/70"
-        />
-      </div>
-      {/* Due date badge - only show if not 'none' or 'future' */}
-      {dueDateCategory !== 'none' && dueDateCategory !== 'future' && (
+        {/* Drag handle icon */}
         <div
-          className={`absolute left-2 top-2 ${badgeConfig.bgColor} ${badgeConfig.textColor} z-10 flex items-center gap-1 border-2 border-black px-2 py-1 font-body text-xs font-bold`}
+          className="absolute right-[-25px] top-[-20px] z-20 flex h-[80px] w-[80px] cursor-move items-center justify-center"
+          draggable="true"
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onMouseEnter={() => setIsDragHandleHovered(true)}
+          onMouseLeave={() => setIsDragHandleHovered(false)}
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent card click when clicking drag handle
+          }}
         >
-          {IconComponent && <IconComponent size={12} />}
-          <span>{badgeConfig.label}</span>
+          <MoreVertical
+            size={20}
+            className="text-black/40 transition-colors hover:text-black/70"
+          />
+        </div>
+        {/* Due date badge - only show if not 'none' or 'future' */}
+        {dueDateCategory !== 'none' && dueDateCategory !== 'future' && (
+          <div
+            className={`absolute right-8 top-2 ${badgeConfig.bgColor} ${badgeConfig.textColor} z-10 flex items-center gap-1 border-2 border-black px-2 py-1 font-body text-xs font-bold`}
+          >
+            {IconComponent && <IconComponent size={12} />}
+            <span>{badgeConfig.label}</span>
+          </div>
+        )}
+
+        {/* Main content */}
+        <div className="flex h-full flex-col p-4 pb-12">
+          {/* Title */}
+          <h3
+            ref={titleRef}
+            className="mb-2 line-clamp-2 break-words font-display text-lg uppercase text-black"
+          >
+            {note.title}
+          </h3>
+
+          {/* Author */}
+          <p className="mb-2 font-body text-xs text-black/70">
+            {note.author_name}
+          </p>
+
+          {/* Due date display (for future dates or when no urgent badge) */}
+          {note.due_date &&
+            (dueDateCategory === 'future' || dueDateCategory === 'none') && (
+              <p className="mb-2 flex items-center gap-1 font-body text-xs text-black/60">
+                <Calendar size={12} />
+                {formattedDueDate}
+              </p>
+            )}
+
+          {/* Message */}
+          <div
+            ref={messageRef}
+            className="note-message-content truncated max-h-[calc(1.5em * 9)] flex-1 overflow-hidden bg-gradient-to-b from-black via-black to-[transparent_100%] bg-clip-text font-body text-sm text-transparent"
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(note.message) }}
+            style={{
+              overflow: 'hidden',
+              lineHeight: '1.5em',
+            }}
+          />
+        </div>
+
+        {/* Button cluster */}
+        <div
+          className={`absolute bottom-0 left-0 right-[25px] flex gap-[1px] transition-opacity duration-200 md:opacity-0 ${
+            isHovered ? 'md:opacity-100' : ''
+          }`}
+        >
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onEdit) onEdit(note);
+            }}
+            className="flex flex-1 items-center justify-center gap-1 bg-black/10 px-3 py-1.5 font-body text-xs text-black transition-colors hover:bg-black/20"
+            aria-label="Edit note"
+          >
+            <Edit2 size={14} />
+            <span>Edit</span>
+          </button>
+          {hasOverflow && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowDetailView(true);
+              }}
+              className="flex flex-1 items-center justify-center gap-1 bg-black/10 px-3 py-1.5 font-body text-xs text-black transition-colors hover:bg-black/20"
+              aria-label="See more"
+            >
+              <Maximize2 size={14} />
+              <span>See more</span>
+            </button>
+          )}
+        </div>
+
+        {/* Folded corner */}
+        <div className="sticky-note-corner-outline bg-black/20 outline outline-2 outline-black">
+          <div className="sticky-note-corner"></div>
+        </div>
+      </div>
+
+      {/* Detail View Modal */}
+      {showDetailView && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-0 sm:p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowDetailView(false);
+            }
+          }}
+        >
+          <div
+            className="relative h-full w-full max-w-2xl overflow-y-auto border-4 border-black p-6 shadow-brutal sm:max-h-[90vh]"
+            style={{ backgroundColor: note.color }}
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setShowDetailView(false)}
+              className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center bg-black/10 transition-colors hover:bg-black/20"
+              aria-label="Close"
+            >
+              <X size={20} className="text-black" />
+            </button>
+
+            {/* Due date badge */}
+            {dueDateCategory !== 'none' && dueDateCategory !== 'future' && (
+              <div
+                className={`mb-4 ${badgeConfig.bgColor} ${badgeConfig.textColor} inline-flex items-center gap-1 border-2 border-black px-2 py-1 font-body text-xs font-bold`}
+              >
+                {IconComponent && <IconComponent size={12} />}
+                <span>{badgeConfig.label}</span>
+              </div>
+            )}
+
+            {/* Title */}
+            <h3 className="mb-3 break-words font-display text-2xl uppercase text-black">
+              {note.title}
+            </h3>
+
+            {/* Author */}
+            <p className="mb-3 font-body text-sm text-black/70">
+              {note.author_name}
+            </p>
+
+            {/* Due date display (for future dates) */}
+            {note.due_date &&
+              (dueDateCategory === 'future' || dueDateCategory === 'none') && (
+                <p className="mb-3 flex items-center gap-1 font-body text-sm text-black/60">
+                  <Calendar size={14} />
+                  {formattedDueDate}
+                </p>
+              )}
+
+            {/* Full message content */}
+            <div
+              className="note-message-content mb-6 font-body text-base text-black"
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(note.message) }}
+            />
+
+            {/* Action buttons */}
+            <div className="left flex gap-[1px]">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowDetailView(false);
+                  if (onEdit) onEdit(note);
+                }}
+                className="flex items-center gap-1 bg-black/10 px-4 py-2 font-body text-sm text-black transition-colors hover:bg-black/20"
+              >
+                <Edit2 size={16} />
+                <span>Edit</span>
+              </button>
+              <button
+                onClick={() => setShowDetailView(false)}
+                className="flex items-center gap-1 bg-black/10 px-4 py-2 font-body text-sm text-black transition-colors hover:bg-black/20"
+              >
+                <span>Close</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
-
-      {/* Main content */}
-      <div className="flex h-full flex-col p-4">
-        {/* Title */}
-        <h3 className="mb-2 line-clamp-2 break-words font-display text-lg uppercase text-black">
-          {note.title}
-        </h3>
-
-        {/* Author */}
-        <p className="mb-2 font-body text-xs text-black/70">
-          {note.author_name}
-        </p>
-
-        {/* Due date display (for future dates or when no urgent badge) */}
-        {note.due_date &&
-          (dueDateCategory === 'future' || dueDateCategory === 'none') && (
-            <p className="mb-2 flex items-center gap-1 font-body text-xs text-black/60">
-              <Calendar size={12} />
-              {formattedDueDate}
-            </p>
-          )}
-
-        {/* Message */}
-        <div
-          ref={messageRef}
-          className="note-message-content flex-1 overflow-hidden font-body text-sm text-black"
-          dangerouslySetInnerHTML={{ __html: sanitizeHtml(note.message) }}
-          style={{
-            display: '-webkit-box',
-            WebkitLineClamp: 6,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-          }}
-        />
-      </div>
-
-      {/* Folded corner */}
-      <div className="sticky-note-corner-outline outline outline-2 outline-black">
-        <div className="sticky-note-corner"></div>
-      </div>
-    </div>
+    </>
   );
 }
 
