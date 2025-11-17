@@ -342,6 +342,13 @@ All dialogs use a unified `Dialog.jsx` component with consistent styling. To cus
 - All existing dialogs (notes, events, forms) will automatically update
 - Mobile-optimized: Dialogs are full-screen on mobile (< 640px) with fixed header/footer and scrollable content
 
+**Dialog Interaction Features:**
+
+- Body scroll lock prevents underlying page from scrolling when dialog is open
+- Text selection can extend outside dialog boundary without closing it
+- Click-outside-to-close requires both mousedown and mouseup on backdrop
+- Consistent behavior on both desktop and mobile
+
 ## License
 
 MIT License - Feel free to use and modify for your home network!
