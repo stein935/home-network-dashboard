@@ -70,15 +70,19 @@ export function WeekView({
         return (
           <div
             key={idx}
-            className={`border-3 ${isToday ? 'border-accent1' : 'border-border'} bg-surface p-2`}
+            className={`border-3 ${isToday ? 'border-accent1 outline outline-2 outline-accent1' : 'border-border'} bg-surface p-2`}
           >
             {isNarrow ? (
               // Horizontal layout for narrow view
               <div className="mb-2 flex items-center gap-3">
-                <div className="min-w-[60px] font-display text-sm uppercase">
+                <div
+                  className={`min-w-[60px] font-display text-sm uppercase ${isToday ? 'text-accent1' : 'text-text'}`}
+                >
                   {dayNames[idx]}
                 </div>
-                <div className="font-display text-lg text-text">
+                <div
+                  className={`font-display text-lg ${isToday ? 'text-accent1' : 'text-text'}`}
+                >
                   {day.toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
@@ -88,7 +92,9 @@ export function WeekView({
             ) : (
               // Original stacked layout for wide view
               <>
-                <div className="mb-2 flex w-full items-center justify-between font-display uppercase">
+                <div
+                  className={`mb-2 flex w-full items-center justify-between font-display uppercase ${isToday ? 'text-accent1' : 'text-text'}`}
+                >
                   <span className="text-xs">{dayNames[idx]}</span>
                   <span className="text-lg">{day.getDate()}</span>
                 </div>

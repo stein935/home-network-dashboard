@@ -16,11 +16,15 @@ export default {
       fontFamily: {
         display: ['"Bowlby One"', 'Impact', 'Arial Black', 'sans-serif'],
         body: ['"Carrois Gothic"', 'Arial', 'Helvetica', 'sans-serif'],
+        accent: ['"VT323"', 'Arial', 'Helvetica', 'sans-serif'],
       },
       fontSize: {
         'display-lg': ['4rem', { lineHeight: '1', fontWeight: '900' }],
         'display-md': ['3rem', { lineHeight: '1.1', fontWeight: '900' }],
         'display-sm': ['2rem', { lineHeight: '1.2', fontWeight: '900' }],
+        'accent-lg': ['4rem', { lineHeight: '1', fontWeight: '400' }],
+        'accent-md': ['3rem', { lineHeight: '1.1', fontWeight: '400' }],
+        'accent-sm': ['2rem', { lineHeight: '1.2', fontWeight: '400' }],
       },
       borderWidth: {
         3: '3px',

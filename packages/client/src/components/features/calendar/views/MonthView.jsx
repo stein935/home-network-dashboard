@@ -105,9 +105,13 @@ export function MonthView({
           return (
             <div
               key={idx}
-              className={`border-3 ${isToday ? 'border-accent1' : 'border-border'} flex min-h-[120px] flex-col bg-surface p-2`}
+              className={`border-3 ${isToday ? 'border-accent1 outline outline-2 outline-accent1' : 'border-border'} flex min-h-[120px] flex-col bg-surface p-2`}
             >
-              <div className="mb-1 font-display text-sm text-text">{day}</div>
+              <div
+                className={`mb-1 font-display text-sm ${isToday ? 'text-accent1' : 'text-text'}`}
+              >
+                {day}
+              </div>
               <div
                 className={`flex-1 divide-y overflow-hidden ${isToday ? 'divide-accent1' : 'divide-border'}`}
               >

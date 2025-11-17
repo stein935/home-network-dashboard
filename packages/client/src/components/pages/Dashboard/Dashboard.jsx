@@ -1,7 +1,14 @@
 import { useState, useEffect } from 'react';
-import { ChevronDown, ChevronRight, StickyNote, Plus } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronRight,
+  StickyNote,
+  Plus,
+  CornerDownLeft,
+} from 'lucide-react';
 import { useAuth } from '@hooks/useAuth';
 import { sectionsApi, notesApi, servicesApi } from '@utils/api';
+import { getRandomGreeting } from '@utils/greetings';
 import ServiceCard from '@features/services/ServiceCard';
 import StickyNoteCard from '@features/notes/StickyNoteCard';
 import NoteDialog from '@features/notes/NoteDialog';
@@ -351,15 +358,18 @@ export function Dashboard() {
       <div className="mx-auto max-w-7xl">
         {/* Header */}
         <header className="mb-3 flex flex-wrap items-start justify-between gap-4 sm:mb-6">
-          <div>
-            <h1 className="mb-2 font-display text-display-sm uppercase text-text sm:text-display-lg">
-              THE
-              <span className="text-accent1"> STEINECKS</span>
-            </h1>
-            <p className="font-body text-xl text-text/80">
-              Welcome, {user?.name || user?.email}
-            </p>
-          </div>
+          <h1 className="mb-2 inline font-display text-display-sm uppercase text-text sm:text-display-lg">
+            THE
+            <span className="text-accent1"> STEINECKS</span>
+          </h1>
+          <p className="font-accent text-accent-md inline text-accent2">
+            {getRandomGreeting() || 'Hello'}, {user?.name || user?.email}
+            <CornerDownLeft
+              size={32}
+              strokeWidth={3}
+              className="-mt-2 ml-2 inline text-accent3"
+            />
+          </p>
         </header>
 
         {/* Sections with Services */}
