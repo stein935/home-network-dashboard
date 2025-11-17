@@ -51,7 +51,7 @@ export function Dialog({
 
         {/* Content */}
         <div
-          className={`max-h-[70vh] space-y-4 overflow-y-auto p-4 sm:max-h-[80vh] sm:space-y-6 sm:p-6 ${contentClassName}`}
+          className={`max-h-[70vh] space-y-4 overflow-y-auto p-4 sm:space-y-6 sm:p-6 ${contentClassName}`}
         >
           {children}
         </div>

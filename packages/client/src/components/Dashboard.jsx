@@ -430,7 +430,7 @@ export function Dashboard() {
                       {/* Services Grid */}
                       {section.services.length > 0 && (
                         <div>
-                          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                          <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-4">
                             {section.services.map((service) => (
                               <ServiceCard
                                 key={service.id}
