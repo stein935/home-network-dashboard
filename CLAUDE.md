@@ -308,6 +308,7 @@ All dialogs in the application use a shared Dialog component for consistency and
 - Responsive design with Tailwind breakpoints
 - Click-outside-to-close functionality
 - Configurable max width and z-index
+- Mobile-optimized: Full-screen layout on mobile (< 640px) with fixed header/footer and scrollable content filling the space between
 
 **Props:**
 

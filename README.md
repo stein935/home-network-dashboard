@@ -340,6 +340,7 @@ All dialogs use a unified `Dialog.jsx` component with consistent styling. To cus
 - Edit `client/src/components/Dialog.jsx`
 - Modify header background color, border styles, or spacing
 - All existing dialogs (notes, events, forms) will automatically update
+- Mobile-optimized: Dialogs are full-screen on mobile (< 640px) with fixed header/footer and scrollable content
 
 ## License
 

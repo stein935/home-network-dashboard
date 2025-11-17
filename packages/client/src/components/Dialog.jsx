@@ -28,15 +28,15 @@ export function Dialog({
 
   return (
     <div
-      className={`fixed inset-0 flex items-center justify-center bg-black/50 p-4`}
+      className={`fixed inset-0 bg-black/50 sm:flex sm:items-center sm:justify-center sm:p-4`}
       style={{ zIndex: zIndex === 9999 ? 9999 : zIndex }}
       onClick={handleBackdropClick}
     >
       <div
-        className={`border-5 border-border bg-surface shadow-brutal ${maxWidth} w-full`}
+        className={`flex h-screen w-screen flex-col border-5 border-border bg-surface shadow-brutal sm:h-auto sm:w-full ${maxWidth}`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b-4 border-border bg-accent1 p-4 text-white sm:p-6">
+        <div className="flex flex-shrink-0 items-center justify-between border-b-4 border-border bg-accent1 p-4 text-white sm:p-6">
           <h2 className="font-display text-xl uppercase sm:text-2xl md:text-3xl">
             {title}
           </h2>
@@ -51,14 +51,16 @@ export function Dialog({
 
         {/* Content */}
         <div
-          className={`max-h-[70vh] space-y-4 overflow-y-auto p-4 sm:space-y-6 sm:p-6 ${contentClassName}`}
+          className={`flex-1 space-y-4 overflow-y-auto p-4 sm:max-h-[70vh] sm:flex-none sm:space-y-6 sm:p-6 ${contentClassName}`}
         >
           {children}
         </div>
 
         {/* Footer */}
         {footer && (
-          <div className="border-t-4 border-border p-4 sm:p-6">{footer}</div>
+          <div className="flex-shrink-0 border-t-4 border-border p-4 sm:p-6">
+            {footer}
+          </div>
         )}
       </div>
     </div>
