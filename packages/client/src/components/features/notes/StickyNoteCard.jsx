@@ -248,11 +248,14 @@ export function StickyNoteCard({
           {/* Message */}
           <div
             ref={messageRef}
-            className="note-message-content flex-1 overflow-hidden bg-gradient-to-b from-black via-black to-[transparent_100%] bg-clip-text font-body text-sm text-transparent"
+            className="note-message-content flex-1 overflow-hidden font-body text-sm text-black"
             dangerouslySetInnerHTML={{ __html: sanitizeHtml(note.message) }}
             style={{
               overflow: 'hidden',
               lineHeight: '1.5em',
+              maskImage: 'linear-gradient(to bottom, black 0%, black 70%, transparent 100%)',
+              WebkitMaskImage:
+                'linear-gradient(to bottom, black 0%, black 70%, transparent 100%)',
             }}
           />
         </div>
