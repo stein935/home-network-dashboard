@@ -226,7 +226,8 @@
   }
 
   .note-message-content u {
-    @apply underline;
+    text-decoration-line: underline;
+    text-decoration-color: black;
   }
 
   .note-message-content .formatted-date {
