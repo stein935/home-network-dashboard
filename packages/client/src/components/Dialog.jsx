@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 
 /**
@@ -20,17 +21,41 @@ export function Dialog({
   contentClassName = '',
   zIndex = 50,
 }) {
-  const handleBackdropClick = (e) => {
-    if (e.target === e.currentTarget) {
+  const mouseDownTargetRef = useRef(null);
+
+  // Lock body scroll when dialog is open
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
+  // Track where mousedown occurred
+  const handleMouseDown = (e) => {
+    mouseDownTargetRef.current = e.target;
+  };
+
+  // Only close if both mousedown and mouseup occurred on the backdrop
+  // This allows text selection to extend outside the dialog without closing it
+  const handleMouseUp = (e) => {
+    if (
+      e.target === e.currentTarget &&
+      mouseDownTargetRef.current === e.currentTarget
+    ) {
       onClose();
     }
+    mouseDownTargetRef.current = null;
   };
 
   return (
     <div
       className={`fixed inset-0 bg-black/50 sm:flex sm:items-center sm:justify-center sm:p-4`}
       style={{ zIndex: zIndex === 9999 ? 9999 : zIndex }}
-      onClick={handleBackdropClick}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
     >
       <div
         className={`flex h-screen w-screen flex-col border-5 border-border bg-surface shadow-brutal sm:h-auto sm:w-full ${maxWidth}`}

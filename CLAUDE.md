@@ -306,9 +306,17 @@ All dialogs in the application use a shared Dialog component for consistency and
 - Scrollable content section with customizable spacing
 - Optional footer section for action buttons
 - Responsive design with Tailwind breakpoints
-- Click-outside-to-close functionality
+- Click-outside-to-close functionality with text selection support
+- Body scroll lock (prevents underlying page from scrolling when dialog is open)
 - Configurable max width and z-index
 - Mobile-optimized: Full-screen layout on mobile (< 640px) with fixed header/footer and scrollable content filling the space between
+
+**Interaction Behavior:**
+
+- When dialog opens, underlying page scroll is completely frozen
+- Text can be selected and dragged outside dialog boundary without closing the dialog
+- Dialog only closes on click-outside if both mousedown and mouseup occur on the backdrop
+- Works consistently on both desktop and mobile
 
 **Props:**
 
