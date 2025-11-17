@@ -55,18 +55,39 @@ home-network-dashboard/
 │   └── client/              # Frontend workspace (home-dashboard-client)
 │       ├── src/
 │       │   ├── components/
-│       │   │   ├── Dashboard.jsx          # Main view with collapsible sections
-│       │   │   ├── ServiceCard.jsx        # Routes card rendering by type
-│       │   │   ├── CalendarCard.jsx       # Calendar with responsive views
-│       │   │   ├── Dialog.jsx             # Unified dialog component (blue header)
-│       │   │   ├── EventDetailDialog.jsx  # Event details with attendees/links
-│       │   │   ├── StickyNoteCard.jsx     # Draggable sticky note display
-│       │   │   ├── NoteDialog.jsx         # Note create/edit/delete dialog
-│       │   │   ├── AdminPanel.jsx         # Admin interface tabs
-│       │   │   ├── ServiceForm.jsx        # Service CRUD with calendar config
-│       │   │   ├── SectionManager.jsx     # Section management
-│       │   │   ├── UserManagement.jsx     # User whitelist management
-│       │   │   └── ProtectedRoute.jsx     # Route protection HOC
+│       │   │   ├── pages/                      # Route-level components
+│       │   │   │   ├── Dashboard/
+│       │   │   │   │   ├── Dashboard.jsx       # Main view with collapsible sections
+│       │   │   │   │   └── index.js            # Barrel export
+│       │   │   │   └── AdminPanel/
+│       │   │   │       ├── AdminPanel.jsx      # Admin interface tabs
+│       │   │   │       └── index.js            # Barrel export
+│       │   │   ├── features/                   # Feature-based groupings
+│       │   │   │   ├── services/
+│       │   │   │   │   ├── ServiceCard.jsx     # Routes card rendering by type
+│       │   │   │   │   └── ServiceForm.jsx     # Service CRUD with calendar config
+│       │   │   │   ├── calendar/
+│       │   │   │   │   ├── CalendarCard.jsx    # Calendar with responsive views
+│       │   │   │   │   ├── EventDetailDialog.jsx # Event details with attendees/links
+│       │   │   │   │   └── views/
+│       │   │   │   │       ├── DayView.jsx     # Day view component
+│       │   │   │   │       ├── WeekView.jsx    # Week view component
+│       │   │   │   │       └── MonthView.jsx   # Month view component
+│       │   │   │   ├── notes/
+│       │   │   │   │   ├── StickyNoteCard.jsx  # Draggable sticky note display
+│       │   │   │   │   ├── NoteDialog.jsx      # Note create/edit/delete dialog
+│       │   │   │   │   └── NoteDetailModal.jsx # Note detail view modal
+│       │   │   │   └── admin/
+│       │   │   │       ├── SectionManager.jsx  # Section management
+│       │   │   │       └── UserManagement.jsx  # User whitelist management
+│       │   │   ├── common/                     # Reusable UI components
+│       │   │   │   ├── Dialog.jsx              # Unified dialog component (blue header)
+│       │   │   │   ├── RichTextEditor.jsx      # TipTap-based rich text editor
+│       │   │   │   ├── FormattedDateExtension.js # Custom TipTap extension
+│       │   │   │   └── TaskItemExtension.js    # Custom TipTap extension
+│       │   │   └── layout/                     # Layout components
+│       │   │       ├── Footer.jsx              # Global footer with admin/logout buttons
+│       │   │       └── ProtectedRoute.jsx      # Route protection HOC
 │       │   ├── context/
 │       │   │   └── AuthContext.jsx        # Auth provider (exports useAuth)
 │       │   ├── hooks/
@@ -74,11 +95,52 @@ home-network-dashboard/
 │       │   └── utils/
 │       │       ├── api.js                 # Axios with API endpoints
 │       │       ├── dateUtils.js           # Due date formatting & categorization
-│       │       └── noteColors.js          # Sticky note color palette
+│       │       ├── noteColors.js          # Sticky note color palette
+│       │       └── htmlUtils.js           # HTML sanitization and utilities
 │       └── package.json          # Client dependencies
 ├── data/                   # SQLite databases (runtime)
 ├── package.json            # Root workspace config & shared dev dependencies
 └── .env                   # Environment configuration
+```
+
+**Component Organization**: Components are organized using feature-based grouping for improved maintainability and scalability.
+
+**Path Aliases**: Configured in `vite.config.js` for clean imports:
+- `@components` → `src/components`
+- `@pages` → `src/components/pages`
+- `@features` → `src/components/features`
+- `@common` → `src/components/common`
+- `@layout` → `src/components/layout`
+- `@context` → `src/context`
+- `@hooks` → `src/hooks`
+- `@utils` → `src/utils`
+
+**Import Examples**:
+```javascript
+// Pages
+import Dashboard from '@pages/Dashboard';
+import AdminPanel from '@pages/AdminPanel';
+
+// Features
+import ServiceCard from '@features/services/ServiceCard';
+import { CalendarCard } from '@features/calendar/CalendarCard';
+import StickyNoteCard from '@features/notes/StickyNoteCard';
+
+// Common components
+import { Dialog } from '@common/Dialog';
+import RichTextEditor from '@common/RichTextEditor';
+
+// Layout
+import ProtectedRoute from '@layout/ProtectedRoute';
+import Footer from '@layout/Footer';
+
+// Context and hooks
+import { useAuth } from '@hooks/useAuth';
+import { AuthProvider } from '@context/AuthContext';
+
+// Utils
+import { sectionsApi, notesApi } from '@utils/api';
+import { getDueDateCategory } from '@utils/dateUtils';
 ```
 
 ## Database Schema
@@ -361,13 +423,17 @@ All dialogs in the application use a shared Dialog component for consistency and
 
 **Note**: All server code is in `packages/server/`, all client code is in `packages/client/`.
 
-**Add service field**: Update `packages/server/models/init-db.js` (schema), `packages/server/models/Service.js` (model), `packages/server/routes/services.js` (routes), `packages/client/src/components/ServiceForm.jsx` (UI)
+**Add service field**: Update `packages/server/models/init-db.js` (schema), `packages/server/models/Service.js` (model), `packages/server/routes/services.js` (routes), `packages/client/src/components/features/services/ServiceForm.jsx` (UI)
 
-**Add note field**: Update `packages/server/models/init-db.js` (schema), `packages/server/models/Note.js` (model), `packages/server/routes/notes.js` (routes), `packages/client/src/components/NoteDialog.jsx` (UI)
+**Add note field**: Update `packages/server/models/init-db.js` (schema), `packages/server/models/Note.js` (model), `packages/server/routes/notes.js` (routes), `packages/client/src/components/features/notes/NoteDialog.jsx` (UI)
 
-**Add admin feature**: Create model in `packages/server/models/`, add route with auth middleware in `packages/server/routes/`, add AdminPanel tab in `packages/client/`, create management component
+**Add admin feature**: Create model in `packages/server/models/`, add route with auth middleware in `packages/server/routes/`, add AdminPanel tab in `packages/client/src/components/pages/AdminPanel/`, create management component in `packages/client/src/components/features/admin/`
 
-**Add new dialog**: Use Dialog component with title, onClose, optional footer, and content as children
+**Add new dialog**: Use Dialog component from `@common/Dialog` with title, onClose, optional footer, and content as children
+
+**Add new page component**: Create in `packages/client/src/components/pages/<ComponentName>/`, include both `ComponentName.jsx` and `index.js` for barrel exports, use path alias `@pages/ComponentName` to import
+
+**Add new feature component**: Create in appropriate feature folder (`features/services/`, `features/calendar/`, `features/notes/`, `features/admin/`), use path alias `@features/<feature>/<ComponentName>` to import
 
 **Add workspace dependency**:
 

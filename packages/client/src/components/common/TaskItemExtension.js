@@ -9,7 +9,7 @@ const CustomTaskItem = TaskItem.extend({
       ...this.parent?.(),
       checked: {
         default: false,
-        parseHTML: element => {
+        parseHTML: (element) => {
           // Parse both data-checked attribute and checked input
           const dataChecked = element.getAttribute('data-checked');
           if (dataChecked) {
@@ -19,13 +19,13 @@ const CustomTaskItem = TaskItem.extend({
           const checkbox = element.querySelector('input[type="checkbox"]');
           return checkbox?.checked || false;
         },
-        renderHTML: attributes => {
+        renderHTML: (attributes) => {
           return {
-            'data-checked': attributes.checked ? 'true' : 'false'
+            'data-checked': attributes.checked ? 'true' : 'false',
           };
         },
-        keepOnSplit: false
-      }
+        keepOnSplit: false,
+      },
     };
   },
 
@@ -33,8 +33,8 @@ const CustomTaskItem = TaskItem.extend({
     return [
       {
         tag: 'li[data-type="taskItem"]',
-        priority: 51
-      }
+        priority: 51,
+      },
     ];
   },
 
@@ -44,7 +44,7 @@ const CustomTaskItem = TaskItem.extend({
       {
         ...HTMLAttributes,
         'data-type': 'taskItem',
-        'data-checked': node.attrs.checked ? 'true' : 'false'
+        'data-checked': node.attrs.checked ? 'true' : 'false',
       },
       [
         'label',
@@ -52,13 +52,13 @@ const CustomTaskItem = TaskItem.extend({
           'input',
           {
             type: 'checkbox',
-            checked: node.attrs.checked ? 'checked' : null
-          }
+            checked: node.attrs.checked ? 'checked' : null,
+          },
         ],
-        ['span', 0]
-      ]
+        ['span', 0],
+      ],
     ];
-  }
+  },
 });
 
 export default CustomTaskItem;

@@ -249,26 +249,36 @@ VS Code will prompt to install these when you open the project.
 
 ```
 home-network-dashboard/
-├── server/               # Backend Express server
-│   ├── config/          # Database and Passport configuration
-│   ├── middleware/      # Auth and admin middleware
-│   ├── models/          # Database models
-│   ├── routes/          # API routes
-│   └── server.js        # Main server file
-├── client/              # Frontend React app
-│   └── src/
-│       ├── components/  # React components (inc. unified Dialog)
-│       ├── context/     # Auth context
-│       ├── hooks/       # Custom hooks
-│       ├── utils/       # API utilities
-│       └── styles/      # Tailwind CSS
-├── scripts/             # Utility scripts
-│   └── seed.js         # Admin user setup
-├── data/               # SQLite database (created at runtime)
+├── packages/
+│   ├── server/              # Backend Express server
+│   │   ├── config/          # Database and Passport configuration
+│   │   ├── middleware/      # Auth and admin middleware
+│   │   ├── models/          # Database models
+│   │   ├── routes/          # API routes
+│   │   ├── scripts/         # Utility scripts (admin user setup)
+│   │   └── server.js        # Main server file
+│   └── client/              # Frontend React app
+│       └── src/
+│           ├── components/
+│           │   ├── pages/           # Route-level components
+│           │   ├── features/        # Feature-based components
+│           │   │   ├── services/    # Service cards and forms
+│           │   │   ├── calendar/    # Calendar and event displays
+│           │   │   ├── notes/       # Sticky notes and dialogs
+│           │   │   └── admin/       # Admin management components
+│           │   ├── common/          # Reusable UI components
+│           │   └── layout/          # Layout components
+│           ├── context/     # Auth context
+│           ├── hooks/       # Custom hooks
+│           ├── utils/       # API utilities
+│           └── styles/      # Tailwind CSS
+├── data/                    # SQLite database (created at runtime)
 ├── Dockerfile
 ├── docker-compose.yml
-└── .env                # Environment variables
+└── .env                    # Environment variables
 ```
+
+**Component Organization**: Uses feature-based grouping with path aliases (`@pages`, `@features`, `@common`, `@layout`) for clean imports and improved maintainability.
 
 ## Troubleshooting
 

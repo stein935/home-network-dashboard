@@ -37,12 +37,12 @@ export function textToHtml(text) {
   if (!text) return '<p></p>';
 
   // Split by line breaks and filter empty lines
-  const lines = text.split(/\n+/).filter(line => line.trim());
+  const lines = text.split(/\n+/).filter((line) => line.trim());
 
   if (lines.length === 0) return '<p></p>';
 
   // Wrap each line in a paragraph tag
-  return lines.map(line => `<p>${escapeHtml(line)}</p>`).join('');
+  return lines.map((line) => `<p>${escapeHtml(line)}</p>`).join('');
 }
 
 /**
@@ -56,9 +56,9 @@ export function escapeHtml(text) {
     '<': '&lt;',
     '>': '&gt;',
     '"': '&quot;',
-    "'": '&#039;'
+    "'": '&#039;',
   };
-  return text.replace(/[&<>"']/g, m => map[m]);
+  return text.replace(/[&<>"']/g, (m) => map[m]);
 }
 
 /**
@@ -84,7 +84,7 @@ export function formatDateShort(date) {
   const options = {
     month: 'short',
     day: 'numeric',
-    year: 'numeric'
+    year: 'numeric',
   };
 
   return d.toLocaleDateString('en-US', options);
@@ -126,12 +126,12 @@ export function sanitizeHtml(html) {
 
   // Remove script tags and event handlers
   const scripts = temp.querySelectorAll('script');
-  scripts.forEach(script => script.remove());
+  scripts.forEach((script) => script.remove());
 
   // Remove event handler attributes
   const allElements = temp.querySelectorAll('*');
-  allElements.forEach(el => {
-    Array.from(el.attributes).forEach(attr => {
+  allElements.forEach((el) => {
+    Array.from(el.attributes).forEach((attr) => {
       if (attr.name.startsWith('on')) {
         el.removeAttribute(attr.name);
       }

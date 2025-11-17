@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Edit, Trash2 } from 'lucide-react';
 import * as Icons from 'lucide-react';
-import { servicesApi } from '../utils/api';
-import UserManagement from './UserManagement';
-import ServiceForm from './ServiceForm';
-import SectionManager from './SectionManager';
+import { servicesApi } from '@utils/api';
+import UserManagement from '@features/admin/UserManagement';
+import ServiceForm from '@features/services/ServiceForm';
+import SectionManager from '@features/admin/SectionManager';
 
 export function AdminPanel() {
   const navigate = useNavigate();

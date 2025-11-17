@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight, StickyNote, Plus } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
-import { sectionsApi, notesApi, servicesApi } from '../utils/api';
-import ServiceCard from './ServiceCard';
-import StickyNoteCard from './StickyNoteCard';
-import NoteDialog from './NoteDialog';
+import { useAuth } from '@hooks/useAuth';
+import { sectionsApi, notesApi, servicesApi } from '@utils/api';
+import ServiceCard from '@features/services/ServiceCard';
+import StickyNoteCard from '@features/notes/StickyNoteCard';
+import NoteDialog from '@features/notes/NoteDialog';
 
 export function Dashboard() {
   const { user, isAdmin } = useAuth();

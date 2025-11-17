@@ -1,6 +1,6 @@
 import { Settings, LogOut } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '@hooks/useAuth';
 
 export function Footer() {
   const { isAdmin, logout } = useAuth();

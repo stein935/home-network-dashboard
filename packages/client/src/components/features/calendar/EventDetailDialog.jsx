@@ -5,7 +5,7 @@ import {
   Link as LinkIcon,
   Users,
 } from 'lucide-react';
-import { Dialog } from './Dialog';
+import { Dialog } from '@common/Dialog';
 
 export function EventDetailDialog({ event, onClose }) {
   if (!event) return null;

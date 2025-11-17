@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
     container_name: home-network-dashboard
     ports:
-      - "3031:3031"
+      - '3031:3031'
     environment:
       - NODE_ENV=production
       - PORT=3031

@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react';
 import { Save, Trash2 } from 'lucide-react';
-import { NOTE_COLORS, getRandomColor } from '../utils/noteColors';
-import { Dialog } from './Dialog';
-import RichTextEditor from './RichTextEditor';
-import { isHtml, textToHtml, countHtmlChars } from '../utils/htmlUtils';
+import { NOTE_COLORS, getRandomColor } from '@utils/noteColors';
+import { Dialog } from '@common/Dialog';
+import RichTextEditor from '@common/RichTextEditor';
+import { isHtml, textToHtml, countHtmlChars } from '@utils/htmlUtils';
 
 export function NoteDialog({ note, sectionId, onSave, onDelete, onClose }) {
   const isCreateMode = note === null;

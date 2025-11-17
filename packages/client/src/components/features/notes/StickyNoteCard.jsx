@@ -7,14 +7,14 @@ import {
   MoreVertical,
   Edit2,
   Maximize2,
-  X,
 } from 'lucide-react';
 import {
   getDueDateCategory,
   formatDueDate,
   getDueDateBadgeConfig,
-} from '../utils/dateUtils';
-import { sanitizeHtml } from '../utils/htmlUtils';
+} from '@utils/dateUtils';
+import { sanitizeHtml } from '@utils/htmlUtils';
+import { NoteDetailModal } from './NoteDetailModal';
 
 export function StickyNoteCard({
   note,
@@ -222,7 +222,7 @@ export function StickyNoteCard({
         )}
 
         {/* Main content */}
-        <div className="flex h-full flex-col p-4 pb-12">
+        <div className={`flex h-full flex-col p-4 ${isHovered ? 'pb-8' : ''}`}>
           {/* Title */}
           <h3
             ref={titleRef}
@@ -248,7 +248,7 @@ export function StickyNoteCard({
           {/* Message */}
           <div
             ref={messageRef}
-            className="note-message-content truncated max-h-[calc(1.5em * 9)] flex-1 overflow-hidden bg-gradient-to-b from-black via-black to-[transparent_100%] bg-clip-text font-body text-sm text-transparent"
+            className="note-message-content flex-1 overflow-hidden bg-gradient-to-b from-black via-black to-[transparent_100%] bg-clip-text font-body text-sm text-transparent"
             dangerouslySetInnerHTML={{ __html: sanitizeHtml(note.message) }}
             style={{
               overflow: 'hidden',
@@ -297,84 +297,11 @@ export function StickyNoteCard({
 
       {/* Detail View Modal */}
       {showDetailView && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-0 sm:p-4"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowDetailView(false);
-            }
-          }}
-        >
-          <div
-            className="relative h-full w-full max-w-2xl overflow-y-auto border-4 border-black p-6 shadow-brutal sm:max-h-[90vh]"
-            style={{ backgroundColor: note.color }}
-          >
-            {/* Close button */}
-            <button
-              onClick={() => setShowDetailView(false)}
-              className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center bg-black/10 transition-colors hover:bg-black/20"
-              aria-label="Close"
-            >
-              <X size={20} className="text-black" />
-            </button>
-
-            {/* Due date badge */}
-            {dueDateCategory !== 'none' && dueDateCategory !== 'future' && (
-              <div
-                className={`mb-4 ${badgeConfig.bgColor} ${badgeConfig.textColor} inline-flex items-center gap-1 border-2 border-black px-2 py-1 font-body text-xs font-bold`}
-              >
-                {IconComponent && <IconComponent size={12} />}
-                <span>{badgeConfig.label}</span>
-              </div>
-            )}
-
-            {/* Title */}
-            <h3 className="mb-3 break-words font-display text-2xl uppercase text-black">
-              {note.title}
-            </h3>
-
-            {/* Author */}
-            <p className="mb-3 font-body text-sm text-black/70">
-              {note.author_name}
-            </p>
-
-            {/* Due date display (for future dates) */}
-            {note.due_date &&
-              (dueDateCategory === 'future' || dueDateCategory === 'none') && (
-                <p className="mb-3 flex items-center gap-1 font-body text-sm text-black/60">
-                  <Calendar size={14} />
-                  {formattedDueDate}
-                </p>
-              )}
-
-            {/* Full message content */}
-            <div
-              className="note-message-content mb-6 font-body text-base text-black"
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(note.message) }}
-            />
-
-            {/* Action buttons */}
-            <div className="left flex gap-[1px]">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowDetailView(false);
-                  if (onEdit) onEdit(note);
-                }}
-                className="flex items-center gap-1 bg-black/10 px-4 py-2 font-body text-sm text-black transition-colors hover:bg-black/20"
-              >
-                <Edit2 size={16} />
-                <span>Edit</span>
-              </button>
-              <button
-                onClick={() => setShowDetailView(false)}
-                className="flex items-center gap-1 bg-black/10 px-4 py-2 font-body text-sm text-black transition-colors hover:bg-black/20"
-              >
-                <span>Close</span>
-              </button>
-            </div>
-          </div>
-        </div>
+        <NoteDetailModal
+          note={note}
+          onClose={() => setShowDetailView(false)}
+          onEdit={onEdit}
+        />
       )}
     </>
   );
