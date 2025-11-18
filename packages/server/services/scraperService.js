@@ -133,7 +133,7 @@ class ScraperService {
     menuItem,
     existingEvents
   ) {
-    const eventSummary = `${type}: ${menuItem}`;
+    const eventSummary = `${type == 'Hot' ? '🔥 ' + type : '🍱 ' + type}: ${menuItem}`;
 
     // Check if event already exists
     const existing = existingEvents.find((event) => {
@@ -148,7 +148,7 @@ class ScraperService {
 
     const eventData = {
       summary: eventSummary,
-      description: `School lunch menu - ${type} option`,
+      description: `School lunch menu - ${type == 'Hot' ? '🔥 ' + type : '🍱 ' + type} option`,
       start: {
         date: date, // All-day event (YYYY-MM-DD)
       },
