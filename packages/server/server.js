@@ -35,6 +35,11 @@ setupPassport();
 const app = express();
 const PORT = process.env.PORT || 3030;
 
+// Trust Cloudflare proxy in production for correct client IPs and HTTPS detection
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
 // Middleware
 app.use(
   helmet({
@@ -70,7 +75,7 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false, // Set to true only when using HTTPS in production
+      secure: process.env.NODE_ENV === 'production', // Enable secure cookies over HTTPS in production
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       sameSite: 'lax',

@@ -12,6 +12,7 @@ A brutalist-designed home network dashboard with Google OAuth authentication, ro
 - **Responsive Layout**: Works on desktop, tablet, and mobile with adaptive dialogs
 - **Dark/Light Mode**: Automatically follows system preference
 - **Docker Deployment**: Easy deployment with Docker Compose
+- **Cloudflare Tunnel**: Secure HTTPS access without port forwarding or SSL certificate management
 
 ## Prerequisites
 
@@ -60,6 +61,52 @@ Before you can run the application, you need to set up Google OAuth credentials:
    - Copy the "Client ID" and "Client Secret"
    - You'll need these for the `.env` file
 
+## Cloudflare Tunnel Setup (For HTTPS Access)
+
+For production deployment with HTTPS, you'll use Cloudflare Tunnel. This eliminates the need for:
+
+- Port forwarding on your router
+- Firewall configuration
+- Manual SSL certificate management
+- Exposing your home IP address
+
+**Steps:**
+
+1. **Sign up for Cloudflare** (free account works)
+   - Visit https://www.cloudflare.com/
+   - Add your domain to Cloudflare (update nameservers at your domain registrar)
+
+2. **Create a Tunnel**
+   - Go to https://one.dash.cloudflare.com/
+   - Navigate to **Networks** → **Tunnels**
+   - Click **Create a tunnel**
+   - Select **Cloudflared** connector type
+   - Name your tunnel (e.g., "home-dashboard")
+   - Click **Save tunnel**
+
+3. **Copy the Tunnel Token**
+   - After creating the tunnel, you'll see installation commands
+   - Copy the token from the command (looks like `eyJh...`)
+   - Save this for the `.env` file
+
+4. **Configure Public Hostname**
+   - Click on the **Published application routes** tab
+   - Click **Add a public hostname**
+   - Configure:
+     - **Subdomain**: (leave blank for root domain)
+     - **Domain**: Select your domain
+     - **Path**: (leave blank)
+     - **Service Type**: HTTP
+     - **URL**: `http://localhost:3031`
+   - Click **Save**
+
+5. **Update Google OAuth**
+   - Go back to Google Cloud Console → OAuth screen
+   - Update **Authorized JavaScript origins** to: `https://yourdomain.com`
+   - Update **Authorized redirect URIs** to: `https://yourdomain.com/auth/google/callback`
+
+That's it! No port forwarding or firewall changes needed.
+
 ## Installation
 
 ### 1. Clone or Download the Project
@@ -86,13 +133,17 @@ PORT=3030
 GOOGLE_CLIENT_ID=your_client_id_here.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=your_client_secret_here
 
-# Update with your server's IP or domain
-GOOGLE_CALLBACK_URL=http://192.168.1.100:3030/auth/google/callback
+# For local dev: http://localhost:3030/auth/google/callback
+# For production with Cloudflare Tunnel: https://yourdomain.com/auth/google/callback
+GOOGLE_CALLBACK_URL=https://yourdomain.com/auth/google/callback
 
 # Generate a random secret (use: openssl rand -base64 32)
 SESSION_SECRET=your_random_secret_here
 
 DATABASE_PATH=/data/database.db
+
+# Cloudflare Tunnel Token (paste the token you copied earlier)
+CLOUDFLARE_TUNNEL_TOKEN=your_cloudflare_tunnel_token_here
 ```
 
 ### 3. Add Your First Admin User
@@ -127,7 +178,10 @@ docker-compose logs -f
 docker-compose down
 ```
 
-The application will be available at `http://localhost:3030` or `http://your-server-ip:3030`
+The application will be available at:
+
+- **Production (with Cloudflare Tunnel)**: `https://yourdomain.com`
+- **Local development**: `http://localhost:3030`
 
 ## Usage
 

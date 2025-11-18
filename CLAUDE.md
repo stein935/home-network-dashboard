@@ -244,7 +244,7 @@ import { getDueDateCategory } from '@utils/dateUtils';
 
 ## Docker Deployment
 
-**Production deployment** uses Docker with port 3031:
+**Production deployment** uses Docker with Cloudflare Tunnel for secure HTTPS access:
 
 ```bash
 # Build and start
@@ -252,6 +252,10 @@ docker-compose up -d --build
 
 # View logs
 docker-compose logs -f
+
+# View specific service logs
+docker-compose logs -f cloudflared
+docker-compose logs -f home-dashboard
 
 # Stop
 docker-compose down
@@ -262,19 +266,59 @@ docker-compose down && docker-compose build --no-cache && docker-compose up -d
 
 **Docker configuration**:
 
-- Port: 3031 (production), 3030 (local dev)
+- **Two services**: `home-dashboard` (Node.js app) and `cloudflared` (Cloudflare Tunnel)
+- Node.js app runs on internal port 3031 (not exposed publicly)
+- Cloudflare Tunnel provides secure HTTPS access without port forwarding
 - NODE_ENV automatically set to `production`
 - Frontend built and served as static files from backend
 - Data persisted in `./data` volume
-- Environment variables set in `docker-compose.yml`
+- Environment variables set in `docker-compose.yml` and `.env`
 
-**OAuth Configuration for Docker**:
-Update Google OAuth Console with production URL:
+**Cloudflare Tunnel Setup**:
 
-- Authorized JavaScript origins: `http://yourdomain.com:3031`
-- Authorized redirect URIs: `http://yourdomain.com:3031/auth/google/callback`
+Production uses Cloudflare Tunnel for zero-config HTTPS with automatic SSL certificates:
+
+1. **Create tunnel in Cloudflare Dashboard**:
+   - Go to Zero Trust → Networks → Tunnels
+   - Create new tunnel with name (e.g., "home-dashboard")
+   - Copy the tunnel token
+
+2. **Configure public hostname**:
+   - Add published application route
+   - Domain: your domain (e.g., steineck.io)
+   - Service type: HTTP
+   - URL: `http://localhost:3031`
+
+3. **Add token to .env**:
+
+   ```
+   CLOUDFLARE_TUNNEL_TOKEN=your_tunnel_token_here
+   ```
+
+4. **Benefits**:
+   - No port forwarding required (no router configuration)
+   - No firewall changes needed (outbound connection only)
+   - Free SSL certificates from Cloudflare
+   - DDoS protection and hide your home IP
+   - Automatic HTTPS without Let's Encrypt complexity
+
+**OAuth Configuration for Production**:
+
+Update Google OAuth Console with HTTPS URL:
+
+- Authorized JavaScript origins: `https://yourdomain.com`
+- Authorized redirect URIs: `https://yourdomain.com/auth/google/callback`
+
+**Security Configuration**:
+
+In production (NODE_ENV=production):
+
+- Secure cookies enabled (`secure: true`)
+- Proxy trust enabled (`trust proxy: 1`) for Cloudflare
+- HTTPS enforced via Cloudflare
 
 **Multi-domain Support**:
+
 The app automatically detects the domain used to access it and redirects accordingly after OAuth. In development, it uses referer detection to support both `localhost` and custom local domains (e.g., `home-dashboard.local`).
 
 ## Environment Variables
@@ -283,11 +327,12 @@ Required in `.env`:
 
 - `GOOGLE_CLIENT_ID` - OAuth client ID
 - `GOOGLE_CLIENT_SECRET` - OAuth client secret
-- `GOOGLE_CALLBACK_URL` - OAuth redirect URI (e.g., `http://localhost:3030/auth/google/callback` for dev, `http://yourdomain.com:3031/auth/google/callback` for production)
+- `GOOGLE_CALLBACK_URL` - OAuth redirect URI (e.g., `http://localhost:3030/auth/google/callback` for dev, `https://yourdomain.com/auth/google/callback` for production)
 - `SESSION_SECRET` - Session encryption key
 - `DATABASE_PATH` - SQLite database path
 - `NODE_ENV` - production/development
 - `PORT` - Server port (default 3030 for dev, 3031 for Docker production)
+- `CLOUDFLARE_TUNNEL_TOKEN` - Cloudflare Tunnel token for production HTTPS (required for production deployment)
 
 Optional in `.env`:
 
@@ -297,6 +342,8 @@ Optional in `.env`:
 ## Current State
 
 Fully functional with Google OAuth, role-based access, link/calendar card types, sticky notes with drag-and-drop reordering, collapsible sections, admin panel, and responsive brutalist design. Calendar integration includes day/week/month views with event details. Sticky notes support due dates with urgency indicators and customizable colors. All dialogs use a unified Dialog component with consistent blue header design and mobile-responsive layouts.
+
+**Production Deployment**: Cloudflare Tunnel integration provides secure HTTPS access without port forwarding or manual SSL certificate management. Zero-config deployment with automatic SSL, DDoS protection, and no router configuration required.
 
 **Code Quality**: Full ESLint and Prettier setup with zero lint errors. Code follows React best practices including proper hooks usage (useCallback, useMemo), no unused variables, and optimized component rendering.
 

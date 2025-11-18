@@ -4,14 +4,15 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: home-network-dashboard
-    ports:
-      - '3031:3031'
+    # Ports are not exposed publicly - accessed via Cloudflare Tunnel
+    expose:
+      - '3031'
     environment:
       - NODE_ENV=production
       - PORT=3031
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - GOOGLE_CALLBACK_URL=http://mac.steineck.com:3031/auth/google/callback
+      - GOOGLE_CALLBACK_URL=https://steineck.io/auth/google/callback
       - SESSION_SECRET=${SESSION_SECRET}
       - DATABASE_PATH=/data/database.db
     volumes:
@@ -19,6 +20,17 @@ services:
     restart: unless-stopped
     networks:
       - home-network
+
+  # Cloudflare Tunnel for secure HTTPS access
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflare-tunnel
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    restart: unless-stopped
+    networks:
+      - home-network
+    depends_on:
+      - home-dashboard
 
 networks:
   home-network:
