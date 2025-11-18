@@ -101,11 +101,13 @@ export function MonthView({
           });
 
           const isToday = date.toDateString() === new Date().toDateString();
+          const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
+          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
           return (
             <div
               key={idx}
-              className={`border-3 ${isToday ? 'border-accent1 outline outline-2 outline-accent1' : 'border-border'} flex min-h-[120px] flex-col bg-surface p-2`}
+              className={`border-3 ${isToday ? 'border-accent1 outline outline-2 outline-accent1' : 'border-border'} flex min-h-[120px] flex-col p-2 ${isWeekend ? 'bg-gray-200' : 'bg-surface'}`}
             >
               <div
                 className={`mb-1 font-display text-sm ${isToday ? 'text-accent1' : 'text-text'}`}

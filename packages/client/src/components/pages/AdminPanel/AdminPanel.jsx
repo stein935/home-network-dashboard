@@ -108,7 +108,7 @@ export function AdminPanel() {
         </header>
 
         {/* Tabs */}
-        <div className="mb-8 flex gap-4 border-b-5 border-border">
+        <div className="mb-8 grid grid-cols-1 gap-4 border-b-5 border-border sm:grid-cols-4 md:grid-cols-5">
           <button
             onClick={() => setActiveTab('services')}
             className={`border-b-5 px-3 py-1 font-display uppercase transition-colors sm:px-6 sm:py-3 ${

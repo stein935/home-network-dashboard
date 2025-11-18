@@ -357,12 +357,12 @@ export function Dashboard() {
     <div className="min-h-screen px-6 pb-0 pt-6 md:px-12 md:pt-12">
       <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <header className="mb-3 flex flex-wrap items-start justify-between gap-4 sm:mb-6">
+        <header className="mb-3 flex flex-wrap items-start justify-between sm:mb-6">
           <h1 className="mb-2 inline font-display text-display-sm uppercase text-text sm:text-display-lg">
             THE
             <span className="text-accent1"> STEINECKS</span>
           </h1>
-          <p className="font-accent text-accent-md inline text-accent2">
+          <p className="font-accent text-accent-sm sm:text-accent-md inline text-accent2">
             {getRandomGreeting() || 'Hello'}, {user?.name || user?.email}!
             <CornerDownLeft
               size={32}

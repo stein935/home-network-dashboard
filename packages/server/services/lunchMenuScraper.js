@@ -101,7 +101,9 @@ class LunchMenuScraper {
 
               if (text.includes('HOT LUNCH')) {
                 // Extract the item after "HOT LUNCH"
-                const hotLunchMatch = text.match(/HOT LUNCH\s+([^]+?)(?:\s+(?:FRUIT|WITH|VEGETABLE|DESSERT|EXTRA ITEM|$))/);
+                const hotLunchMatch = text.match(
+                  /HOT LUNCH\s+([^]+?)(?:\s+(?:FRUIT|WITH|VEGETABLE|DESSERT|EXTRA ITEM|$))/
+                );
                 if (hotLunchMatch && hotLunchMatch[1]) {
                   hotLunchItems[col] = hotLunchMatch[1].trim();
                 }

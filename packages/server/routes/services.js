@@ -26,8 +26,8 @@ const validateServiceCreate = [
   body('config.calendar_id').optional().trim(),
   body('config.view_type')
     .optional()
-    .isIn(['day', 'week', 'month'])
-    .withMessage('View type must be "day", "week", or "month"'),
+    .isIn(['day', 'week', 'fiveday', 'month'])
+    .withMessage('View type must be "day", "week", "fiveday", or "month"'),
 ];
 
 // Validation middleware for update
@@ -50,8 +50,8 @@ const validateServiceUpdate = [
   body('config.calendar_id').optional().trim(),
   body('config.view_type')
     .optional()
-    .isIn(['day', 'week', 'month'])
-    .withMessage('View type must be "day", "week", or "month"'),
+    .isIn(['day', 'week', 'fiveday', 'month'])
+    .withMessage('View type must be "day", "week", "fiveday", or "month"'),
 ];
 
 // GET all services (requires authentication)

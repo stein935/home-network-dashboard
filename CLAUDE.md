@@ -72,6 +72,7 @@ home-network-dashboard/
 │       │   │   │   │   └── views/
 │       │   │   │   │       ├── DayView.jsx     # Day view component
 │       │   │   │   │       ├── WeekView.jsx    # Week view component
+│       │   │   │   │       ├── FiveDayView.jsx # 5 Day (Mon-Fri) view component
 │       │   │   │   │       └── MonthView.jsx   # Month view component
 │       │   │   │   ├── notes/
 │       │   │   │   │   ├── StickyNoteCard.jsx  # Draggable sticky note display
@@ -106,6 +107,7 @@ home-network-dashboard/
 **Component Organization**: Components are organized using feature-based grouping for improved maintainability and scalability.
 
 **Path Aliases**: Configured in `vite.config.js` for clean imports:
+
 - `@components` → `src/components`
 - `@pages` → `src/components/pages`
 - `@features` → `src/components/features`
@@ -116,6 +118,7 @@ home-network-dashboard/
 - `@utils` → `src/utils`
 
 **Import Examples**:
+
 ```javascript
 // Pages
 import Dashboard from '@pages/Dashboard';
@@ -308,11 +311,12 @@ The service card system supports different card types via the `card_type` field:
 
 **Calendar Card Features:**
 
-- Three view modes: Day, Week (Sunday-Saturday), Month (traditional grid)
+- Four view modes: Day, Week (Sunday-Saturday), 5 Day (Monday-Friday), Month (traditional grid)
 - Event detail dialog with attendees, response status, organizer, meeting/hangout links
-- Responsive layouts: Month view disabled <900px, week view stacks <672px (ResizeObserver)
+- Responsive layouts: Month view disabled <950px, week/5-day views stack <800px
 - Event deduplication, all-day event support
 - Navigation controls (prev/next/today) with view persistence
+- 5 Day view: Shows Monday-Friday work week, jumps by 7 days for calendar week alignment, "Today" button shows upcoming Monday's week on weekends
 - Configurable calendar selection and default view type
 
 **Adding New Card Types:**

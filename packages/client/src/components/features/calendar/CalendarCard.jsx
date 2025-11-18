@@ -9,6 +9,7 @@ import { calendarApi } from '@utils/api';
 import { EventDetailDialog } from '@features/calendar/EventDetailDialog';
 import { DayView } from './views/DayView';
 import { WeekView } from './views/WeekView';
+import { FiveDayView } from './views/FiveDayView';
 import { MonthView } from './views/MonthView';
 
 export function CalendarCard({
@@ -70,6 +71,20 @@ export function CalendarCard({
     return start;
   };
 
+  const getWorkWeekStart = (date) => {
+    const d = new Date(date);
+    const day = d.getDay();
+    // Calculate Monday of the current week
+    // If today is Sunday (0), go back 6 days to Monday
+    // If today is Monday (1), stay on Monday (diff = 0)
+    // Otherwise, go back (day - 1) days
+    const diff = day === 0 ? -6 : 1 - day;
+    const start = new Date(d);
+    start.setDate(d.getDate() + diff);
+    start.setHours(0, 0, 0, 0);
+    return start;
+  };
+
   const getTimeRange = useCallback(() => {
     let timeMin, timeMax;
 
@@ -84,6 +99,12 @@ export function CalendarCard({
       const start = getWeekStart(currentDate);
       const end = new Date(start);
       end.setDate(end.getDate() + 7);
+      timeMin = start.toISOString();
+      timeMax = end.toISOString();
+    } else if (effectiveViewType === 'fiveday') {
+      const start = getWorkWeekStart(currentDate);
+      const end = new Date(start);
+      end.setDate(end.getDate() + 5);
       timeMin = start.toISOString();
       timeMax = end.toISOString();
     } else if (effectiveViewType === 'month') {
@@ -153,6 +174,9 @@ export function CalendarCard({
     if (effectiveViewType === 'day') {
       newDate.setDate(newDate.getDate() + direction);
     } else if (effectiveViewType === 'week') {
+      newDate.setDate(newDate.getDate() + direction * 7);
+    } else if (effectiveViewType === 'fiveday') {
+      // Jump by 7 days (full week) to maintain calendar week alignment
       newDate.setDate(newDate.getDate() + direction * 7);
     } else if (effectiveViewType === 'month') {
       newDate.setMonth(newDate.getMonth() + direction);
@@ -230,6 +254,11 @@ export function CalendarCard({
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekEnd.getDate() + 6);
       return `${formatDateShort(weekStart)} - ${formatDateShort(weekEnd)}`;
+    } else if (effectiveViewType === 'fiveday') {
+      const workWeekStart = getWorkWeekStart(currentDate);
+      const workWeekEnd = new Date(workWeekStart);
+      workWeekEnd.setDate(workWeekEnd.getDate() + 4); // Monday to Friday
+      return `${formatDateShort(workWeekStart)} - ${formatDateShort(workWeekEnd)}`;
     } else if (effectiveViewType === 'month') {
       return currentDate.toLocaleDateString('en-US', {
         year: 'numeric',
@@ -264,6 +293,8 @@ export function CalendarCard({
     if (effectiveViewType === 'day') return 'col-span-1 md:col-span-2';
     if (effectiveViewType === 'week')
       return 'col-span-1 md:col-span-3 lg:col-span-4';
+    if (effectiveViewType === 'fiveday')
+      return 'col-span-1 md:col-span-3 lg:col-span-4';
     if (effectiveViewType === 'month')
       return 'col-span-1 md:col-span-3 lg:col-span-4';
     return 'col-span-1';
@@ -279,6 +310,11 @@ export function CalendarCard({
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekEnd.getDate() + 6);
       return today >= weekStart && today <= weekEnd;
+    } else if (effectiveViewType === 'fiveday') {
+      const workWeekStart = getWorkWeekStart(currentDate);
+      const workWeekEnd = new Date(workWeekStart);
+      workWeekEnd.setDate(workWeekEnd.getDate() + 4);
+      return today >= workWeekStart && today <= workWeekEnd;
     } else if (effectiveViewType === 'month') {
       return (
         currentDate.getMonth() === today.getMonth() &&
@@ -343,6 +379,16 @@ export function CalendarCard({
             Week
           </button>
           <button
+            onClick={() => setSelectedViewType('fiveday')}
+            className={`border-3 px-3 py-1 font-display text-sm uppercase text-text transition-colors ${
+              selectedViewType === 'fiveday'
+                ? 'border-accent1 bg-accent1 text-white'
+                : 'border-border'
+            }`}
+          >
+            5 Day
+          </button>
+          <button
             onClick={() => setSelectedViewType('month')}
             disabled={windowWidth && windowWidth < MONTH_VIEW_MIN_WIDTH}
             className={`border-3 px-3 py-1 font-display text-sm uppercase transition-colors ${
@@ -361,7 +407,22 @@ export function CalendarCard({
         </div>
         <div className="mb-4 flex flex-wrap gap-2">
           <button
-            onClick={() => setCurrentDate(new Date())}
+            onClick={() => {
+              const today = new Date();
+              // Special handling for 5 Day view on weekends
+              if (effectiveViewType === 'fiveday') {
+                const dayOfWeek = today.getDay();
+                // If today is Saturday (6) or Sunday (0), show next Monday's week
+                if (dayOfWeek === 0 || dayOfWeek === 6) {
+                  const daysUntilMonday = dayOfWeek === 0 ? 1 : 2;
+                  const nextMonday = new Date(today);
+                  nextMonday.setDate(today.getDate() + daysUntilMonday);
+                  setCurrentDate(nextMonday);
+                  return;
+                }
+              }
+              setCurrentDate(today);
+            }}
             disabled={isViewingToday()}
             className={`border-3 border-border px-3 py-2 font-display text-sm uppercase transition-colors ${
               isViewingToday()
@@ -410,6 +471,17 @@ export function CalendarCard({
             currentDate={currentDate}
             formatDate={formatDate}
             getWeekStart={getWeekStart}
+            setSelectedEvent={setSelectedEvent}
+            windowWidth={windowWidth}
+            weekStackWidth={WEEK_STACK_WIDTH}
+          />
+        )}
+        {effectiveViewType === 'fiveday' && (
+          <FiveDayView
+            events={events}
+            currentDate={currentDate}
+            formatDate={formatDate}
+            getWorkWeekStart={getWorkWeekStart}
             setSelectedEvent={setSelectedEvent}
             windowWidth={windowWidth}
             weekStackWidth={WEEK_STACK_WIDTH}
