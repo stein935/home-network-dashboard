@@ -108,10 +108,10 @@ export function AdminPanel() {
         </header>
 
         {/* Tabs */}
-        <div className="mb-8 grid grid-cols-1 gap-4 border-b-5 border-border sm:grid-cols-4 md:grid-cols-5">
+        <div className="mb-8 flex flex-row flex-wrap gap-4 border-b-5 border-border">
           <button
             onClick={() => setActiveTab('services')}
-            className={`border-b-5 px-3 py-1 font-display uppercase transition-colors sm:px-6 sm:py-3 ${
+            className={`w-full border-b-5 px-3 py-1 font-display uppercase transition-colors sm:w-auto sm:px-6 sm:py-3 ${
               activeTab === 'services'
                 ? 'border-accent1 text-accent1'
                 : 'border-transparent text-text/60 hover:text-text'
@@ -121,7 +121,7 @@ export function AdminPanel() {
           </button>
           <button
             onClick={() => setActiveTab('sections')}
-            className={`border-b-5 px-3 py-1 font-display uppercase transition-colors sm:px-6 sm:py-3 ${
+            className={`w-full border-b-5 px-3 py-1 font-display uppercase transition-colors sm:w-auto sm:px-6 sm:py-3 ${
               activeTab === 'sections'
                 ? 'border-accent1 text-accent1'
                 : 'border-transparent text-text/60 hover:text-text'
@@ -131,7 +131,7 @@ export function AdminPanel() {
           </button>
           <button
             onClick={() => setActiveTab('scrapers')}
-            className={`border-b-5 px-3 py-1 font-display uppercase transition-colors sm:px-6 sm:py-3 ${
+            className={`w-full border-b-5 px-3 py-1 font-display uppercase transition-colors sm:w-auto sm:px-6 sm:py-3 ${
               activeTab === 'scrapers'
                 ? 'border-accent1 text-accent1'
                 : 'border-transparent text-text/60 hover:text-text'
@@ -141,7 +141,7 @@ export function AdminPanel() {
           </button>
           <button
             onClick={() => setActiveTab('users')}
-            className={`border-b-5 px-3 py-1 font-display uppercase transition-colors sm:px-6 sm:py-3 ${
+            className={`w-full border-b-5 px-3 py-1 font-display uppercase transition-colors sm:w-auto sm:px-6 sm:py-3 ${
               activeTab === 'users'
                 ? 'border-accent1 text-accent1'
                 : 'border-transparent text-text/60 hover:text-text'
