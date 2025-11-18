@@ -341,6 +341,7 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
               >
                 <option value="day">Day</option>
                 <option value="week">Week</option>
+                <option value="fiveday">5 Day</option>
                 <option value="month">Month</option>
               </select>
               {errors.view_type && (

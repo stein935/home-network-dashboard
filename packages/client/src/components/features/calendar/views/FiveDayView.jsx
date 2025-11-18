@@ -1,22 +1,23 @@
 import { Calendar as CalendarIcon } from 'lucide-react';
 
-export function WeekView({
+export function FiveDayView({
   events,
   currentDate,
   formatDate,
-  getWeekStart,
+  getWorkWeekStart,
   setSelectedEvent,
   windowWidth,
   weekStackWidth,
 }) {
-  const weekStart = getWeekStart(currentDate);
-  const days = Array.from({ length: 7 }, (_, i) => {
-    const day = new Date(weekStart);
+  const workWeekStart = getWorkWeekStart(currentDate);
+  // Generate Monday through Friday (5 days)
+  const days = Array.from({ length: 5 }, (_, i) => {
+    const day = new Date(workWeekStart);
     day.setDate(day.getDate() + i);
     return day;
   });
 
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 
   // Remove duplicates from events array
   const uniqueEvents = events.filter(
@@ -33,7 +34,7 @@ export function WeekView({
   const isNarrow = windowWidth && windowWidth < weekStackWidth;
 
   return (
-    <div className={`grid gap-2 ${isNarrow ? 'grid-cols-1' : 'grid-cols-7'}`}>
+    <div className={`grid gap-2 ${isNarrow ? 'grid-cols-1' : 'grid-cols-5'}`}>
       {days.map((day, idx) => {
         const dayEvents = uniqueEvents.filter((event) => {
           // Parse dates - for all-day events, parse as local date, not UTC
@@ -70,7 +71,7 @@ export function WeekView({
         return (
           <div
             key={idx}
-            className={`border-3 ${isToday ? 'border-accent1 outline outline-2 outline-accent1' : 'border-border'} p-2 ${dayNames[idx] == 'Sun' || dayNames[idx] == 'Sat' ? 'bg-gray-200' : 'bg-surface'}`}
+            className={`border-3 ${isToday ? 'border-accent1 outline outline-2 outline-accent1' : 'border-border'} bg-surface p-2`}
           >
             {isNarrow ? (
               // Horizontal layout for narrow view
@@ -93,7 +94,7 @@ export function WeekView({
               // Original stacked layout for wide view
               <>
                 <div
-                  className={`mb-2 flex w-full items-center justify-between font-display uppercase ${isToday ? 'text-accent1' : 'text-text'} `}
+                  className={`mb-2 flex w-full items-center justify-between font-display uppercase ${isToday ? 'text-accent1' : 'text-text'}`}
                 >
                   <span className="text-xs">{dayNames[idx]}</span>
                   <span className="text-lg">{day.getDate()}</span>

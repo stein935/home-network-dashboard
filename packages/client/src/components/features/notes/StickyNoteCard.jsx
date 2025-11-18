@@ -222,7 +222,9 @@ export function StickyNoteCard({
         )}
 
         {/* Main content */}
-        <div className={`flex h-full flex-col p-4 ${isHovered ? 'pb-8' : ''}`}>
+        <div
+          className={`flex h-full flex-col p-4 pb-8 sm:p-4 ${isHovered ? 'sm:pb-8' : ''}`}
+        >
           {/* Title */}
           <h3
             ref={titleRef}

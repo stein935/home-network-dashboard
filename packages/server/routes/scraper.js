@@ -163,31 +163,39 @@ router.delete('/:id', isAdmin, [param('id').isInt()], (req, res) => {
 });
 
 // POST trigger scraper manually (admin only)
-router.post('/:id/trigger', isAdmin, [param('id').isInt()], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+router.post(
+  '/:id/trigger',
+  isAdmin,
+  [param('id').isInt()],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const scraper = Scraper.findById(req.params.id);
+      if (!scraper) {
+        return res.status(404).json({ error: 'Scraper not found' });
+      }
+
+      console.log(
+        `Manual trigger of scraper ${scraper.name} by ${req.user.email}`
+      );
+
+      // Run scraper using the authenticated user's ID
+      const result = await ScraperService.runScraper(
+        req.params.id,
+        req.user.id
+      );
+
+      res.json(result);
+    } catch (error) {
+      console.error('Error triggering scraper:', error);
+      res.status(500).json({ error: 'Failed to trigger scraper' });
     }
-
-    const scraper = Scraper.findById(req.params.id);
-    if (!scraper) {
-      return res.status(404).json({ error: 'Scraper not found' });
-    }
-
-    console.log(
-      `Manual trigger of scraper ${scraper.name} by ${req.user.email}`
-    );
-
-    // Run scraper using the authenticated user's ID
-    const result = await ScraperService.runScraper(req.params.id, req.user.id);
-
-    res.json(result);
-  } catch (error) {
-    console.error('Error triggering scraper:', error);
-    res.status(500).json({ error: 'Failed to trigger scraper' });
   }
-});
+);
 
 // GET logs for a scraper (admin only)
 router.get('/:id/logs', isAdmin, [param('id').isInt()], (req, res) => {

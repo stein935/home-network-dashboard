@@ -240,7 +240,9 @@ export function ScraperManager() {
                       {scraper.cron_schedule}
                     </div>
                   </td>
-                  <td className="p-4 text-sm">{formatDate(scraper.last_run)}</td>
+                  <td className="p-4 text-sm">
+                    {formatDate(scraper.last_run)}
+                  </td>
                   <td className="p-4">
                     <span
                       className={`inline-block rounded px-2 py-1 text-xs font-bold uppercase ${

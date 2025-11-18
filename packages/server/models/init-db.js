@@ -212,17 +212,66 @@ function initializeDatabase() {
   }
 
   // Create service_config table for calendar-specific configuration
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS service_config (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      service_id INTEGER NOT NULL UNIQUE,
-      calendar_id TEXT,
-      view_type TEXT CHECK(view_type IN ('day', 'week', 'month')) DEFAULT 'week',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE
-    )
-  `);
+  // Check if we need to migrate service_config table to add 'fiveday' view type
+  const configTableInfo = db.prepare('PRAGMA table_info(service_config)').all();
+  const configTableExists = configTableInfo.length > 0;
+
+  if (configTableExists) {
+    // Always migrate to ensure fiveday support
+    console.log('Migrating service_config table to support fiveday view type...');
+
+    // Create new table with updated constraint
+    db.exec(`
+      CREATE TABLE service_config_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        service_id INTEGER NOT NULL UNIQUE,
+        calendar_id TEXT,
+        view_type TEXT CHECK(view_type IN ('day', 'week', 'fiveday', 'month')) DEFAULT 'week',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE
+      )
+    `);
+
+    // Copy data from old table
+    const existingConfigs = db.prepare('SELECT * FROM service_config').all();
+    if (existingConfigs.length > 0) {
+      const insertStmt = db.prepare(`
+        INSERT INTO service_config_new (id, service_id, calendar_id, view_type, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `);
+
+      for (const config of existingConfigs) {
+        insertStmt.run(
+          config.id,
+          config.service_id,
+          config.calendar_id,
+          config.view_type,
+          config.created_at,
+          config.updated_at
+        );
+      }
+    }
+
+    // Drop old table and rename new one
+    db.exec('DROP TABLE service_config');
+    db.exec('ALTER TABLE service_config_new RENAME TO service_config');
+
+    console.log('service_config migration complete');
+  } else {
+    // Create fresh table with fiveday support
+    db.exec(`
+      CREATE TABLE service_config (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        service_id INTEGER NOT NULL UNIQUE,
+        calendar_id TEXT,
+        view_type TEXT CHECK(view_type IN ('day', 'week', 'fiveday', 'month')) DEFAULT 'week',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE
+      )
+    `);
+  }
 
   // Create notes table
   db.exec(`
