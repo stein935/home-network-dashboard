@@ -20,6 +20,10 @@ const sectionsRoutes = require('./routes/sections');
 const usersRoutes = require('./routes/users');
 const calendarRoutes = require('./routes/calendar');
 const notesRoutes = require('./routes/notes');
+const scraperRoutes = require('./routes/scraper');
+
+// Import scheduler
+const scheduler = require('./services/scheduler');
 
 // Initialize database
 initializeDatabase();
@@ -85,6 +89,12 @@ app.use('/api/sections', sectionsRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/notes', notesRoutes);
+app.use('/api/scrapers', scraperRoutes);
+
+// Initialize scheduler after database and routes are set up
+scheduler.initialize().catch((err) => {
+  console.error('Failed to initialize scheduler:', err);
+});
 
 // Serve static frontend files
 app.use(express.static(path.join(__dirname, '../client/dist')));

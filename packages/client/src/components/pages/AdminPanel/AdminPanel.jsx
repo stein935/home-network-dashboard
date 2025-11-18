@@ -6,6 +6,7 @@ import { servicesApi } from '@utils/api';
 import UserManagement from '@features/admin/UserManagement';
 import ServiceForm from '@features/services/ServiceForm';
 import SectionManager from '@features/admin/SectionManager';
+import { ScraperManager } from '@features/admin/ScraperManager';
 
 export function AdminPanel() {
   const navigate = useNavigate();
@@ -129,6 +130,16 @@ export function AdminPanel() {
             Sections
           </button>
           <button
+            onClick={() => setActiveTab('scrapers')}
+            className={`border-b-5 px-3 py-1 font-display uppercase transition-colors sm:px-6 sm:py-3 ${
+              activeTab === 'scrapers'
+                ? 'border-accent1 text-accent1'
+                : 'border-transparent text-text/60 hover:text-text'
+            }`}
+          >
+            Scrapers
+          </button>
+          <button
             onClick={() => setActiveTab('users')}
             className={`border-b-5 px-3 py-1 font-display uppercase transition-colors sm:px-6 sm:py-3 ${
               activeTab === 'users'
@@ -237,6 +248,8 @@ export function AdminPanel() {
           </div>
         ) : activeTab === 'sections' ? (
           <SectionManager />
+        ) : activeTab === 'scrapers' ? (
+          <ScraperManager />
         ) : (
           <UserManagement />
         )}

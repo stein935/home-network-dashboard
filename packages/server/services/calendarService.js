@@ -97,6 +97,82 @@ class CalendarService {
       throw new Error('Failed to fetch events from Google Calendar');
     }
   }
+
+  static async createEvent(userId, calendarId, eventData) {
+    const auth = this.getOAuthClient(userId);
+    const calendar = google.calendar({ version: 'v3', auth });
+
+    try {
+      const response = await calendar.events.insert({
+        calendarId: calendarId || 'primary',
+        requestBody: eventData,
+      });
+
+      console.log(
+        `Event created: ${response.data.summary} on ${response.data.start.date || response.data.start.dateTime}`
+      );
+
+      return {
+        id: response.data.id,
+        summary: response.data.summary,
+        description: response.data.description,
+        start: response.data.start.dateTime || response.data.start.date,
+        end: response.data.end.dateTime || response.data.end.date,
+        allDay: !response.data.start.dateTime,
+        htmlLink: response.data.htmlLink,
+      };
+    } catch (error) {
+      console.error('Error creating event:', error);
+      throw new Error('Failed to create event in Google Calendar');
+    }
+  }
+
+  static async updateEvent(userId, calendarId, eventId, eventData) {
+    const auth = this.getOAuthClient(userId);
+    const calendar = google.calendar({ version: 'v3', auth });
+
+    try {
+      const response = await calendar.events.update({
+        calendarId: calendarId || 'primary',
+        eventId: eventId,
+        requestBody: eventData,
+      });
+
+      console.log(`Event updated: ${response.data.summary} (${eventId})`);
+
+      return {
+        id: response.data.id,
+        summary: response.data.summary,
+        description: response.data.description,
+        start: response.data.start.dateTime || response.data.start.date,
+        end: response.data.end.dateTime || response.data.end.date,
+        allDay: !response.data.start.dateTime,
+        htmlLink: response.data.htmlLink,
+      };
+    } catch (error) {
+      console.error('Error updating event:', error);
+      throw new Error('Failed to update event in Google Calendar');
+    }
+  }
+
+  static async deleteEvent(userId, calendarId, eventId) {
+    const auth = this.getOAuthClient(userId);
+    const calendar = google.calendar({ version: 'v3', auth });
+
+    try {
+      await calendar.events.delete({
+        calendarId: calendarId || 'primary',
+        eventId: eventId,
+      });
+
+      console.log(`Event deleted: ${eventId}`);
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      throw new Error('Failed to delete event from Google Calendar');
+    }
+  }
 }
 
 module.exports = CalendarService;

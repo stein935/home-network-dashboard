@@ -60,4 +60,16 @@ export const notesApi = {
   delete: (id) => api.delete(`/api/notes/${id}`),
 };
 
+// Scraper API
+export const scraperApi = {
+  getAll: () => api.get('/api/scrapers'),
+  getById: (id) => api.get(`/api/scrapers/${id}`),
+  create: (data) => api.post('/api/scrapers', data),
+  update: (id, data) => api.put(`/api/scrapers/${id}`, data),
+  delete: (id) => api.delete(`/api/scrapers/${id}`),
+  trigger: (id) => api.post(`/api/scrapers/${id}/trigger`),
+  getLogs: (id, limit = 10) =>
+    api.get(`/api/scrapers/${id}/logs`, { params: { limit } }),
+};
+
 export default api;
