@@ -14,6 +14,10 @@ const validateSection = [
   body('display_order')
     .isInt({ min: 0 })
     .withMessage('Display order must be a positive integer'),
+  body('is_collapsed_by_default')
+    .optional()
+    .isBoolean()
+    .withMessage('Collapse default must be a boolean'),
 ];
 
 // GET all sections (requires authentication)
@@ -46,8 +50,12 @@ router.post('/', isAdmin, validateSection, (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { name, display_order } = req.body;
-    const section = Section.create(name, display_order);
+    const { name, display_order, is_collapsed_by_default } = req.body;
+    const section = Section.create(
+      name,
+      display_order,
+      is_collapsed_by_default
+    );
 
     console.log(`Section created: ${name} by ${req.user.email}`);
     res.status(201).json(section);
@@ -70,14 +78,19 @@ router.put(
       }
 
       const { id } = req.params;
-      const { name, display_order } = req.body;
+      const { name, display_order, is_collapsed_by_default } = req.body;
 
       const existingSection = Section.findById(id);
       if (!existingSection) {
         return res.status(404).json({ error: 'Section not found' });
       }
 
-      const section = Section.update(id, name, display_order);
+      const section = Section.update(
+        id,
+        name,
+        display_order,
+        is_collapsed_by_default
+      );
 
       console.log(`Section updated: ${name} by ${req.user.email}`);
       res.json(section);
