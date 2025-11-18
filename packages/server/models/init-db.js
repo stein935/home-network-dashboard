@@ -242,6 +242,35 @@ function initializeDatabase() {
     )
   `);
 
+  // Create scrapers table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS scrapers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      url TEXT NOT NULL,
+      calendar_id TEXT NOT NULL,
+      cron_schedule TEXT NOT NULL DEFAULT '0 6 * * *',
+      enabled BOOLEAN NOT NULL DEFAULT 1,
+      last_run DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Create scraper_logs table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS scraper_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      scraper_id INTEGER NOT NULL,
+      status TEXT NOT NULL CHECK(status IN ('success', 'error')),
+      message TEXT,
+      events_created INTEGER DEFAULT 0,
+      events_updated INTEGER DEFAULT 0,
+      run_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (scraper_id) REFERENCES scrapers(id) ON DELETE CASCADE
+    )
+  `);
+
   // Create indexes
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id);
@@ -252,6 +281,8 @@ function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_service_config_service ON service_config(service_id);
     CREATE INDEX IF NOT EXISTS idx_notes_section ON notes(section_id);
     CREATE INDEX IF NOT EXISTS idx_notes_order ON notes(section_id, display_order);
+    CREATE INDEX IF NOT EXISTS idx_scraper_logs_scraper ON scraper_logs(scraper_id);
+    CREATE INDEX IF NOT EXISTS idx_scraper_logs_run_at ON scraper_logs(run_at);
   `);
 
   // Ensure default section exists
