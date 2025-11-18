@@ -9,7 +9,11 @@ export function SectionManager() {
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingSection, setEditingSection] = useState(null);
-  const [formData, setFormData] = useState({ name: '', display_order: '' });
+  const [formData, setFormData] = useState({
+    name: '',
+    display_order: '',
+    is_collapsed_by_default: false,
+  });
   const [formError, setFormError] = useState(null);
 
   useEffect(() => {
@@ -36,7 +40,11 @@ export function SectionManager() {
       sections.length > 0
         ? Math.max(...sections.map((s) => s.display_order)) + 1
         : 1;
-    setFormData({ name: '', display_order: nextOrder });
+    setFormData({
+      name: '',
+      display_order: nextOrder,
+      is_collapsed_by_default: false,
+    });
     setShowForm(true);
     setFormError(null);
   };
@@ -46,6 +54,7 @@ export function SectionManager() {
     setFormData({
       name: section.name,
       display_order: section.display_order,
+      is_collapsed_by_default: section.is_collapsed_by_default || false,
     });
     setShowForm(true);
     setFormError(null);
@@ -54,7 +63,11 @@ export function SectionManager() {
   const handleCloseForm = () => {
     setShowForm(false);
     setEditingSection(null);
-    setFormData({ name: '', display_order: '' });
+    setFormData({
+      name: '',
+      display_order: '',
+      is_collapsed_by_default: false,
+    });
     setFormError(null);
   };
 
@@ -66,6 +79,7 @@ export function SectionManager() {
       const submitData = {
         name: formData.name.trim(),
         display_order: parseInt(formData.display_order, 10),
+        is_collapsed_by_default: formData.is_collapsed_by_default,
       };
 
       if (editingSection) {
@@ -247,6 +261,44 @@ export function SectionManager() {
                 required
                 min="0"
               />
+            </div>
+
+            <div>
+              <label className="mb-2 block font-display text-sm uppercase text-text">
+                Collapse Default
+              </label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="collapse_default"
+                    checked={!formData.is_collapsed_by_default}
+                    onChange={() =>
+                      setFormData({
+                        ...formData,
+                        is_collapsed_by_default: false,
+                      })
+                    }
+                    className="h-5 w-5 border-3 border-border text-accent1 focus:ring-accent1"
+                  />
+                  <span className="font-body text-text">Open</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="collapse_default"
+                    checked={formData.is_collapsed_by_default}
+                    onChange={() =>
+                      setFormData({
+                        ...formData,
+                        is_collapsed_by_default: true,
+                      })
+                    }
+                    className="h-5 w-5 border-3 border-border text-accent1 focus:ring-accent1"
+                  />
+                  <span className="font-body text-text">Closed</span>
+                </label>
+              </div>
             </div>
 
             {formError && (

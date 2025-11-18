@@ -40,6 +40,14 @@ export function Dashboard() {
       ]);
       setSectionsWithServices(sectionsResponse.data);
       setNotes(notesResponse.data);
+
+      // Initialize collapsed sections based on default values
+      const initialCollapsedState = {};
+      sectionsResponse.data.forEach((section) => {
+        initialCollapsedState[section.id] =
+          section.is_collapsed_by_default || false;
+      });
+      setCollapsedSections(initialCollapsedState);
     } catch (err) {
       console.error('Error fetching data:', err);
       setError('Failed to load dashboard');
@@ -362,7 +370,7 @@ export function Dashboard() {
             THE
             <span className="text-accent1"> STEINECKS</span>
           </h1>
-          <p className="font-accent text-accent-sm sm:text-accent-md inline text-accent2">
+          <p className="inline font-accent text-accent-sm text-accent2 sm:text-accent-md">
             {getRandomGreeting() || 'Hello'}, {user?.name || user?.email}!
             <CornerDownLeft
               size={32}

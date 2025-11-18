@@ -89,17 +89,47 @@ function initializeDatabase() {
     `);
   }
 
-  // Create sections table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS sections (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      display_order INTEGER NOT NULL,
-      is_default BOOLEAN NOT NULL DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
+  // Check if sections table needs migration for is_collapsed_by_default
+  const sectionsTableInfo = db.prepare('PRAGMA table_info(sections)').all();
+  const sectionsTableExists = sectionsTableInfo.length > 0;
+  const hasCollapsedDefault = sectionsTableInfo.find(
+    (col) => col.name === 'is_collapsed_by_default'
+  );
+
+  if (sectionsTableExists && !hasCollapsedDefault) {
+    // Add is_collapsed_by_default column to existing table
+    console.log('Adding is_collapsed_by_default column to sections table...');
+    db.exec(
+      'ALTER TABLE sections ADD COLUMN is_collapsed_by_default BOOLEAN NOT NULL DEFAULT 0'
+    );
+    console.log('is_collapsed_by_default column added');
+  } else if (!sectionsTableExists) {
+    // Create sections table with is_collapsed_by_default
+    db.exec(`
+      CREATE TABLE sections (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        display_order INTEGER NOT NULL,
+        is_default BOOLEAN NOT NULL DEFAULT 0,
+        is_collapsed_by_default BOOLEAN NOT NULL DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+  } else {
+    // Table exists with column, ensure it exists
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS sections (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        display_order INTEGER NOT NULL,
+        is_default BOOLEAN NOT NULL DEFAULT 0,
+        is_collapsed_by_default BOOLEAN NOT NULL DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+  }
 
   // Check if we need to migrate services table
   const tableInfo = db.prepare('PRAGMA table_info(services)').all();
@@ -218,7 +248,9 @@ function initializeDatabase() {
 
   if (configTableExists) {
     // Always migrate to ensure fiveday support
-    console.log('Migrating service_config table to support fiveday view type...');
+    console.log(
+      'Migrating service_config table to support fiveday view type...'
+    );
 
     // Create new table with updated constraint
     db.exec(`

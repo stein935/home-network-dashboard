@@ -15,22 +15,22 @@ class Section {
     return db.prepare('SELECT * FROM sections WHERE is_default = 1').get();
   }
 
-  static create(name, displayOrder) {
+  static create(name, displayOrder, isCollapsedByDefault = false) {
     const stmt = db.prepare(`
-      INSERT INTO sections (name, display_order, is_default)
-      VALUES (?, ?, 0)
+      INSERT INTO sections (name, display_order, is_default, is_collapsed_by_default)
+      VALUES (?, ?, 0, ?)
     `);
-    const result = stmt.run(name, displayOrder);
+    const result = stmt.run(name, displayOrder, isCollapsedByDefault ? 1 : 0);
     return this.findById(result.lastInsertRowid);
   }
 
-  static update(id, name, displayOrder) {
+  static update(id, name, displayOrder, isCollapsedByDefault) {
     const stmt = db.prepare(`
       UPDATE sections
-      SET name = ?, display_order = ?, updated_at = CURRENT_TIMESTAMP
+      SET name = ?, display_order = ?, is_collapsed_by_default = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `);
-    stmt.run(name, displayOrder, id);
+    stmt.run(name, displayOrder, isCollapsedByDefault ? 1 : 0, id);
     return this.findById(id);
   }
 
