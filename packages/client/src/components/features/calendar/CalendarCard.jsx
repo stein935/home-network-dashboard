@@ -12,13 +12,7 @@ import { WeekView } from './views/WeekView';
 import { FiveDayView } from './views/FiveDayView';
 import { MonthView } from './views/MonthView';
 
-export function CalendarCard({
-  service,
-  onDragStart,
-  onDragEnd,
-  onDragOver,
-  onDrop,
-}) {
+export function CalendarCard({ service }) {
   const config = service.config || {};
   const defaultViewType = config.view_type || 'week';
   const cardElementRef = useRef(null);
@@ -32,7 +26,6 @@ export function CalendarCard({
   const [expandedDay, setExpandedDay] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-  const [isDragOver, setIsDragOver] = useState(false);
 
   const calendarId = config.calendar_id || 'primary';
 
@@ -185,47 +178,6 @@ export function CalendarCard({
     setCurrentDate(newDate);
   };
 
-  // Drag handlers
-  const handleDragStart = (e) => {
-    // Set the drag image to the entire card
-    if (cardRef.current) {
-      e.dataTransfer.setDragImage(cardRef.current, 150, 100);
-    }
-    if (onDragStart) {
-      onDragStart(e, service);
-    }
-  };
-
-  const handleDragEnd = (e) => {
-    if (onDragEnd) {
-      onDragEnd(e);
-    }
-    setIsDragOver(false);
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(true);
-    if (onDragOver) {
-      onDragOver(e);
-    }
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    setIsDragOver(false);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(false);
-    if (onDrop) {
-      onDrop(e, service);
-    }
-  };
-
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleTimeString('en-US', {
       hour: 'numeric',
@@ -327,17 +279,11 @@ export function CalendarCard({
   return (
     <div
       ref={cardRef}
-      className={`service-card calendar-card ${getColumnSpanClass()} relative ${isDragOver ? 'ring-4 ring-accent3' : ''}`}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
+      className={`service-card calendar-card ${getColumnSpanClass()} relative`}
     >
       {/* Drag handle icon */}
       <div
-        className="absolute right-4 top-4 z-30 cursor-move"
-        draggable="true"
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
+        className="sortable-handle absolute right-4 top-4 z-30 cursor-move"
         onClick={(e) => {
           e.stopPropagation(); // Prevent any card interactions when clicking drag handle
         }}

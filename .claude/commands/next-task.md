@@ -28,15 +28,15 @@ description: Running list of tasks I would like to make to the project. When run
 
 ### 4. Documentation Updates
 
-Update relevant documentation if the changes affect:
+Read and update relevant documentation ONLY if the changes affect:
 
-- @CLAUDE.md - Architecture, features, or API changes
-- @README.md - User-facing features or setup instructions
-- @Dockerfile - Build or deployment changes
-- @docker-compose.yml - Service configuration changes
-- @schema.sql - Database schema changes
-- @package.json - Dependencies or scripts
-- @packages/client/package.json - Client dependencies or scripts
+- CLAUDE.md - Architecture, features, or API changes
+- README.md - User-facing features or setup instructions
+- Dockerfile - Build or deployment changes
+- docker-compose.yml - Service configuration changes
+- schema.sql - Database schema changes
+- package.json - Dependencies or scripts
+- packages/client/package.json - Client dependencies or scripts
 
 ### 5. User Testing
 
@@ -61,7 +61,7 @@ Update relevant documentation if the changes affect:
 - Switch to `dev` branch
 - Pull latest changes and confirm feature is present
 - Delete feature branch both locally and on remote
-- Move the completed task from "Ready" to "Complete" in @local/prompt-drafts/task-list.md
+- Delete the completed task from "Ready" in @local/prompt-drafts/task-list.md
 
 ### 9. Completion
 

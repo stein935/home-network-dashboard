@@ -16,22 +16,12 @@ import {
 import { sanitizeHtml } from '@utils/htmlUtils';
 import { NoteDetailModal } from './NoteDetailModal';
 
-export function StickyNoteCard({
-  note,
-  onEdit,
-  onCheckboxToggle,
-  onDragStart,
-  onDragEnd,
-  onDragOver,
-  onDrop,
-}) {
-  const [isDragOver, setIsDragOver] = useState(false);
+export function StickyNoteCard({ note, onEdit, onCheckboxToggle }) {
   const [isDragHandleHovered, setIsDragHandleHovered] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [hasOverflow, setHasOverflow] = useState(false);
   const [showDetailView, setShowDetailView] = useState(false);
   const messageRef = useRef(null);
-  const cardRef = useRef(null);
   const titleRef = useRef(null);
 
   // Detect content overflow
@@ -120,46 +110,6 @@ export function StickyNoteCard({
     };
   }, [note.id, onCheckboxToggle, note.message]);
 
-  const handleDragStart = (e) => {
-    // Set the drag image to the entire card
-    if (cardRef.current) {
-      e.dataTransfer.setDragImage(cardRef.current, 50, 50);
-    }
-    if (onDragStart) {
-      onDragStart(e, note);
-    }
-  };
-
-  const handleDragEnd = (e) => {
-    if (onDragEnd) {
-      onDragEnd(e);
-    }
-    setIsDragOver(false);
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(true);
-    if (onDragOver) {
-      onDragOver(e);
-    }
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    setIsDragOver(false);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(false);
-    if (onDrop) {
-      onDrop(e, note);
-    }
-  };
-
   const dueDateCategory = getDueDateCategory(note.due_date);
   const formattedDueDate = formatDueDate(note.due_date);
   const badgeConfig = getDueDateBadgeConfig(dueDateCategory);
@@ -183,23 +133,14 @@ export function StickyNoteCard({
   return (
     <>
       <div
-        ref={cardRef}
-        className={`sticky-note-card relative select-none ${
-          isDragOver ? 'ring-4 ring-accent3' : ''
-        } ${isDragHandleHovered ? 'sticky-note-card-hover' : ''}`}
+        className={`sticky-note-card relative select-none ${isDragHandleHovered ? 'sticky-note-card-hover' : ''}`}
         style={{ backgroundColor: note.color }}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
         {/* Drag handle icon */}
         <div
-          className="absolute right-[-25px] top-[-20px] z-20 flex h-[80px] w-[80px] cursor-move items-center justify-center"
-          draggable="true"
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
+          className="sortable-handle absolute right-[-25px] top-[-20px] z-20 flex h-[80px] w-[80px] cursor-move items-center justify-center"
           onMouseEnter={() => setIsDragHandleHovered(true)}
           onMouseLeave={() => setIsDragHandleHovered(false)}
           onClick={(e) => {
