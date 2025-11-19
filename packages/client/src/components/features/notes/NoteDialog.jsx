@@ -167,7 +167,7 @@ export function NoteDialog({ note, sectionId, onSave, onDelete, onClose }) {
           type="date"
           value={dueDate}
           onChange={(e) => setDueDate(e.target.value)}
-          className="input-brutal w-full"
+          className="input-brutal w-full max-w-full"
         />
       </div>
 
