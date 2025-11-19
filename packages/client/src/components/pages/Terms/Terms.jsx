@@ -1,6 +1,6 @@
 export function Terms() {
   return (
-    <div className="prose prose-slate m-auto min-h-[80vh] max-w-[800px] px-6 pb-28 md:p-12 md:pb-28">
+    <div className="prose prose-slate m-auto max-w-[800px] p-6 pb-20 md:p-12 md:pb-28">
       <h1 className="mb-2 inline font-display text-display-sm uppercase text-text">
         HOME <span className="text-accent1">DASHBOARD</span>
       </h1>
