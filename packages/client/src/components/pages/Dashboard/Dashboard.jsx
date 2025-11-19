@@ -11,6 +11,7 @@ import { sectionsApi, notesApi, servicesApi } from '@utils/api';
 import { getRandomGreeting } from '@utils/greetings';
 import ServiceCard from '@features/services/ServiceCard';
 import StickyNoteCard from '@features/notes/StickyNoteCard';
+import Footer from '@layout/Footer';
 import NoteDialog from '@features/notes/NoteDialog';
 
 export function Dashboard() {
@@ -370,7 +371,7 @@ export function Dashboard() {
             THE
             <span className="text-accent1"> STEINECKS</span>
           </h1>
-          <p className="inline font-accent text-accent-sm text-accent2 sm:text-accent-md">
+          <p className="font-accent text-accent-sm sm:text-accent-md inline text-accent2">
             {getRandomGreeting() || 'Hello'}, {user?.name || user?.email}!
             <CornerDownLeft
               size={32}
@@ -411,11 +412,17 @@ export function Dashboard() {
             </div>
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="">
             {sectionsWithServices
-              .filter((section) => section.services.length > 0)
+              .filter(
+                (section) =>
+                  !(section.name === 'Default' && section.services.length === 0)
+              )
               .map((section) => (
-                <div key={section.id} className="">
+                <div
+                  key={section.id}
+                  className={`${collapsedSections[section.id] ? '' : 'mb-8'}`}
+                >
                   {/* Section Header */}
                   <div className="flex items-center justify-between border-t-5 border-black py-6">
                     <button
@@ -532,6 +539,8 @@ export function Dashboard() {
               ))}
           </div>
         )}
+
+        <Footer />
 
         {/* Note Dialog */}
         {noteDialogOpen && (

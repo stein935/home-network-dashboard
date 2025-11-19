@@ -211,15 +211,6 @@ export function StickyNoteCard({
             className="text-black/40 transition-colors hover:text-black/70"
           />
         </div>
-        {/* Due date badge - only show if not 'none' or 'future' */}
-        {dueDateCategory !== 'none' && dueDateCategory !== 'future' && (
-          <div
-            className={`absolute right-8 top-2 ${badgeConfig.bgColor} ${badgeConfig.textColor} z-10 flex items-center gap-1 border-2 border-black px-2 py-1 font-body text-xs font-bold`}
-          >
-            {IconComponent && <IconComponent size={12} />}
-            <span>{badgeConfig.label}</span>
-          </div>
-        )}
 
         {/* Main content */}
         <div
@@ -233,24 +224,35 @@ export function StickyNoteCard({
             {note.title}
           </h3>
 
-          {/* Author */}
-          <p className="mb-2 border-b-2 border-black pb-1 font-body text-xs text-black/70">
-            From: {note.author_name}
-          </p>
+          <div className="mb-2 flex items-end justify-between">
+            {/* Author */}
+            <p className="font-body text-xs text-black/70">
+              From: {note.author_name}
+            </p>
 
-          {/* Due date display (for future dates or when no urgent badge) */}
-          {note.due_date &&
-            (dueDateCategory === 'future' || dueDateCategory === 'none') && (
-              <p className="mb-2 flex items-center gap-1 font-body text-xs text-black/60">
-                <Calendar size={12} />
-                {formattedDueDate}
-              </p>
+            {/* Due date display (for future dates or when no urgent badge) */}
+            {note.due_date &&
+              (dueDateCategory === 'future' || dueDateCategory === 'none') && (
+                <p className="flex items-center gap-1 font-body text-xs text-black/60">
+                  <Calendar size={12} />
+                  {formattedDueDate}
+                </p>
+              )}
+            {/* Due date badge - only show if not 'none' or 'future' */}
+            {dueDateCategory !== 'none' && dueDateCategory !== 'future' && (
+              <div
+                className={`${badgeConfig.bgColor} ${badgeConfig.textColor} -mt-12 flex items-center gap-1 border-2 border-black px-2 py-1 font-body text-xs font-bold`}
+              >
+                {IconComponent && <IconComponent size={12} />}
+                <span>{badgeConfig.label}</span>
+              </div>
             )}
+          </div>
 
           {/* Message */}
           <div
             ref={messageRef}
-            className="note-message-content flex-1 overflow-hidden font-body text-sm text-black"
+            className="note-message-content flex-1 overflow-hidden border-t-2 border-black pt-2 font-body text-sm text-black"
             dangerouslySetInnerHTML={{ __html: sanitizeHtml(note.message) }}
             style={{
               overflow: 'hidden',
