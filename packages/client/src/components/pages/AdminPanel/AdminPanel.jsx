@@ -7,6 +7,7 @@ import UserManagement from '@features/admin/UserManagement';
 import ServiceForm from '@features/services/ServiceForm';
 import SectionManager from '@features/admin/SectionManager';
 import { ScraperManager } from '@features/admin/ScraperManager';
+import Footer from '@layout/Footer';
 
 export function AdminPanel() {
   const navigate = useNavigate();
@@ -90,7 +91,7 @@ export function AdminPanel() {
   };
 
   return (
-    <div className="min-h-[80vh] p-6 md:p-12">
+    <div className="min-h-screen px-6 pb-0 pt-6 md:px-12 md:pt-12">
       <div className="mx-auto max-w-7xl">
         {/* Header */}
         <header className="mb-6 sm:mb-12">
@@ -264,6 +265,7 @@ export function AdminPanel() {
             onCancel={handleCloseForm}
           />
         )}
+        <Footer />
       </div>
     </div>
   );
