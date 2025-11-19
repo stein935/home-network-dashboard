@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '@context/AuthContext';
 import ProtectedRoute from '@layout/ProtectedRoute';
+import ScrollToTop from '@layout/ScrollToTop';
 import Dashboard from '@pages/Dashboard';
 import AdminPanel from '@pages/AdminPanel';
 import Privacy from '@pages/Privacy';
@@ -10,6 +11,7 @@ function App() {
   return (
     <AuthProvider>
       <Router>
+        <ScrollToTop />
         <Routes>
           <Route
             path="/"
