@@ -225,6 +225,8 @@ import { getDueDateCategory } from '@utils/dateUtils';
 - `npm run seed` - Seed admin user
 - `npm run build` - Build frontend for production
 - `npm run start` - Start backend in production mode
+- `npm run deploy` - Deploy to production (see Docker Deployment section)
+- `npm run recover` - Recover data from backup database
 
 **Code Quality**:
 
@@ -248,6 +250,10 @@ import { getDueDateCategory } from '@utils/dateUtils';
 **Production deployment** uses Docker with Cloudflare Tunnel for secure HTTPS access:
 
 ```bash
+# Recommended: Safe deploy with automatic backup and verification
+npm run deploy
+
+# Manual deployment steps (not recommended - use npm run deploy instead)
 # Build and start
 docker-compose up -d --build
 
@@ -258,12 +264,28 @@ docker-compose logs -f
 docker-compose logs -f cloudflared
 docker-compose logs -f home-dashboard
 
-# Stop
-docker-compose down
-
-# Rebuild from scratch
-docker-compose down && docker-compose build --no-cache && docker-compose up -d
+# Stop (use -t 30 for graceful 30-second shutdown)
+docker-compose down -t 30
 ```
+
+**Safe Deployment Process** (`npm run deploy`):
+
+The deploy command performs the following steps to prevent database corruption:
+
+1. **Build frontend** - Compiles React app for production
+2. **Checkpoint database** - Creates timestamped backup in `data/backups/` and commits all WAL (Write-Ahead Log) files
+3. **Graceful shutdown** - Stops containers with 30-second timeout for clean shutdown
+4. **Rebuild images** - Builds fresh Docker images without cache
+5. **Start containers** - Launches home-dashboard and cloudflared services
+6. **Verify deployment** - Confirms database integrity and displays current data
+
+**Database Protection Features**:
+
+- **Automatic backups**: Each deployment creates timestamped backup (keeps last 10)
+- **WAL checkpoint**: Forces SQLite to commit pending writes before shutdown
+- **Integrity verification**: Checks database health before and after deployment
+- **Graceful shutdown**: 30-second timeout prevents abrupt database closure
+- **Recovery command**: `npm run recover` restores data from most recent backup if needed
 
 **Docker configuration**:
 

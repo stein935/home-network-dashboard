@@ -1,7 +1,7 @@
 require('dotenv').config();
 const readline = require('readline');
-const User = require('../server/models/User');
-const initializeDatabase = require('../server/models/init-db');
+const User = require('../models/User');
+const initializeDatabase = require('../models/init-db');
 
 const rl = readline.createInterface({
   input: process.stdin,

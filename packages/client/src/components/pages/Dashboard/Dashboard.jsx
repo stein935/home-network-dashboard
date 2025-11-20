@@ -83,11 +83,11 @@ export function Dashboard() {
 
               try {
                 // Update local state immediately to match the DOM
-                const updatedSections = sectionsWithServices.map(s => {
+                const updatedSections = sectionsWithServices.map((s) => {
                   if (s.id === section.id) {
                     return {
                       ...s,
-                      services: reorderedServices
+                      services: reorderedServices,
                     };
                   }
                   return s;
@@ -97,7 +97,7 @@ export function Dashboard() {
                 setSectionsWithServices(updatedSections);
 
                 // Save to server in background
-                servicesApi.reorder(updates).catch(err => {
+                servicesApi.reorder(updates).catch((err) => {
                   console.error('Error reordering services:', err);
                   alert('Failed to save service order');
                   // Revert by fetching from server
@@ -126,11 +126,19 @@ export function Dashboard() {
             ghostClass: 'opacity-50',
             group: 'notes', // Allow dragging between sections
             onEnd: async (evt) => {
-              const fromSectionId = parseInt(evt.from.getAttribute('data-notes-section'));
-              const toSectionId = parseInt(evt.to.getAttribute('data-notes-section'));
+              const fromSectionId = parseInt(
+                evt.from.getAttribute('data-notes-section')
+              );
+              const toSectionId = parseInt(
+                evt.to.getAttribute('data-notes-section')
+              );
 
               // If dropped in same position in same section, do nothing
-              if (evt.oldIndex === evt.newIndex && fromSectionId === toSectionId) return;
+              if (
+                evt.oldIndex === evt.newIndex &&
+                fromSectionId === toSectionId
+              )
+                return;
 
               const scrollY = window.scrollY;
               const isCrossSection = fromSectionId !== toSectionId;
@@ -139,7 +147,10 @@ export function Dashboard() {
               if (isCrossSection) {
                 // Move the item back to its original position
                 if (evt.from && evt.item) {
-                  evt.from.insertBefore(evt.item, evt.from.children[evt.oldIndex]);
+                  evt.from.insertBefore(
+                    evt.item,
+                    evt.from.children[evt.oldIndex]
+                  );
                 }
               }
 
@@ -149,11 +160,11 @@ export function Dashboard() {
               if (isCrossSection) {
                 // Get the moved note
                 const noteId = parseInt(evt.item.getAttribute('data-note-id'));
-                const movedNote = notes.find(n => n.id === noteId);
+                const movedNote = notes.find((n) => n.id === noteId);
 
                 // Get target section notes and insert at new position
                 const targetNotes = notes
-                  .filter(n => n.section_id === toSectionId)
+                  .filter((n) => n.section_id === toSectionId)
                   .sort((a, b) => a.display_order - b.display_order);
 
                 targetNotes.splice(evt.newIndex, 0, movedNote);
@@ -168,7 +179,9 @@ export function Dashboard() {
 
                 // Update source section (excluding moved note)
                 const sourceNotes = notes
-                  .filter(n => n.section_id === fromSectionId && n.id !== noteId)
+                  .filter(
+                    (n) => n.section_id === fromSectionId && n.id !== noteId
+                  )
                   .sort((a, b) => a.display_order - b.display_order);
 
                 sourceNotes.forEach((note, index) => {
@@ -181,7 +194,7 @@ export function Dashboard() {
               } else {
                 // Same section reorder
                 const sectionNotes = notes
-                  .filter(n => n.section_id === section.id)
+                  .filter((n) => n.section_id === section.id)
                   .sort((a, b) => a.display_order - b.display_order);
 
                 const reorderedNotes = Array.from(sectionNotes);
