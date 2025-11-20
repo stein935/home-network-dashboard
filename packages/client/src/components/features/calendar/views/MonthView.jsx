@@ -6,6 +6,7 @@ export function MonthView({
   setExpandedDay,
   setSelectedEvent,
   windowWidth,
+  calendars = [],
 }) {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -117,22 +118,36 @@ export function MonthView({
               <div
                 className={`flex-1 divide-y overflow-hidden ${isToday ? 'divide-accent1' : 'divide-border'}`}
               >
-                {dayEvents.slice(0, 2).map((event, eventIdx) => (
-                  <div
-                    key={eventIdx}
-                    className="flex cursor-pointer items-center gap-1 truncate py-1 text-xs text-text transition-colors hover:bg-accent1/10"
-                    title={event.summary}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedEvent(event);
-                    }}
-                  >
-                    {event.allDay && (
-                      <CalendarIcon size={10} className="flex-shrink-0" />
-                    )}
-                    <span className="truncate">{event.summary}</span>
-                  </div>
-                ))}
+                {dayEvents.slice(0, 2).map((event, eventIdx) => {
+                  // Find calendar color (only show dot if 2+ calendars)
+                  const showDot = calendars.length >= 2;
+                  const calendarColor = calendars.find(
+                    (cal) => cal.id === event.calendarId
+                  )?.color;
+                  return (
+                    <div
+                      key={eventIdx}
+                      className="flex cursor-pointer items-center gap-1 truncate py-1 text-xs text-text transition-colors hover:bg-accent1/10"
+                      title={event.summary}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedEvent(event);
+                      }}
+                    >
+                      {showDot && calendarColor && (
+                        <div
+                          className="h-2 w-2 flex-shrink-0 rounded-full"
+                          style={{ backgroundColor: calendarColor }}
+                          aria-label="Calendar indicator"
+                        />
+                      )}
+                      {event.allDay && (
+                        <CalendarIcon size={10} className="flex-shrink-0" />
+                      )}
+                      <span className="truncate">{event.summary}</span>
+                    </div>
+                  );
+                })}
                 {dayEvents.length > 2 && (
                   <button
                     onClick={() => setExpandedDay({ date, events: dayEvents })}

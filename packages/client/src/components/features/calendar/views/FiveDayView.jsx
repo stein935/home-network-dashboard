@@ -3,11 +3,13 @@ import { Calendar as CalendarIcon } from 'lucide-react';
 export function FiveDayView({
   events,
   currentDate,
+  setExpandedDay,
   formatDate,
   getWorkWeekStart,
   setSelectedEvent,
   windowWidth,
   weekStackWidth,
+  calendars = [],
 }) {
   const workWeekStart = getWorkWeekStart(currentDate);
   // Generate Monday through Friday (5 days)
@@ -104,23 +106,48 @@ export function FiveDayView({
             <div
               className={`divide-y ${isToday ? 'divide-accent1' : 'divide-border'}`}
             >
-              {dayEvents.map((event, eventIdx) => (
-                <div
-                  key={eventIdx}
-                  className="flex cursor-pointer items-center gap-1 truncate py-1 font-body text-xs text-text transition-colors hover:bg-accent1/10"
-                  title={event.summary}
-                  onClick={() => setSelectedEvent(event)}
+              {dayEvents.slice(0, 5).map((event, eventIdx) => {
+                // Find calendar color (only show dot if 2+ calendars)
+                const showDot = calendars.length >= 2;
+                const calendarColor = calendars.find(
+                  (cal) => cal.id === event.calendarId
+                )?.color;
+
+                return (
+                  <div
+                    key={eventIdx}
+                    className="flex cursor-pointer items-center gap-1 truncate py-1 font-body text-xs text-text transition-colors hover:bg-accent1/10"
+                    title={event.summary}
+                    onClick={() => setSelectedEvent(event)}
+                  >
+                    {showDot && calendarColor && (
+                      <div
+                        className="h-2 w-2 flex-shrink-0 rounded-full"
+                        style={{ backgroundColor: calendarColor }}
+                        aria-label="Calendar indicator"
+                      />
+                    )}
+                    {event.allDay && (
+                      <CalendarIcon size={12} className="flex-shrink-0" />
+                    )}
+                    <span className="truncate">
+                      {event.allDay
+                        ? event.summary
+                        : `${formatDate(event.start)} ${event.summary}`}
+                    </span>
+                  </div>
+                );
+              })}
+              {dayEvents.length > 5 && (
+                <button
+                  onClick={() =>
+                    setExpandedDay({ date: day, events: dayEvents })
+                  }
+                  className="cursor-pointer py-1 text-xs text-accent1 hover:text-accent2"
                 >
-                  {event.allDay && (
-                    <CalendarIcon size={12} className="flex-shrink-0" />
-                  )}
-                  <span className="truncate">
-                    {event.allDay
-                      ? event.summary
-                      : `${formatDate(event.start)} ${event.summary}`}
-                  </span>
-                </div>
-              ))}
+                  +{dayEvents.length - 5} more
+                </button>
+              )}
             </div>
           </div>
         );
