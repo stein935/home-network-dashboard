@@ -79,10 +79,11 @@ app.use(
     secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
     resave: false,
     saveUninitialized: false,
+    rolling: true, // Reset session expiration on each request (sliding window)
     cookie: {
       secure: process.env.NODE_ENV === 'production', // Enable secure cookies over HTTPS in production
       httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days of inactivity
       sameSite: 'lax',
     },
   })
