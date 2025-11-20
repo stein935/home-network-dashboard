@@ -27,7 +27,9 @@ function setupPassport() {
 
           if (!user) {
             // User not in whitelist - deny access
-            console.log(`[OAuth Strategy] Access denied for non-whitelisted user: ${email}`);
+            console.log(
+              `[OAuth Strategy] Access denied for non-whitelisted user: ${email}`
+            );
             return done(null, false, {
               message: 'User not authorized. Contact admin for access.',
             });
@@ -50,7 +52,9 @@ function setupPassport() {
           // Update last login timestamp
           User.updateLastLogin(user.id);
 
-          console.log(`[OAuth Strategy] User authenticated successfully: ${email} (${user.role})`);
+          console.log(
+            `[OAuth Strategy] User authenticated successfully: ${email} (${user.role})`
+          );
           return done(null, user);
         } catch (error) {
           console.error('[OAuth Strategy] Error:', error);
