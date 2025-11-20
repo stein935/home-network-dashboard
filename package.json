@@ -7,7 +7,8 @@
     "packages/*"
   ],
   "scripts": {
-    "deploy": "npm run build && node packages/server/scripts/checkpoint-db.js && docker-compose down -t 30 && docker-compose build --no-cache && docker-compose up -d && node packages/server/scripts/verify-data.js",
+    "deploy": "./scripts/deploy-production.sh",
+    "backup:dev": "node packages/server/scripts/checkpoint-db.js",
     "dev": "npm run dev:server & npm run dev:client",
     "dev:server": "npm run dev --workspace=home-dashboard-server",
     "dev:client": "npm run dev --workspace=home-dashboard-client",

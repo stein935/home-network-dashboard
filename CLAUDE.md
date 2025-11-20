@@ -226,7 +226,8 @@ import { getDueDateCategory } from '@utils/dateUtils';
 - `npm run build` - Build frontend for production
 - `npm run start` - Start backend in production mode
 - `npm run deploy` - Deploy to production (see Docker Deployment section)
-- `npm run recover` - Recover data from backup database
+- `npm run backup:dev` - Backup development database to ./data/backups/
+- `npm run recover` - Recover development database from backup
 
 **Code Quality**:
 
@@ -273,19 +274,31 @@ docker-compose down -t 30
 The deploy command performs the following steps to prevent database corruption:
 
 1. **Build frontend** - Compiles React app for production
-2. **Checkpoint database** - Creates timestamped backup in `data/backups/` and commits all WAL (Write-Ahead Log) files
+2. **Backup production database** - Creates timestamped backup inside Docker volume and commits all WAL files (if container is running)
 3. **Graceful shutdown** - Stops containers with 30-second timeout for clean shutdown
 4. **Rebuild images** - Builds fresh Docker images without cache
 5. **Start containers** - Launches home-dashboard and cloudflared services
-6. **Verify deployment** - Confirms database integrity and displays current data
+6. **Verify status** - Confirms containers are running and displays status
+
+**Database Isolation**:
+
+- **Development database**: `./data/database.db` (local machine, bind mount)
+  - Used by `npm run dev:server` for local development
+  - Backs up to `./data/backups/` using `npm run backup:dev`
+  - Recoverable using `npm run recover`
+
+- **Production database**: Docker volume `production-data:/app/data/production.db`
+  - Completely isolated from development database
+  - Persisted in Docker-managed volume (survives container rebuilds)
+  - Backs up to `/app/data/backups/` inside container during deployment
+  - When deployed to remote machine, starts fresh (or restore from volume backup)
 
 **Database Protection Features**:
 
-- **Automatic backups**: Each deployment creates timestamped backup (keeps last 10)
+- **Automatic backups**: Each deployment creates timestamped backup inside Docker volume (keeps last 10)
 - **WAL checkpoint**: Forces SQLite to commit pending writes before shutdown
-- **Integrity verification**: Checks database health before and after deployment
 - **Graceful shutdown**: 30-second timeout prevents abrupt database closure
-- **Recovery command**: `npm run recover` restores data from most recent backup if needed
+- **Volume persistence**: Production data survives container rebuilds and updates
 
 **Docker configuration**:
 
@@ -294,8 +307,48 @@ The deploy command performs the following steps to prevent database corruption:
 - Cloudflare Tunnel provides secure HTTPS access without port forwarding
 - NODE_ENV automatically set to `production`
 - Frontend built and served as static files from backend
-- Data persisted in `./data` volume
+- **Production data**: Docker volume `production-data` mounted at `/app/data`
+- **Session database**: Stored in same Docker volume at `/app/data/sessions.db`
 - Environment variables set in `docker-compose.yml` and `.env`
+
+**Migrating from Old Deployment** (one-time migration):
+
+If you're upgrading from the old deployment structure where dev and production shared `./data/database.db`, you need to migrate your production data to the new Docker volume:
+
+```bash
+# Run migration script to copy existing production data to Docker volume
+./scripts/migrate-to-docker-volume.sh
+
+# Deploy with new configuration
+npm run deploy
+
+# Verify production is working, then optionally remove old data directory
+# rm -rf ./data  # Only after verifying production works!
+```
+
+**Managing Production Database**:
+
+```bash
+# View production database backups
+docker exec home-network-dashboard ls -lh /app/data/backups/
+
+# Backup production volume to local machine
+docker run --rm -v home-network-dashboard_production-data:/data -v $(pwd):/backup alpine tar czf /backup/production-backup.tar.gz /data
+
+# Restore production volume from backup
+docker run --rm -v home-network-dashboard_production-data:/data -v $(pwd):/backup alpine tar xzf /backup/production-backup.tar.gz -C /
+
+# Create admin user in production
+docker exec home-network-dashboard node packages/server/scripts/add-admin.js email@example.com "Name"
+
+# Transfer production volume to remote machine
+# On source machine:
+docker run --rm -v home-network-dashboard_production-data:/data -v $(pwd):/backup alpine tar czf /backup/production-data.tar.gz -C / data
+
+# On remote machine (after copying the tar.gz):
+docker volume create home-network-dashboard_production-data
+docker run --rm -v home-network-dashboard_production-data:/data -v $(pwd):/backup alpine tar xzf /backup/production-data.tar.gz -C /
+```
 
 **Cloudflare Tunnel Setup**:
 

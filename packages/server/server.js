@@ -60,15 +60,20 @@ app.use(express.urlencoded({ extended: true }));
 
 // Session configuration
 const projectRoot = path.resolve(__dirname, '../..');
-// Use absolute path for session DB in production, relative path for dev
-const sessionDbDir =
-  process.env.NODE_ENV === 'production'
-    ? '/data'
-    : path.join(projectRoot, 'data');
+// Use SESSION_DB_PATH env var if provided, otherwise use default paths
+const sessionDbPath = process.env.SESSION_DB_PATH
+  ? process.env.SESSION_DB_PATH
+  : process.env.NODE_ENV === 'production'
+    ? '/app/data/sessions.db'
+    : path.join(projectRoot, 'data', 'sessions.db');
+
+const sessionDbDir = path.dirname(sessionDbPath);
+const sessionDbFile = path.basename(sessionDbPath);
+
 app.use(
   session({
     store: new SQLiteStore({
-      db: 'sessions.db',
+      db: sessionDbFile,
       dir: sessionDbDir,
     }),
     secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
