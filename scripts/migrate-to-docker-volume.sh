@@ -7,17 +7,17 @@ set -e
 
 echo ""
 echo "╔═══════════════════════════════════════════════════════════════╗"
-echo "║   Migrate Production Data to Docker Volume                   ║"
+echo "║   Migrate Production Data to Docker Volume                    ║"
 echo "╚═══════════════════════════════════════════════════════════════╝"
 echo ""
 
 # Check if old database exists
 if [ ! -f "./data/database.db" ]; then
-  echo "⚠️  No existing production database found at ./data/database.db"
-  echo "    This is normal for first-time deployments."
-  echo "    Skipping migration."
-  echo ""
-  exit 0
+	echo "⚠️  No existing production database found at ./data/database.db"
+	echo "    This is normal for first-time deployments."
+	echo "    Skipping migration."
+	echo ""
+	exit 0
 fi
 
 echo "Found existing production database at ./data/database.db"
@@ -32,9 +32,9 @@ echo ""
 # Copy data to Docker volume using temporary container
 echo "Copying database to Docker volume..."
 docker run --rm \
-  -v $(pwd)/data:/source:ro \
-  -v home-network-dashboard_production-data:/dest \
-  alpine sh -c "
+	-v $(pwd)/data:/source:ro \
+	-v home-network-dashboard_production-data:/dest \
+	alpine sh -c "
     mkdir -p /dest &&
     cp -v /source/database.db /dest/production.db &&
     cp -v /source/database.db-shm /dest/production.db-shm 2>/dev/null || true &&
