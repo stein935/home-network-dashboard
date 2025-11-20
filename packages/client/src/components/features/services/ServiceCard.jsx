@@ -1,86 +1,19 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import * as Icons from 'lucide-react';
 import { MoreVertical } from 'lucide-react';
 import { CalendarCard } from '@features/calendar/CalendarCard';
 
-export function ServiceCard({
-  service,
-  onDragStart,
-  onDragEnd,
-  onDragOver,
-  onDrop,
-}) {
-  const [isDragOver, setIsDragOver] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
+export function ServiceCard({ service }) {
   const [isDragHandleHovered, setIsDragHandleHovered] = useState(false);
-  const cardRef = useRef(null);
 
   // Render calendar card for calendar type
   if (service.card_type === 'calendar') {
-    return (
-      <CalendarCard
-        service={service}
-        onDragStart={onDragStart}
-        onDragEnd={onDragEnd}
-        onDragOver={onDragOver}
-        onDrop={onDrop}
-      />
-    );
+    return <CalendarCard service={service} />;
   }
 
   // Default link card behavior
-  const handleClick = (e) => {
-    // Prevent click if we just finished dragging
-    if (isDragging) {
-      e.preventDefault();
-      e.stopPropagation();
-      return;
-    }
+  const handleClick = () => {
     window.open(service.url, '_blank', 'noopener,noreferrer');
-  };
-
-  // Drag handlers
-  const handleDragStart = (e) => {
-    setIsDragging(true);
-    // Set the drag image to the entire card
-    if (cardRef.current) {
-      e.dataTransfer.setDragImage(cardRef.current, 100, 100);
-    }
-    if (onDragStart) {
-      onDragStart(e, service);
-    }
-  };
-
-  const handleDragEnd = (e) => {
-    if (onDragEnd) {
-      onDragEnd(e);
-    }
-    setIsDragOver(false);
-    // Reset dragging state after a short delay to prevent click
-    setTimeout(() => setIsDragging(false), 100);
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(true);
-    if (onDragOver) {
-      onDragOver(e);
-    }
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    setIsDragOver(false);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(false);
-    if (onDrop) {
-      onDrop(e, service);
-    }
   };
 
   // Dynamically get icon component from lucide-react
@@ -88,12 +21,8 @@ export function ServiceCard({
 
   return (
     <div
-      ref={cardRef}
-      className={`service-card relative ${isDragOver ? 'ring-4 ring-accent3' : ''}`}
+      className="service-card relative"
       onClick={handleClick}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
       role="button"
       tabIndex={0}
       onKeyPress={(e) => {
@@ -104,10 +33,7 @@ export function ServiceCard({
     >
       {/* Drag handle icon */}
       <div
-        className="absolute right-4 top-4 z-20 cursor-move"
-        draggable="true"
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
+        className="sortable-handle absolute right-4 top-4 z-20 cursor-move"
         onMouseEnter={() => setIsDragHandleHovered(true)}
         onMouseLeave={() => setIsDragHandleHovered(false)}
         onClick={(e) => {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   ChevronDown,
   ChevronRight,
@@ -6,6 +6,7 @@ import {
   Plus,
   CornerDownLeft,
 } from 'lucide-react';
+import Sortable from 'sortablejs';
 import { useAuth } from '@hooks/useAuth';
 import { sectionsApi, notesApi, servicesApi } from '@utils/api';
 import { getRandomGreeting } from '@utils/greetings';
@@ -24,12 +25,208 @@ export function Dashboard() {
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState(null);
   const [selectedSectionId, setSelectedSectionId] = useState(null);
-  const [draggedNote, setDraggedNote] = useState(null);
-  const [draggedService, setDraggedService] = useState(null);
+  const sortableRefs = useRef({});
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Initialize Sortable for services and notes grids
+  useEffect(() => {
+    if (loading) return;
+
+    // Cleanup existing instances first
+    Object.keys(sortableRefs.current).forEach((key) => {
+      const sortable = sortableRefs.current[key];
+      if (sortable && typeof sortable.destroy === 'function') {
+        try {
+          sortable.destroy();
+        } catch {
+          // Silently ignore
+        }
+      }
+    });
+    sortableRefs.current = {};
+
+    // Use setTimeout to ensure DOM is fully rendered
+    const timeoutId = setTimeout(() => {
+      // Initialize sortable for each section's services
+      sectionsWithServices.forEach((section) => {
+        // Skip collapsed sections - their DOM elements don't exist yet
+        if (collapsedSections[section.id]) return;
+
+        const servicesKey = `services-${section.id}`;
+        const servicesGrid = document.querySelector(
+          `[data-services-section="${section.id}"]`
+        );
+
+        if (servicesGrid && section.services.length > 0) {
+          sortableRefs.current[servicesKey] = new Sortable(servicesGrid, {
+            animation: 150,
+            handle: '.sortable-handle',
+            ghostClass: 'opacity-50',
+            onEnd: async (evt) => {
+              if (evt.oldIndex === evt.newIndex) return;
+
+              const scrollY = window.scrollY;
+              const sectionServices =
+                sectionsWithServices.find((s) => s.id === section.id)
+                  ?.services || [];
+              const reorderedServices = Array.from(sectionServices);
+              const [movedService] = reorderedServices.splice(evt.oldIndex, 1);
+              reorderedServices.splice(evt.newIndex, 0, movedService);
+
+              const updates = reorderedServices.map((service, index) => ({
+                id: service.id,
+                displayOrder: index,
+              }));
+
+              try {
+                // Update local state immediately to match the DOM
+                const updatedSections = sectionsWithServices.map(s => {
+                  if (s.id === section.id) {
+                    return {
+                      ...s,
+                      services: reorderedServices
+                    };
+                  }
+                  return s;
+                });
+
+                // Update state - this will trigger useEffect to recreate Sortable instances
+                setSectionsWithServices(updatedSections);
+
+                // Save to server in background
+                servicesApi.reorder(updates).catch(err => {
+                  console.error('Error reordering services:', err);
+                  alert('Failed to save service order');
+                  // Revert by fetching from server
+                  fetchServices();
+                });
+
+                window.scrollTo(0, scrollY);
+              } catch (err) {
+                console.error('Error reordering services:', err);
+                alert('Failed to reorder services');
+              }
+            },
+          });
+        }
+
+        // Initialize sortable for each section's notes
+        const notesKey = `notes-${section.id}`;
+        const notesGrid = document.querySelector(
+          `[data-notes-section="${section.id}"]`
+        );
+
+        if (notesGrid) {
+          sortableRefs.current[notesKey] = new Sortable(notesGrid, {
+            animation: 150,
+            handle: '.sortable-handle',
+            ghostClass: 'opacity-50',
+            group: 'notes', // Allow dragging between sections
+            onEnd: async (evt) => {
+              const fromSectionId = parseInt(evt.from.getAttribute('data-notes-section'));
+              const toSectionId = parseInt(evt.to.getAttribute('data-notes-section'));
+
+              // If dropped in same position in same section, do nothing
+              if (evt.oldIndex === evt.newIndex && fromSectionId === toSectionId) return;
+
+              const scrollY = window.scrollY;
+              const isCrossSection = fromSectionId !== toSectionId;
+
+              // If cross-section, revert DOM changes immediately
+              if (isCrossSection) {
+                // Move the item back to its original position
+                if (evt.from && evt.item) {
+                  evt.from.insertBefore(evt.item, evt.from.children[evt.oldIndex]);
+                }
+              }
+
+              // Build updates
+              const updates = [];
+
+              if (isCrossSection) {
+                // Get the moved note
+                const noteId = parseInt(evt.item.getAttribute('data-note-id'));
+                const movedNote = notes.find(n => n.id === noteId);
+
+                // Get target section notes and insert at new position
+                const targetNotes = notes
+                  .filter(n => n.section_id === toSectionId)
+                  .sort((a, b) => a.display_order - b.display_order);
+
+                targetNotes.splice(evt.newIndex, 0, movedNote);
+
+                targetNotes.forEach((note, index) => {
+                  updates.push({
+                    id: note.id,
+                    sectionId: toSectionId,
+                    displayOrder: index,
+                  });
+                });
+
+                // Update source section (excluding moved note)
+                const sourceNotes = notes
+                  .filter(n => n.section_id === fromSectionId && n.id !== noteId)
+                  .sort((a, b) => a.display_order - b.display_order);
+
+                sourceNotes.forEach((note, index) => {
+                  updates.push({
+                    id: note.id,
+                    sectionId: fromSectionId,
+                    displayOrder: index,
+                  });
+                });
+              } else {
+                // Same section reorder
+                const sectionNotes = notes
+                  .filter(n => n.section_id === section.id)
+                  .sort((a, b) => a.display_order - b.display_order);
+
+                const reorderedNotes = Array.from(sectionNotes);
+                const [movedNote] = reorderedNotes.splice(evt.oldIndex, 1);
+                reorderedNotes.splice(evt.newIndex, 0, movedNote);
+
+                reorderedNotes.forEach((note, index) => {
+                  updates.push({
+                    id: note.id,
+                    sectionId: section.id,
+                    displayOrder: index,
+                  });
+                });
+              }
+
+              try {
+                await notesApi.reorder(updates);
+                await fetchNotes();
+                window.scrollTo(0, scrollY);
+              } catch (err) {
+                console.error('Error reordering notes:', err);
+                alert('Failed to reorder notes');
+              }
+            },
+          });
+        }
+      });
+    }, 0);
+
+    return () => {
+      clearTimeout(timeoutId);
+      // Cleanup sortable instances
+      Object.keys(sortableRefs.current).forEach((key) => {
+        const sortable = sortableRefs.current[key];
+        if (sortable && typeof sortable.destroy === 'function') {
+          try {
+            sortable.destroy();
+          } catch {
+            // Silently ignore
+          }
+        }
+      });
+      sortableRefs.current = {};
+    };
+  }, [loading, sectionsWithServices, notes, collapsedSections]);
 
   const fetchData = async () => {
     try {
@@ -63,6 +260,15 @@ export function Dashboard() {
       setNotes(response.data);
     } catch (err) {
       console.error('Error fetching notes:', err);
+    }
+  };
+
+  const fetchServices = async () => {
+    try {
+      const response = await sectionsApi.getAllWithServices();
+      setSectionsWithServices(response.data);
+    } catch (err) {
+      console.error('Error fetching services:', err);
     }
   };
 
@@ -182,186 +388,6 @@ export function Dashboard() {
     return notes.filter((note) => note.section_id === sectionId);
   };
 
-  // Drag and drop handlers
-  const handleDragStart = (e, note) => {
-    setDraggedNote(note);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDragEnd = () => {
-    setDraggedNote(null);
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleNoteDropOnNote = async (e, targetNote) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!draggedNote || draggedNote.id === targetNote.id) {
-      setDraggedNote(null);
-      return;
-    }
-
-    const targetSectionId = targetNote.section_id;
-    const targetNotes = getSectionNotes(targetSectionId);
-    const targetIndex = targetNotes.findIndex(
-      (note) => note.id === targetNote.id
-    );
-
-    // Call handleDrop with the target index
-    await handleDrop(e, targetSectionId, targetIndex);
-  };
-
-  const handleDrop = async (e, targetSectionId, dropIndex = null) => {
-    e.preventDefault();
-
-    if (!draggedNote) return;
-
-    const targetNotes = getSectionNotes(targetSectionId);
-    const isSameSection = draggedNote.section_id === targetSectionId;
-
-    try {
-      if (targetNotes.length === 0) {
-        // Target section is empty, just move the note
-        await notesApi.reorder([
-          {
-            id: draggedNote.id,
-            sectionId: targetSectionId,
-            displayOrder: 0,
-          },
-        ]);
-        await fetchNotes();
-      } else if (isSameSection) {
-        // Reordering within the same section
-        // Get the current index of the dragged note
-        const currentIndex = targetNotes.findIndex(
-          (note) => note.id === draggedNote.id
-        );
-        const targetIndex = dropIndex !== null ? dropIndex : 0;
-
-        if (currentIndex !== targetIndex) {
-          // Remove the dragged note from its current position
-          const reorderedNotes = targetNotes.filter(
-            (note) => note.id !== draggedNote.id
-          );
-          // Insert it at the target position
-          reorderedNotes.splice(targetIndex, 0, draggedNote);
-
-          // Create updates with new display orders
-          const updates = reorderedNotes.map((note, index) => ({
-            id: note.id,
-            sectionId: targetSectionId,
-            displayOrder: index,
-          }));
-
-          await notesApi.reorder(updates);
-          await fetchNotes();
-        }
-      } else {
-        // Moving to a different section, place at the beginning
-        const updates = targetNotes.map((note, index) => ({
-          id: note.id,
-          sectionId: targetSectionId,
-          displayOrder: index + 1,
-        }));
-        updates.unshift({
-          id: draggedNote.id,
-          sectionId: targetSectionId,
-          displayOrder: 0,
-        });
-
-        await notesApi.reorder(updates);
-        await fetchNotes();
-      }
-    } catch (err) {
-      console.error('Error reordering notes:', err);
-      alert('Failed to reorder notes');
-    }
-
-    setDraggedNote(null);
-  };
-
-  // Service drag and drop handlers
-  const handleServiceDragStart = (e, service) => {
-    setDraggedService(service);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleServiceDragEnd = () => {
-    setDraggedService(null);
-  };
-
-  const handleServiceDragOver = (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleServiceDropOnService = async (e, targetService) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!draggedService || draggedService.id === targetService.id) {
-      setDraggedService(null);
-      return;
-    }
-
-    // Only allow reordering within the same section
-    if (draggedService.section_id !== targetService.section_id) {
-      setDraggedService(null);
-      return;
-    }
-
-    const targetSectionId = targetService.section_id;
-    const section = sectionsWithServices.find((s) => s.id === targetSectionId);
-    if (!section) {
-      setDraggedService(null);
-      return;
-    }
-
-    const sectionServices = section.services;
-    const currentIndex = sectionServices.findIndex(
-      (s) => s.id === draggedService.id
-    );
-    const targetIndex = sectionServices.findIndex(
-      (s) => s.id === targetService.id
-    );
-
-    if (currentIndex !== targetIndex) {
-      try {
-        // Save scroll position
-        const scrollY = window.scrollY;
-
-        // Remove the dragged service from its current position
-        const reorderedServices = sectionServices.filter(
-          (s) => s.id !== draggedService.id
-        );
-        // Insert it at the target position
-        reorderedServices.splice(targetIndex, 0, draggedService);
-
-        // Create updates with new display orders
-        const updates = reorderedServices.map((service, index) => ({
-          id: service.id,
-          displayOrder: index,
-        }));
-
-        await servicesApi.reorder(updates);
-        await fetchData();
-
-        // Restore scroll position
-        window.scrollTo(0, scrollY);
-      } catch (err) {
-        console.error('Error reordering services:', err);
-        alert('Failed to reorder services');
-      }
-    }
-
-    setDraggedService(null);
-  };
-
   return (
     <div className="min-h-screen px-6 pb-0 pt-6 md:px-12 md:pt-12">
       <div className="mx-auto max-w-7xl">
@@ -371,7 +397,7 @@ export function Dashboard() {
             THE
             <span className="text-accent1"> STEINECKS</span>
           </h1>
-          <p className="font-accent text-accent-sm sm:text-accent-md inline text-accent2">
+          <p className="inline font-accent text-accent-sm text-accent2 sm:text-accent-md">
             {getRandomGreeting() || 'Hello'}, {user?.name || user?.email}!
             <CornerDownLeft
               size={32}
@@ -455,83 +481,56 @@ export function Dashboard() {
                       {/* Services Grid */}
                       {section.services.length > 0 && (
                         <div>
-                          <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-4">
+                          <div
+                            data-services-section={section.id}
+                            className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-4"
+                          >
                             {section.services.map((service) => (
-                              <ServiceCard
-                                key={service.id}
-                                service={service}
-                                onDragStart={handleServiceDragStart}
-                                onDragEnd={handleServiceDragEnd}
-                                onDragOver={handleServiceDragOver}
-                                onDrop={handleServiceDropOnService}
-                              />
+                              <ServiceCard key={service.id} service={service} />
                             ))}
                           </div>
                         </div>
                       )}
 
                       {/* Notes Grid */}
-                      <div
-                        onDragOver={handleDragOver}
-                        onDrop={(e) => handleDrop(e, section.id)}
-                        className={`min-h-[100px] ${
-                          getSectionNotes(section.id).length === 0
-                            ? 'relative flex items-center justify-center rounded border-3 border-dashed border-border/30'
-                            : ''
-                        }`}
-                      >
-                        {getSectionNotes(section.id).length > 0 ? (
-                          <div>
-                            <div className="flex w-full items-center justify-between">
-                              <h3 className="mb-4 font-display text-xl uppercase text-text/70">
-                                Notes
-                              </h3>
-                            </div>
-                            {/* <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,280px))] gap-6"> */}
-                            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-                              {getSectionNotes(section.id).map((note) => (
-                                <StickyNoteCard
-                                  key={note.id}
-                                  note={note}
-                                  onEdit={handleEditNote}
-                                  onCheckboxToggle={handleCheckboxToggle}
-                                  onDragStart={handleDragStart}
-                                  onDragEnd={handleDragEnd}
-                                  onDrop={handleNoteDropOnNote}
-                                />
-                              ))}
-                              <button
-                                onClick={() => handleNewNote(section.id)}
-                                className="group min-h-[100px] rounded border-3 border-dashed border-border/30 transition-colors hover:text-accent1"
-                                aria-label="Add new note"
-                                title="Add new note"
-                              >
-                                <StickyNote size={36} className="inline" />
-                                <Plus
-                                  size={18}
-                                  className="-ml-[40px] inline h-[20px] w-[20px] rounded-full border-2 border-border bg-white group-hover:border-accent1 group-hover:bg-accent1 group-hover:text-white"
-                                />
-                              </button>
-                            </div>
+                      <div>
+                        {getSectionNotes(section.id).length > 0 && (
+                          <div className="flex w-full items-center justify-between">
+                            <h3 className="mb-4 font-display text-xl uppercase text-text/70">
+                              Notes
+                            </h3>
                           </div>
-                        ) : draggedNote ? (
-                          <p className="text-center font-body text-text/50">
-                            Drop note here
-                          </p>
-                        ) : (
-                          <button
-                            onClick={() => handleNewNote(section.id)}
-                            className="group absolute h-full w-full transition-colors hover:text-accent1"
-                            aria-label="Add new note"
-                            title="Add new note"
-                          >
-                            <StickyNote size={36} className="inline" />
-                            <Plus
-                              size={18}
-                              className="-ml-[40px] inline h-[20px] w-[20px] rounded-full border-2 border-border bg-white group-hover:border-accent1 group-hover:bg-accent1 group-hover:text-white"
-                            />
-                          </button>
                         )}
+                        <div
+                          data-notes-section={section.id}
+                          className={`grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 ${
+                            getSectionNotes(section.id).length === 0
+                              ? 'min-h-[100px] rounded border-3 border-dashed border-border/30'
+                              : ''
+                          }`}
+                        >
+                          {getSectionNotes(section.id).map((note) => (
+                            <div key={note.id} data-note-id={note.id}>
+                              <StickyNoteCard
+                                note={note}
+                                onEdit={handleEditNote}
+                                onCheckboxToggle={handleCheckboxToggle}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                        <button
+                          onClick={() => handleNewNote(section.id)}
+                          className="group mt-6 min-h-[100px] w-full rounded border-3 border-dashed border-border/30 transition-colors hover:text-accent1"
+                          aria-label="Add new note"
+                          title="Add new note"
+                        >
+                          <StickyNote size={36} className="inline" />
+                          <Plus
+                            size={18}
+                            className="-ml-[40px] inline h-[20px] w-[20px] rounded-full border-2 border-border bg-white group-hover:border-accent1 group-hover:bg-accent1 group-hover:text-white"
+                          />
+                        </button>
                       </div>
                     </div>
                   )}

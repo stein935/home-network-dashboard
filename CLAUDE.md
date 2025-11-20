@@ -17,6 +17,7 @@ Brutalist-designed home network dashboard with Google OAuth, role-based access c
 - Axios for API calls
 - Tailwind CSS for styling
 - Lucide React for icons
+- SortableJS for drag-and-drop with native mobile touch support
 
 ## Architecture
 
@@ -342,6 +343,8 @@ Optional in `.env`:
 ## Current State
 
 Fully functional with Google OAuth, role-based access, link/calendar card types, sticky notes with drag-and-drop reordering, collapsible sections, admin panel, and responsive brutalist design. Calendar integration includes day/week/month views with event details. Sticky notes support due dates with urgency indicators and customizable colors. All dialogs use a unified Dialog component with consistent blue header design and mobile-responsive layouts.
+
+**Drag and Drop**: Services and notes support drag-and-drop reordering with full mobile touch support via SortableJS library. Native touch support on mobile devices, scroll position and collapsed section state preserved during reorder operations. Sortable instances are initialized for expanded sections only.
 
 **Production Deployment**: Cloudflare Tunnel integration provides secure HTTPS access without port forwarding or manual SSL certificate management. Zero-config deployment with automatic SSL, DDoS protection, and no router configuration required.
 
