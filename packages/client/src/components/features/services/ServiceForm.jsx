@@ -43,7 +43,8 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
     section_id: '',
     card_type: 'link',
     config: {
-      calendar_id: '',
+      calendar_id: '', // Backward compatibility
+      calendar_ids: [], // Multi-calendar support
       view_type: 'week',
     },
   });
@@ -61,6 +62,17 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
 
   useEffect(() => {
     if (service) {
+      // Support both old format (calendar_id) and new format (calendar_ids)
+      let calendarIds = [];
+      if (
+        service.config?.calendar_ids &&
+        Array.isArray(service.config.calendar_ids)
+      ) {
+        calendarIds = service.config.calendar_ids;
+      } else if (service.config?.calendar_id) {
+        calendarIds = [service.config.calendar_id];
+      }
+
       setFormData({
         name: service.name,
         url: service.url || '',
@@ -69,11 +81,13 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
         card_type: service.card_type || 'link',
         config: service.config
           ? {
-              calendar_id: service.config.calendar_id || '',
+              calendar_id: service.config.calendar_id || '', // Backward compat
+              calendar_ids: calendarIds,
               view_type: service.config.view_type || 'week',
             }
           : {
               calendar_id: '',
+              calendar_ids: [],
               view_type: 'week',
             },
       });
@@ -144,8 +158,13 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
 
     // Calendar config required for calendar cards
     if (formData.card_type === 'calendar') {
-      if (!formData.config.calendar_id) {
-        newErrors.calendar_id = 'Calendar is required';
+      if (
+        !formData.config.calendar_ids ||
+        formData.config.calendar_ids.length === 0
+      ) {
+        newErrors.calendar_ids = 'At least one calendar is required';
+      } else if (formData.config.calendar_ids.length > 5) {
+        newErrors.calendar_ids = 'Maximum 5 calendars allowed';
       }
       if (!formData.config.view_type) {
         newErrors.view_type = 'View type is required';
@@ -213,6 +232,25 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
       calendars.length === 0
     ) {
       fetchCalendars();
+    }
+  };
+
+  const handleCalendarMultiSelectChange = (e) => {
+    const selectedOptions = Array.from(e.target.selectedOptions).map(
+      (option) => option.value
+    );
+
+    setFormData((prev) => ({
+      ...prev,
+      config: {
+        ...prev.config,
+        calendar_ids: selectedOptions,
+      },
+    }));
+
+    // Clear error
+    if (errors.calendar_ids) {
+      setErrors((prev) => ({ ...prev, calendar_ids: '' }));
     }
   };
 
@@ -296,8 +334,11 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
           <>
             <div>
               <label className="mb-2 block font-display text-sm uppercase text-text">
-                Calendar
+                Calendars (select up to 5)
               </label>
+              <div className="mb-2 text-sm text-text/70">
+                Hold Ctrl (Cmd on Mac) to select multiple calendars
+              </div>
               {loadingCalendars ? (
                 <div className="input-brutal w-full text-text/60">
                   Loading calendars...
@@ -307,22 +348,31 @@ export function ServiceForm({ service, onSubmit, onCancel }) {
                   No calendars found. Please ensure calendar access is granted.
                 </div>
               ) : (
-                <select
-                  name="config.calendar_id"
-                  value={formData.config.calendar_id}
-                  onChange={handleChange}
-                  className="input-brutal w-full"
-                >
-                  <option value="">Select a calendar</option>
-                  {calendars.map((cal) => (
-                    <option key={cal.id} value={cal.id}>
-                      {cal.summary} {cal.primary ? '(Primary)' : ''}
-                    </option>
-                  ))}
-                </select>
+                <>
+                  <select
+                    multiple
+                    size={Math.min(calendars.length, 8)}
+                    value={formData.config.calendar_ids}
+                    onChange={handleCalendarMultiSelectChange}
+                    className="input-brutal w-full"
+                  >
+                    {calendars.map((cal) => (
+                      <option key={cal.id} value={cal.id}>
+                        {cal.summary} {cal.primary ? '(Primary)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                  {formData.config.calendar_ids.length > 0 && (
+                    <div className="mt-2 text-sm text-text/70">
+                      {formData.config.calendar_ids.length} calendar
+                      {formData.config.calendar_ids.length > 1 ? 's' : ''}{' '}
+                      selected
+                    </div>
+                  )}
+                </>
               )}
-              {errors.calendar_id && (
-                <p className="mt-2 text-sm text-error">{errors.calendar_id}</p>
+              {errors.calendar_ids && (
+                <p className="mt-2 text-sm text-error">{errors.calendar_ids}</p>
               )}
               {errors.calendar && (
                 <p className="mt-2 text-sm text-error">{errors.calendar}</p>

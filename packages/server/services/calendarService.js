@@ -98,6 +98,154 @@ class CalendarService {
     }
   }
 
+  /**
+   * Fetch events from multiple calendars in parallel
+   * @param {number} userId - User ID
+   * @param {string[]} calendarIds - Array of calendar IDs
+   * @param {string} timeMin - Start time (ISO 8601)
+   * @param {string} timeMax - End time (ISO 8601)
+   * @returns {Promise<{events: Array, calendars: Array, errors: Array}>}
+   */
+  static async getEventsFromMultipleCalendars(
+    userId,
+    calendarIds,
+    timeMin,
+    timeMax
+  ) {
+    const auth = this.getOAuthClient(userId);
+    const calendarApi = google.calendar({ version: 'v3', auth });
+
+    // First, fetch calendar list to get calendar metadata
+    let calendarsList = [];
+    try {
+      const calListResponse = await calendarApi.calendarList.list();
+      calendarsList = calListResponse.data.items;
+    } catch (error) {
+      console.error('Error fetching calendar list:', error);
+    }
+
+    // Fetch events from each calendar in parallel using Promise.allSettled
+    const eventPromises = calendarIds.map((calendarId) =>
+      calendarApi.events
+        .list({
+          calendarId: calendarId,
+          timeMin: timeMin,
+          timeMax: timeMax,
+          singleEvents: true,
+          orderBy: 'startTime',
+          maxResults: 250,
+        })
+        .then((response) => ({ calendarId, response, success: true }))
+        .catch((error) => ({ calendarId, error, success: false }))
+    );
+
+    const results = await Promise.allSettled(eventPromises);
+
+    // Process results
+    const allEvents = [];
+    const calendars = [];
+    const errors = [];
+
+    results.forEach((result, index) => {
+      const calendarId = calendarIds[index];
+      const calendarMeta = calendarsList.find((cal) => cal.id === calendarId);
+      const calendarName = calendarMeta?.summary || calendarId;
+      const calendarColor = calendarMeta?.backgroundColor || '#3788d8';
+
+      if (result.status === 'fulfilled' && result.value.success) {
+        // Successfully fetched events from this calendar
+        const events = result.value.response.data.items.map((event) => ({
+          id: event.id,
+          summary: event.summary || '(No title)',
+          description: event.description,
+          start: event.start.dateTime || event.start.date,
+          end: event.end.dateTime || event.end.date,
+          allDay: !event.start.dateTime,
+          location: event.location,
+          htmlLink: event.htmlLink,
+          colorId: event.colorId,
+          // Add calendar metadata to each event
+          calendarId: calendarId,
+          calendarName: calendarName,
+          calendarColor: calendarColor,
+        }));
+
+        allEvents.push(...events);
+
+        calendars.push({
+          id: calendarId,
+          name: calendarName,
+          color: calendarColor,
+          accessible: true,
+          eventCount: events.length,
+        });
+      } else {
+        // Failed to fetch events from this calendar
+        const error =
+          result.status === 'rejected'
+            ? result.reason
+            : result.value?.error || new Error('Unknown error');
+
+        console.error(
+          `Error fetching events from calendar ${calendarId}:`,
+          error
+        );
+
+        calendars.push({
+          id: calendarId,
+          name: calendarName,
+          color: calendarColor,
+          accessible: false,
+          error: error.message || 'Access denied',
+        });
+
+        errors.push({
+          calendarId: calendarId,
+          calendarName: calendarName,
+          error: error.message || 'Failed to fetch events',
+        });
+      }
+    });
+
+    // Sort events by start time
+    allEvents.sort((a, b) => {
+      const aTime = new Date(a.start).getTime();
+      const bTime = new Date(b.start).getTime();
+      return aTime - bTime;
+    });
+
+    // Deduplicate events (same event might appear in multiple calendars)
+    const uniqueEvents = this._deduplicateEvents(allEvents);
+
+    return {
+      events: uniqueEvents,
+      calendars: calendars,
+      errors: errors,
+    };
+  }
+
+  /**
+   * Deduplicate events that appear in multiple calendars
+   * @param {Array} events - Array of events
+   * @returns {Array} Deduplicated events
+   * @private
+   */
+  static _deduplicateEvents(events) {
+    const seen = new Map();
+
+    return events.filter((event) => {
+      // Create a unique key based on event ID, summary, start, and end
+      const key = `${event.id}-${event.summary}-${event.start}-${event.end}`;
+
+      if (seen.has(key)) {
+        return false;
+      }
+
+      seen.set(key, true);
+      return true;
+    });
+  }
+
   static async createEvent(userId, calendarId, eventData) {
     const auth = this.getOAuthClient(userId);
     const calendar = google.calendar({ version: 'v3', auth });

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -6,7 +6,9 @@ import {
   MoreVertical,
 } from 'lucide-react';
 import { calendarApi } from '@utils/api';
+import { assignCalendarColors } from '@utils/calendarColors';
 import { EventDetailDialog } from '@features/calendar/EventDetailDialog';
+import { CalendarLegend } from '@features/calendar/CalendarLegend';
 import { DayView } from './views/DayView';
 import { WeekView } from './views/WeekView';
 import { FiveDayView } from './views/FiveDayView';
@@ -26,8 +28,17 @@ export function CalendarCard({ service }) {
   const [expandedDay, setExpandedDay] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [calendars, setCalendars] = useState([]);
+  const [calendarErrors, setCalendarErrors] = useState([]);
 
-  const calendarId = config.calendar_id || 'primary';
+  // Support both old format (calendar_id) and new format (calendar_ids)
+  const calendarIds = useMemo(() => {
+    return config.calendar_ids && Array.isArray(config.calendar_ids)
+      ? config.calendar_ids
+      : config.calendar_id
+        ? [config.calendar_id]
+        : ['primary'];
+  }, [config.calendar_ids, config.calendar_id]);
 
   // Track window width on resize
   useEffect(() => {
@@ -127,25 +138,53 @@ export function CalendarCard({ service }) {
       const { timeMin, timeMax } = getTimeRange();
 
       const response = await calendarApi.getEvents(
-        calendarId,
+        calendarIds,
         timeMin,
         timeMax
       );
 
-      // Deduplicate events at the source
-      const uniqueEvents = response.data.filter(
-        (event, index, self) =>
-          index ===
-          self.findIndex(
-            (e) =>
-              e.id === event.id ||
-              (e.summary === event.summary &&
-                e.start === event.start &&
-                e.end === event.end)
-          )
-      );
+      // Handle both old format (array of events) and new format (object with events, calendars, errors)
+      if (response.data.events) {
+        // New multi-calendar format
+        setEvents(response.data.events || []);
 
-      setEvents(uniqueEvents);
+        // Assign unique colors to calendars based on their position in calendarIds
+        const colorMap = assignCalendarColors(calendarIds);
+
+        // Build calendar metadata with assigned colors
+        const calendarMetadata = (response.data.calendars || []).map((cal) => ({
+          ...cal,
+          color: colorMap[cal.id] || '#FF00FF', // Fallback to first color
+        }));
+        setCalendars(calendarMetadata);
+        setCalendarErrors(response.data.errors || []);
+
+        // Check if all calendars failed
+        if (
+          response.data.calendars &&
+          response.data.calendars.every((cal) => !cal.accessible)
+        ) {
+          setError(
+            'You do not have access to any of the configured calendars. Please contact an administrator.'
+          );
+        }
+      } else {
+        // Old single-calendar format (backward compatibility)
+        const uniqueEvents = response.data.filter(
+          (event, index, self) =>
+            index ===
+            self.findIndex(
+              (e) =>
+                e.id === event.id ||
+                (e.summary === event.summary &&
+                  e.start === event.start &&
+                  e.end === event.end)
+            )
+        );
+        setEvents(uniqueEvents);
+        setCalendars([]);
+        setCalendarErrors([]);
+      }
     } catch (err) {
       console.error('Error fetching calendar events:', err);
       console.error('Error details:', err.response?.data);
@@ -153,13 +192,13 @@ export function CalendarCard({ service }) {
     } finally {
       setLoading(false);
     }
-  }, [calendarId, getTimeRange]);
+  }, [calendarIds, getTimeRange]);
 
   useEffect(() => {
-    if (calendarId) {
+    if (calendarIds.length > 0) {
       fetchEvents();
     }
-  }, [calendarId, fetchEvents]);
+  }, [calendarIds, fetchEvents]);
 
   const navigate = (direction) => {
     const newDate = new Date(currentDate);
@@ -409,41 +448,49 @@ export function CalendarCard({ service }) {
             currentDate={currentDate}
             formatDate={formatDate}
             setSelectedEvent={setSelectedEvent}
+            calendars={calendars}
           />
         )}
         {effectiveViewType === 'week' && (
           <WeekView
             events={events}
             currentDate={currentDate}
+            setExpandedDay={setExpandedDay}
             formatDate={formatDate}
             getWeekStart={getWeekStart}
             setSelectedEvent={setSelectedEvent}
             windowWidth={windowWidth}
             weekStackWidth={WEEK_STACK_WIDTH}
+            calendars={calendars}
           />
         )}
         {effectiveViewType === 'fiveday' && (
           <FiveDayView
             events={events}
             currentDate={currentDate}
+            setExpandedDay={setExpandedDay}
             formatDate={formatDate}
             getWorkWeekStart={getWorkWeekStart}
             setSelectedEvent={setSelectedEvent}
             windowWidth={windowWidth}
             weekStackWidth={WEEK_STACK_WIDTH}
+            calendars={calendars}
           />
         )}
         {effectiveViewType === 'month' && (
           <MonthView
             events={events}
             currentDate={currentDate}
-            expandedDay={expandedDay}
             setExpandedDay={setExpandedDay}
             setSelectedEvent={setSelectedEvent}
             windowWidth={windowWidth}
+            calendars={calendars}
           />
         )}
       </div>
+
+      {/* Calendar legend (only shown for 2+ calendars) */}
+      <CalendarLegend calendars={calendars} errors={calendarErrors} />
 
       {/* Event detail dialog */}
       {selectedEvent && (
@@ -481,30 +528,45 @@ export function CalendarCard({ service }) {
               </button>
             </div>
             <div className="space-y-2">
-              {expandedDay.events.map((event, idx) => (
-                <div
-                  key={idx}
-                  className="cursor-pointer border-3 border-border bg-white p-3 transition-colors hover:bg-accent1/10"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setExpandedDay(null);
-                    setSelectedEvent(event);
-                  }}
-                >
-                  <div className="flex items-center gap-1 font-display text-sm uppercase text-accent1">
-                    {event.allDay && <CalendarIcon size={14} />}
-                    {event.allDay ? 'All Day' : formatDate(event.start)}
-                  </div>
-                  <div className="mt-1 font-body text-text">
-                    {event.summary}
-                  </div>
-                  {event.location && (
-                    <div className="mt-1 font-body text-xs text-text/70">
-                      {event.location}
+              {expandedDay.events.map((event, idx) => {
+                // Find calendar color (only show dot if 2+ calendars)
+                const showDot = calendars.length >= 2;
+                const calendarColor = calendars.find(
+                  (cal) => cal.id === event.calendarId
+                )?.color;
+
+                return (
+                  <div
+                    key={idx}
+                    className="cursor-pointer border-3 border-border bg-white p-3 transition-colors hover:bg-accent1/10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setExpandedDay(null);
+                      setSelectedEvent(event);
+                    }}
+                  >
+                    <div className="flex items-center gap-1 font-display text-sm uppercase text-accent1">
+                      {event.allDay && <CalendarIcon size={14} />}
+                      {event.allDay ? 'All Day' : formatDate(event.start)}
                     </div>
-                  )}
-                </div>
-              ))}
+                    <div className="mt-1 flex items-center gap-2 font-body text-text">
+                      {showDot && calendarColor && (
+                        <div
+                          className="h-2 w-2 flex-shrink-0 rounded-full"
+                          style={{ backgroundColor: calendarColor }}
+                          aria-label="Calendar indicator"
+                        />
+                      )}
+                      <span>{event.summary}</span>
+                    </div>
+                    {event.location && (
+                      <div className="mt-1 font-body text-xs text-text/70">
+                        {event.location}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
