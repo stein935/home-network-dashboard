@@ -5,21 +5,25 @@ import { X } from 'lucide-react';
  * Unified Dialog component with blue header, content section, and optional footer
  *
  * @param {string} title - Dialog title displayed in the header
+ * @param {ReactNode} icon - Optional icon to display next to title
  * @param {function} onClose - Handler called when dialog is closed
  * @param {ReactNode} children - Content section of the dialog
  * @param {ReactNode} footer - Optional footer with action buttons
  * @param {string} maxWidth - Max width class (default: 'max-w-2xl')
  * @param {string} contentClassName - Additional classes for content section
  * @param {number} zIndex - Z-index for dialog (default: 50)
+ * @param {boolean} preventBackdropClose - If true, clicking backdrop won't close dialog (default: false)
  */
 export function Dialog({
   title,
+  icon,
   onClose,
   children,
   footer,
   maxWidth = 'max-w-2xl',
   contentClassName = '',
   zIndex = 50,
+  preventBackdropClose = false,
 }) {
   const mouseDownTargetRef = useRef(null);
 
@@ -41,6 +45,11 @@ export function Dialog({
   // Only close if both mousedown and mouseup occurred on the backdrop
   // This allows text selection to extend outside the dialog without closing it
   const handleMouseUp = (e) => {
+    if (preventBackdropClose) {
+      mouseDownTargetRef.current = null;
+      return;
+    }
+
     if (
       e.target === e.currentTarget &&
       mouseDownTargetRef.current === e.currentTarget
@@ -62,9 +71,12 @@ export function Dialog({
       >
         {/* Header */}
         <div className="flex flex-shrink-0 items-center justify-between border-b-4 border-border bg-accent1 p-4 text-white sm:p-6">
-          <h2 className="font-display text-xl uppercase sm:text-2xl md:text-3xl">
-            {title}
-          </h2>
+          <div className="flex items-center gap-3">
+            {icon && <div className="flex-shrink-0">{icon}</div>}
+            <h2 className="font-display text-xl uppercase sm:text-2xl md:text-3xl">
+              {title}
+            </h2>
+          </div>
           <button
             onClick={onClose}
             className="flex-shrink-0 p-2 transition-colors hover:bg-accent1/20"

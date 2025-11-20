@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Play, FileText } from 'lucide-react';
 import { scraperApi, calendarApi } from '@utils/api';
+import { useNotification } from '@hooks/useNotification';
 import { Dialog } from '@common/Dialog';
 
 export function ScraperManager() {
+  const { notify, confirm } = useNotification();
   const [scrapers, setScrapers] = useState([]);
   const [calendars, setCalendars] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -117,20 +119,22 @@ export function ScraperManager() {
   };
 
   const handleDelete = async (scraper) => {
-    if (
-      !confirm(
-        `Are you sure you want to delete "${scraper.name}"? This will also delete all associated logs.`
-      )
-    ) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: 'Delete Scraper',
+      message: `Are you sure you want to delete "${scraper.name}"? This will also delete all associated logs. This action cannot be undone.`,
+      confirmText: 'Delete',
+      confirmVariant: 'danger',
+      cancelText: 'Cancel',
+    });
+
+    if (!confirmed) return;
 
     try {
       await scraperApi.delete(scraper.id);
       fetchScrapers();
     } catch (err) {
       console.error('Error deleting scraper:', err);
-      alert(err.response?.data?.error || 'Failed to delete scraper');
+      notify.error(err.response?.data?.error || 'Failed to delete scraper');
     }
   };
 
@@ -139,16 +143,16 @@ export function ScraperManager() {
       setTriggering(scraperId);
       const response = await scraperApi.trigger(scraperId);
       if (response.data.success) {
-        alert(
-          `Scraper triggered successfully!\n${response.data.eventsCreated} events created, ${response.data.eventsUpdated} events updated.`
+        notify.success(
+          `Scraper triggered successfully! ${response.data.eventsCreated} events created, ${response.data.eventsUpdated} events updated.`
         );
       } else {
-        alert(`Scraper failed: ${response.data.message}`);
+        notify.error(`Scraper failed: ${response.data.message}`);
       }
       fetchScrapers();
     } catch (err) {
       console.error('Error triggering scraper:', err);
-      alert(err.response?.data?.error || 'Failed to trigger scraper');
+      notify.error(err.response?.data?.error || 'Failed to trigger scraper');
     } finally {
       setTriggering(null);
     }
@@ -161,7 +165,7 @@ export function ScraperManager() {
       setShowLogs(true);
     } catch (err) {
       console.error('Error fetching logs:', err);
-      alert('Failed to load logs');
+      notify.error('Failed to load logs');
     }
   };
 

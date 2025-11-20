@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Edit, Trash2 } from 'lucide-react';
 import * as Icons from 'lucide-react';
 import { servicesApi } from '@utils/api';
+import { useNotification } from '@hooks/useNotification';
 import UserManagement from '@features/admin/UserManagement';
 import ServiceForm from '@features/services/ServiceForm';
 import SectionManager from '@features/admin/SectionManager';
@@ -11,6 +12,7 @@ import Footer from '@layout/Footer';
 
 export function AdminPanel() {
   const navigate = useNavigate();
+  const { notify, confirm } = useNotification();
   const [activeTab, setActiveTab] = useState('services');
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -62,16 +64,23 @@ export function AdminPanel() {
   };
 
   const handleDeleteService = async (serviceId) => {
-    if (!confirm('Are you sure you want to delete this service?')) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: 'Delete Service',
+      message:
+        'Are you sure you want to delete this service? This action cannot be undone.',
+      confirmText: 'Delete',
+      confirmVariant: 'danger',
+      cancelText: 'Cancel',
+    });
+
+    if (!confirmed) return;
 
     try {
       await servicesApi.delete(serviceId);
       fetchServices();
     } catch (err) {
       console.error('Error deleting service:', err);
-      alert('Failed to delete service');
+      notify.error('Failed to delete service');
     }
   };
 
