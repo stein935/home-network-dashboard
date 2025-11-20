@@ -42,7 +42,10 @@ router.get(
       const referer = new URL(req.get('referer'));
 
       // Ignore Google domains as referer (from OAuth flow)
-      if (!referer.hostname.includes('google.com') && !referer.hostname.includes('accounts.google.com')) {
+      if (
+        !referer.hostname.includes('google.com') &&
+        !referer.hostname.includes('accounts.google.com')
+      ) {
         redirectUrl = `${referer.protocol}//${referer.host}/`;
       }
     }
