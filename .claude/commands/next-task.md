@@ -65,7 +65,7 @@ Read and update relevant documentation ONLY if the changes affect:
 
 ### 9. Completion
 
-End operation with message: "💥💣💥 Boom! COMPLETE! 💥💣💥"
+End operation with message: "💥💣💥 Boom! Task COMPLETE! 💥💣💥"
 
 ## Error Handling
 
