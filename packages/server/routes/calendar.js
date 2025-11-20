@@ -14,10 +14,10 @@ router.get('/calendars', isAuthenticated, async (req, res) => {
   }
 });
 
-// Get events for a specific calendar
+// Get events for a specific calendar or multiple calendars
 router.get('/events', isAuthenticated, async (req, res) => {
   try {
-    const { calendarId, timeMin, timeMax } = req.query;
+    const { calendarId, calendarIds, timeMin, timeMax } = req.query;
 
     if (!timeMin || !timeMax) {
       return res
@@ -25,14 +25,53 @@ router.get('/events', isAuthenticated, async (req, res) => {
         .json({ error: 'timeMin and timeMax are required' });
     }
 
-    const events = await CalendarService.getEvents(
-      req.user.id,
-      calendarId || 'primary',
-      timeMin,
-      timeMax
-    );
+    // Support both single calendarId and multiple calendarIds
+    let calendarIdArray;
 
-    res.json(events);
+    if (calendarIds) {
+      // calendarIds can be a comma-separated string or an array from query params
+      calendarIdArray = Array.isArray(calendarIds)
+        ? calendarIds
+        : calendarIds.split(',').map((id) => id.trim());
+    } else if (calendarId) {
+      // Backward compatibility: single calendarId
+      calendarIdArray = [calendarId];
+    } else {
+      // Default to primary calendar
+      calendarIdArray = ['primary'];
+    }
+
+    // If only one calendar, use the original single-calendar method
+    if (calendarIdArray.length === 1) {
+      const events = await CalendarService.getEvents(
+        req.user.id,
+        calendarIdArray[0],
+        timeMin,
+        timeMax
+      );
+
+      // Return in same format as multi-calendar for consistency
+      res.json({
+        events: events,
+        calendars: [
+          {
+            id: calendarIdArray[0],
+            accessible: true,
+          },
+        ],
+        errors: [],
+      });
+    } else {
+      // Multiple calendars: use the new multi-calendar method
+      const result = await CalendarService.getEventsFromMultipleCalendars(
+        req.user.id,
+        calendarIdArray,
+        timeMin,
+        timeMax
+      );
+
+      res.json(result);
+    }
   } catch (error) {
     console.error('Error fetching events:', error);
     res.status(500).json({ error: error.message });

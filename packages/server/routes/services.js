@@ -23,7 +23,17 @@ const validateServiceCreate = [
     .optional()
     .isIn(['link', 'calendar'])
     .withMessage('Card type must be "link" or "calendar"'),
+  // Support both calendar_id (single, backward compat) and calendar_ids (array)
   body('config.calendar_id').optional().trim(),
+  body('config.calendar_ids')
+    .optional()
+    .isArray({ min: 1, max: 5 })
+    .withMessage('calendar_ids must be an array with 1-5 items'),
+  body('config.calendar_ids.*')
+    .optional()
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Each calendar ID must be non-empty'),
   body('config.view_type')
     .optional()
     .isIn(['day', 'week', 'fiveday', 'month'])
@@ -47,7 +57,17 @@ const validateServiceUpdate = [
     .optional()
     .isIn(['link', 'calendar'])
     .withMessage('Card type must be "link" or "calendar"'),
+  // Support both calendar_id (single, backward compat) and calendar_ids (array)
   body('config.calendar_id').optional().trim(),
+  body('config.calendar_ids')
+    .optional()
+    .isArray({ min: 1, max: 5 })
+    .withMessage('calendar_ids must be an array with 1-5 items'),
+  body('config.calendar_ids.*')
+    .optional()
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Each calendar ID must be non-empty'),
   body('config.view_type')
     .optional()
     .isIn(['day', 'week', 'fiveday', 'month'])
@@ -86,11 +106,17 @@ router.post('/', isAdmin, validateServiceCreate, (req, res) => {
 
     // If calendar card type, save config
     if (card_type === 'calendar' && config) {
-      ServiceConfig.upsert(
-        service.id,
-        config.calendar_id,
-        config.view_type || 'week'
-      );
+      // Support both calendar_ids (array) and calendar_id (single, backward compat)
+      const calendarIds =
+        config.calendar_ids || (config.calendar_id ? [config.calendar_id] : []);
+
+      if (calendarIds.length > 0) {
+        ServiceConfig.upsert(
+          service.id,
+          calendarIds,
+          config.view_type || 'week'
+        );
+      }
     }
 
     const serviceWithConfig = Service.findByIdWithConfig(service.id);
@@ -145,11 +171,16 @@ router.put(
 
       // If calendar card type, save config
       if (card_type === 'calendar' && config) {
-        ServiceConfig.upsert(
-          id,
-          config.calendar_id,
-          config.view_type || 'week'
-        );
+        console.log('Update service config received:', JSON.stringify(config));
+        // Support both calendar_ids (array) and calendar_id (single, backward compat)
+        const calendarIds =
+          config.calendar_ids ||
+          (config.calendar_id ? [config.calendar_id] : []);
+        console.log('Normalized calendar IDs for update:', calendarIds);
+
+        if (calendarIds.length > 0) {
+          ServiceConfig.upsert(id, calendarIds, config.view_type || 'week');
+        }
       } else if (card_type !== 'calendar') {
         // Delete config if switching away from calendar
         ServiceConfig.delete(id);
