@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import Sortable from 'sortablejs';
 import { useAuth } from '@hooks/useAuth';
+import { useNotification } from '@hooks/useNotification';
 import { sectionsApi, notesApi, servicesApi } from '@utils/api';
 import { getRandomGreeting } from '@utils/greetings';
 import ServiceCard from '@features/services/ServiceCard';
@@ -17,6 +18,7 @@ import NoteDialog from '@features/notes/NoteDialog';
 
 export function Dashboard() {
   const { user, isAdmin } = useAuth();
+  const { notify } = useNotification();
   const [sectionsWithServices, setSectionsWithServices] = useState([]);
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -99,7 +101,7 @@ export function Dashboard() {
                 // Save to server in background
                 servicesApi.reorder(updates).catch((err) => {
                   console.error('Error reordering services:', err);
-                  alert('Failed to save service order');
+                  notify.error('Failed to save service order');
                   // Revert by fetching from server
                   fetchServices();
                 });
@@ -107,7 +109,7 @@ export function Dashboard() {
                 window.scrollTo(0, scrollY);
               } catch (err) {
                 console.error('Error reordering services:', err);
-                alert('Failed to reorder services');
+                notify.error('Failed to reorder services');
               }
             },
           });
@@ -216,7 +218,7 @@ export function Dashboard() {
                 window.scrollTo(0, scrollY);
               } catch (err) {
                 console.error('Error reordering notes:', err);
-                alert('Failed to reorder notes');
+                notify.error('Failed to reorder notes');
               }
             },
           });
@@ -239,7 +241,7 @@ export function Dashboard() {
       });
       sortableRefs.current = {};
     };
-  }, [loading, sectionsWithServices, notes, collapsedSections]);
+  }, [loading, sectionsWithServices, notes, collapsedSections, notify]);
 
   const fetchData = async () => {
     try {
@@ -325,7 +327,7 @@ export function Dashboard() {
       setSelectedSectionId(null);
     } catch (err) {
       console.error('Error saving note:', err);
-      alert('Failed to save note');
+      notify.error('Failed to save note');
     }
   };
 
@@ -338,7 +340,7 @@ export function Dashboard() {
       setSelectedSectionId(null);
     } catch (err) {
       console.error('Error deleting note:', err);
-      alert('Failed to delete note');
+      notify.error('Failed to delete note');
     }
   };
 

@@ -1,11 +1,13 @@
 import { useState, useMemo } from 'react';
 import { Save, Trash2 } from 'lucide-react';
 import { NOTE_COLORS, getRandomColor } from '@utils/noteColors';
+import { useNotification } from '@hooks/useNotification';
 import { Dialog } from '@common/Dialog';
 import RichTextEditor from '@common/RichTextEditor';
 import { isHtml, textToHtml, countHtmlChars } from '@utils/htmlUtils';
 
 export function NoteDialog({ note, sectionId, onSave, onDelete, onClose }) {
+  const { notify, confirm } = useNotification();
   const isCreateMode = note === null;
 
   // Convert plain text to HTML on first load if needed
@@ -35,20 +37,20 @@ export function NoteDialog({ note, sectionId, onSave, onDelete, onClose }) {
 
   const handleSave = () => {
     if (!title.trim()) {
-      alert('Title is required');
+      notify.warning('Title is required');
       return;
     }
 
     // Check if message has actual content (not just empty HTML tags)
     const messageCharCount = countHtmlChars(message);
     if (messageCharCount === 0) {
-      alert('Message is required');
+      notify.warning('Message is required');
       return;
     }
 
     // Validate character limit (count visible text only)
     if (messageCharCount > 5000) {
-      alert('Message exceeds 5000 character limit');
+      notify.warning('Message exceeds 5000 character limit');
       return;
     }
 
@@ -66,8 +68,16 @@ export function NoteDialog({ note, sectionId, onSave, onDelete, onClose }) {
     onSave(noteData);
   };
 
-  const handleDelete = () => {
-    if (window.confirm('Are you sure you want to delete this note?')) {
+  const handleDelete = async () => {
+    const confirmed = await confirm({
+      title: 'Delete Note',
+      message: `Are you sure you want to delete the note "${title}"? This action cannot be undone.`,
+      confirmText: 'Delete',
+      confirmVariant: 'danger',
+      cancelText: 'Cancel',
+    });
+
+    if (confirmed) {
       onDelete(note.id);
     }
   };

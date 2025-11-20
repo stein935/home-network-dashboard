@@ -44,26 +44,7 @@ Read and update relevant documentation ONLY if the changes affect:
 - Wait for confirmation that the task is complete
 - Address any issues found during testing
 
-### 6. Commit & Push
-
-- Stage all changes (both Claude's and user's modifications)
-- Create a descriptive commit with the change summary
-- Push the feature branch to remote
-
-### 7. Pull Request
-
-- Create a PR to merge the feature branch into `dev`
-- Include summary of changes and testing notes in PR description
-- Wait for confirmation that the PR has been merged
-
-### 8. Cleanup
-
-- Switch to `dev` branch
-- Pull latest changes and confirm feature is present
-- Delete feature branch both locally and on remote
-- Delete the completed task from "Ready" in @local/prompt-drafts/task-list.md
-
-### 9. Completion
+### 8. Completion
 
 End operation with message: "💥💣💥 Boom! Task COMPLETE! 💥💣💥"
 

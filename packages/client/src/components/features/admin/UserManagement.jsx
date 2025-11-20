@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { UserPlus, Trash2, Shield, Eye } from 'lucide-react';
 import { usersApi } from '@utils/api';
 import { useAuth } from '@hooks/useAuth';
+import { useNotification } from '@hooks/useNotification';
 import { Dialog } from '@common/Dialog';
 
 export function UserManagement() {
   const { user: currentUser } = useAuth();
+  const { notify, confirm } = useNotification();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -44,7 +46,7 @@ export function UserManagement() {
       fetchUsers();
     } catch (err) {
       console.error('Error adding user:', err);
-      alert(err.response?.data?.error || 'Failed to add user');
+      notify.error(err.response?.data?.error || 'Failed to add user');
     }
   };
 
@@ -55,21 +57,28 @@ export function UserManagement() {
       fetchUsers();
     } catch (err) {
       console.error('Error updating user role:', err);
-      alert('Failed to update user role');
+      notify.error('Failed to update user role');
     }
   };
 
   const handleDeleteUser = async (userId) => {
-    if (!confirm('Are you sure you want to remove this user?')) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: 'Remove User',
+      message:
+        'Are you sure you want to remove this user? They will no longer be able to access the application.',
+      confirmText: 'Remove',
+      confirmVariant: 'danger',
+      cancelText: 'Cancel',
+    });
+
+    if (!confirmed) return;
 
     try {
       await usersApi.delete(userId);
       fetchUsers();
     } catch (err) {
       console.error('Error deleting user:', err);
-      alert(err.response?.data?.error || 'Failed to delete user');
+      notify.error(err.response?.data?.error || 'Failed to delete user');
     }
   };
 

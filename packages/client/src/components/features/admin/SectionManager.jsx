@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import { sectionsApi } from '@utils/api';
+import { useNotification } from '@hooks/useNotification';
 import { Dialog } from '@common/Dialog';
 
 export function SectionManager() {
+  const { notify, confirm } = useNotification();
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -98,24 +100,26 @@ export function SectionManager() {
 
   const handleDelete = async (section) => {
     if (section.is_default) {
-      alert('Cannot delete the default section');
+      notify.warning('Cannot delete the default section');
       return;
     }
 
-    if (
-      !confirm(
-        `Are you sure you want to delete "${section.name}"? Services in this section will be moved to the default section.`
-      )
-    ) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: 'Delete Section',
+      message: `Are you sure you want to delete "${section.name}"? Services in this section will be moved to the default section. This action cannot be undone.`,
+      confirmText: 'Delete',
+      confirmVariant: 'danger',
+      cancelText: 'Cancel',
+    });
+
+    if (!confirmed) return;
 
     try {
       await sectionsApi.delete(section.id);
       fetchSections();
     } catch (err) {
       console.error('Error deleting section:', err);
-      alert(err.response?.data?.error || 'Failed to delete section');
+      notify.error(err.response?.data?.error || 'Failed to delete section');
     }
   };
 
