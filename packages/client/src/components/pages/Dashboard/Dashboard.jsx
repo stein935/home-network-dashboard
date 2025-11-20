@@ -82,8 +82,28 @@ export function Dashboard() {
               }));
 
               try {
-                await servicesApi.reorder(updates);
-                await fetchServices();
+                // Update local state immediately to match the DOM
+                const updatedSections = sectionsWithServices.map(s => {
+                  if (s.id === section.id) {
+                    return {
+                      ...s,
+                      services: reorderedServices
+                    };
+                  }
+                  return s;
+                });
+
+                // Update state - this will trigger useEffect to recreate Sortable instances
+                setSectionsWithServices(updatedSections);
+
+                // Save to server in background
+                servicesApi.reorder(updates).catch(err => {
+                  console.error('Error reordering services:', err);
+                  alert('Failed to save service order');
+                  // Revert by fetching from server
+                  fetchServices();
+                });
+
                 window.scrollTo(0, scrollY);
               } catch (err) {
                 console.error('Error reordering services:', err);
@@ -98,29 +118,84 @@ export function Dashboard() {
         const notesGrid = document.querySelector(
           `[data-notes-section="${section.id}"]`
         );
-        const sectionNotes = notes.filter((n) => n.section_id === section.id);
 
-        if (notesGrid && sectionNotes.length > 0) {
+        if (notesGrid) {
           sortableRefs.current[notesKey] = new Sortable(notesGrid, {
             animation: 150,
             handle: '.sortable-handle',
             ghostClass: 'opacity-50',
+            group: 'notes', // Allow dragging between sections
             onEnd: async (evt) => {
-              if (evt.oldIndex === evt.newIndex) return;
+              const fromSectionId = parseInt(evt.from.getAttribute('data-notes-section'));
+              const toSectionId = parseInt(evt.to.getAttribute('data-notes-section'));
+
+              // If dropped in same position in same section, do nothing
+              if (evt.oldIndex === evt.newIndex && fromSectionId === toSectionId) return;
 
               const scrollY = window.scrollY;
-              const currentSectionNotes = notes.filter(
-                (n) => n.section_id === section.id
-              );
-              const reorderedNotes = Array.from(currentSectionNotes);
-              const [movedNote] = reorderedNotes.splice(evt.oldIndex, 1);
-              reorderedNotes.splice(evt.newIndex, 0, movedNote);
+              const isCrossSection = fromSectionId !== toSectionId;
 
-              const updates = reorderedNotes.map((note, index) => ({
-                id: note.id,
-                sectionId: section.id,
-                displayOrder: index,
-              }));
+              // If cross-section, revert DOM changes immediately
+              if (isCrossSection) {
+                // Move the item back to its original position
+                if (evt.from && evt.item) {
+                  evt.from.insertBefore(evt.item, evt.from.children[evt.oldIndex]);
+                }
+              }
+
+              // Build updates
+              const updates = [];
+
+              if (isCrossSection) {
+                // Get the moved note
+                const noteId = parseInt(evt.item.getAttribute('data-note-id'));
+                const movedNote = notes.find(n => n.id === noteId);
+
+                // Get target section notes and insert at new position
+                const targetNotes = notes
+                  .filter(n => n.section_id === toSectionId)
+                  .sort((a, b) => a.display_order - b.display_order);
+
+                targetNotes.splice(evt.newIndex, 0, movedNote);
+
+                targetNotes.forEach((note, index) => {
+                  updates.push({
+                    id: note.id,
+                    sectionId: toSectionId,
+                    displayOrder: index,
+                  });
+                });
+
+                // Update source section (excluding moved note)
+                const sourceNotes = notes
+                  .filter(n => n.section_id === fromSectionId && n.id !== noteId)
+                  .sort((a, b) => a.display_order - b.display_order);
+
+                sourceNotes.forEach((note, index) => {
+                  updates.push({
+                    id: note.id,
+                    sectionId: fromSectionId,
+                    displayOrder: index,
+                  });
+                });
+              } else {
+                // Same section reorder
+                const sectionNotes = notes
+                  .filter(n => n.section_id === section.id)
+                  .sort((a, b) => a.display_order - b.display_order);
+
+                const reorderedNotes = Array.from(sectionNotes);
+                const [movedNote] = reorderedNotes.splice(evt.oldIndex, 1);
+                reorderedNotes.splice(evt.newIndex, 0, movedNote);
+
+                reorderedNotes.forEach((note, index) => {
+                  updates.push({
+                    id: note.id,
+                    sectionId: section.id,
+                    displayOrder: index,
+                  });
+                });
+              }
 
               try {
                 await notesApi.reorder(updates);
@@ -418,60 +493,44 @@ export function Dashboard() {
                       )}
 
                       {/* Notes Grid */}
-                      <div
-                        className={`min-h-[100px] ${
-                          getSectionNotes(section.id).length === 0
-                            ? 'relative flex items-center justify-center rounded border-3 border-dashed border-border/30'
-                            : ''
-                        }`}
-                      >
-                        {getSectionNotes(section.id).length > 0 ? (
-                          <div>
-                            <div className="flex w-full items-center justify-between">
-                              <h3 className="mb-4 font-display text-xl uppercase text-text/70">
-                                Notes
-                              </h3>
-                            </div>
-                            <div
-                              data-notes-section={section.id}
-                              className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4"
-                            >
-                              {getSectionNotes(section.id).map((note) => (
-                                <StickyNoteCard
-                                  key={note.id}
-                                  note={note}
-                                  onEdit={handleEditNote}
-                                  onCheckboxToggle={handleCheckboxToggle}
-                                />
-                              ))}
-                            </div>
-                            <button
-                              onClick={() => handleNewNote(section.id)}
-                              className="group mt-6 min-h-[100px] w-full rounded border-3 border-dashed border-border/30 transition-colors hover:text-accent1"
-                              aria-label="Add new note"
-                              title="Add new note"
-                            >
-                              <StickyNote size={36} className="inline" />
-                              <Plus
-                                size={18}
-                                className="-ml-[40px] inline h-[20px] w-[20px] rounded-full border-2 border-border bg-white group-hover:border-accent1 group-hover:bg-accent1 group-hover:text-white"
-                              />
-                            </button>
+                      <div>
+                        {getSectionNotes(section.id).length > 0 && (
+                          <div className="flex w-full items-center justify-between">
+                            <h3 className="mb-4 font-display text-xl uppercase text-text/70">
+                              Notes
+                            </h3>
                           </div>
-                        ) : (
-                          <button
-                            onClick={() => handleNewNote(section.id)}
-                            className="group absolute h-full w-full transition-colors hover:text-accent1"
-                            aria-label="Add new note"
-                            title="Add new note"
-                          >
-                            <StickyNote size={36} className="inline" />
-                            <Plus
-                              size={18}
-                              className="-ml-[40px] inline h-[20px] w-[20px] rounded-full border-2 border-border bg-white group-hover:border-accent1 group-hover:bg-accent1 group-hover:text-white"
-                            />
-                          </button>
                         )}
+                        <div
+                          data-notes-section={section.id}
+                          className={`grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 ${
+                            getSectionNotes(section.id).length === 0
+                              ? 'min-h-[100px] rounded border-3 border-dashed border-border/30'
+                              : ''
+                          }`}
+                        >
+                          {getSectionNotes(section.id).map((note) => (
+                            <div key={note.id} data-note-id={note.id}>
+                              <StickyNoteCard
+                                note={note}
+                                onEdit={handleEditNote}
+                                onCheckboxToggle={handleCheckboxToggle}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                        <button
+                          onClick={() => handleNewNote(section.id)}
+                          className="group mt-6 min-h-[100px] w-full rounded border-3 border-dashed border-border/30 transition-colors hover:text-accent1"
+                          aria-label="Add new note"
+                          title="Add new note"
+                        >
+                          <StickyNote size={36} className="inline" />
+                          <Plus
+                            size={18}
+                            className="-ml-[40px] inline h-[20px] w-[20px] rounded-full border-2 border-border bg-white group-hover:border-accent1 group-hover:bg-accent1 group-hover:text-white"
+                          />
+                        </button>
                       </div>
                     </div>
                   )}
