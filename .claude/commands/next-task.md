@@ -14,19 +14,14 @@ description: Running list of tasks I would like to make to the project. When run
 - Ask clarifying questions about the task one at a time with selectable options
 - Present a detailed plan for fulfilling the task and ask with selector for confirmation or additional instruction
 
-### 2. Branch Setup
-
-- Create and switch to feature branch from `dev` using naming convention: `feature/<brief-description>`
-- Example: `feature/add-calendar-export` or `fix/dialog-scroll-lock`
-
-### 3. Implementation
+### 2. Implementation
 
 - Execute the accepted plan
 - Run linting and formatting checks if code changes are made
 - Run tests if they exist in the project
 - Verify the application builds successfully
 
-### 4. Documentation Updates
+### 3. Documentation Updates
 
 Read and update relevant documentation ONLY if the changes affect:
 
@@ -38,15 +33,20 @@ Read and update relevant documentation ONLY if the changes affect:
 - package.json - Dependencies or scripts
 - packages/client/package.json - Client dependencies or scripts
 
-### 5. User Testing
+### 4. User Testing
 
-- Prompt me to test the change
-- Wait for confirmation that the task is complete
-- Address any issues found during testing
+**IMPORTANT: DO NOT proceed to Step 5 until testing is confirmed complete.**
 
-### 8. Completion
+- Present a summary of changes and what was implemented
+- Provide a clear, actionable test plan with specific scenarios to verify
+- Explicitly ask: "Please test these changes and let me know if you encounter any issues or if everything works as expected."
+- **STOP and WAIT** for user response
+- If issues are found, address them and repeat this step
+- Only proceed to Step 5 after user explicitly confirms testing is complete and successful
 
-End operation with message: "💥💣💥 Boom! Task COMPLETE! 💥💣💥"
+### 5. Completion
+
+**ONLY after user confirms testing is complete**, end operation with message: "💥💣💥 Boom! Task COMPLETE! 💥💣💥"
 
 ## Error Handling
 
