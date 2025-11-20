@@ -3,11 +3,11 @@
 # Production deployment script with database protection
 # This script safely deploys to production Docker containers
 
-set -e  # Exit on error
+set -e # Exit on error
 
 echo ""
 echo "╔═══════════════════════════════════════════════════════════════╗"
-echo "║   Production Deployment - Home Network Dashboard             ║"
+echo "║   Production Deployment - Home Network Dashboard              ║"
 echo "╚═══════════════════════════════════════════════════════════════╝"
 echo ""
 
@@ -19,40 +19,45 @@ echo ""
 
 # Step 2: Backup production database (if container is running)
 if docker ps | grep -q home-network-dashboard; then
-  echo "Step 2/5: Backing up production database..."
+	# Check if database file exists
+	if docker exec home-network-dashboard test -f /app/data/production.db; then
+		echo "Step 2/5: Backing up production database..."
 
-  # Create backup directory inside container
-  docker exec home-network-dashboard sh -c "mkdir -p /app/data/backups"
+		# Create backup directory inside container (as root to ensure permissions)
+		docker exec -u root home-network-dashboard sh -c "mkdir -p /app/data/backups && chown -R nodejs:nodejs /app/data/backups"
 
-  # Create timestamped backup
-  TIMESTAMP=$(date -u +"%Y-%m-%dT%H-%M-%S")
-  docker exec home-network-dashboard sh -c "
-    node -e \"
-      const Database = require('better-sqlite3');
-      const db = new Database('/app/data/production.db');
-      db.backup('/app/data/backups/production-${TIMESTAMP}.db')
-        .then(() => {
-          console.log('✓ Backup created: production-${TIMESTAMP}.db');
-          db.pragma('wal_checkpoint(TRUNCATE)');
-          console.log('✓ WAL checkpoint completed');
-          db.close();
-        })
-        .catch(err => {
-          console.error('Backup failed:', err.message);
-          process.exit(1);
-        });
-    \"
-  "
+		# Create timestamped backup
+		TIMESTAMP=$(date -u +"%Y-%m-%dT%H-%M-%S")
+		docker exec home-network-dashboard sh -c "
+      node -e \"
+        const Database = require('better-sqlite3');
+        const db = new Database('/app/data/production.db');
+        db.backup('/app/data/backups/production-${TIMESTAMP}.db')
+          .then(() => {
+            console.log('✓ Backup created: production-${TIMESTAMP}.db');
+            db.pragma('wal_checkpoint(TRUNCATE)');
+            console.log('✓ WAL checkpoint completed');
+            db.close();
+          })
+          .catch(err => {
+            console.error('Backup failed:', err.message);
+            process.exit(1);
+          });
+      \"
+    "
 
-  # Clean up old backups (keep last 10)
-  docker exec home-network-dashboard sh -c "
-    cd /app/data/backups &&
-    ls -t production-*.db 2>/dev/null | tail -n +11 | xargs rm -f 2>/dev/null || true
-  "
+		# Clean up old backups (keep last 10)
+		docker exec home-network-dashboard sh -c "
+      cd /app/data/backups &&
+      ls -t production-*.db 2>/dev/null | tail -n +11 | xargs rm -f 2>/dev/null || true
+    "
 
-  echo "✓ Production database backed up"
+		echo "✓ Production database backed up"
+	else
+		echo "Step 2/5: Skipping backup (production database not yet created)"
+	fi
 else
-  echo "Step 2/5: Skipping backup (first deployment)"
+	echo "Step 2/5: Skipping backup (container not running)"
 fi
 echo ""
 
@@ -80,20 +85,20 @@ sleep 5
 
 # Check container status
 if docker ps | grep -q home-network-dashboard; then
-  echo "✓ Deployment completed successfully!"
-  echo ""
-  echo "Container status:"
-  docker-compose ps
-  echo ""
-  echo "View logs: docker-compose logs -f"
+	echo "✓ Deployment completed successfully!"
+	echo ""
+	echo "Container status:"
+	docker-compose ps
+	echo ""
+	echo "View logs: docker-compose logs -f"
 else
-  echo "✗ Deployment failed - containers not running"
-  echo "Check logs: docker-compose logs"
-  exit 1
+	echo "✗ Deployment failed - containers not running"
+	echo "Check logs: docker-compose logs"
+	exit 1
 fi
 
 echo ""
 echo "╔═══════════════════════════════════════════════════════════════╗"
-echo "║   Production URL: https://steineck.io                        ║"
+echo "║   Production URL: https://steineck.io                         ║"
 echo "╚═══════════════════════════════════════════════════════════════╝"
 echo ""
