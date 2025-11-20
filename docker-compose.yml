@@ -14,9 +14,10 @@ services:
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - GOOGLE_CALLBACK_URL=https://steineck.io/auth/google/callback
       - SESSION_SECRET=${SESSION_SECRET}
-      - DATABASE_PATH=/data/database.db
+      - DATABASE_PATH=/app/data/production.db
+      - SESSION_DB_PATH=/app/data/sessions.db
     volumes:
-      - ./data:/data
+      - production-data:/app/data
     restart: unless-stopped
     networks:
       - home-network
@@ -37,5 +38,5 @@ networks:
     driver: bridge
 
 volumes:
-  data:
+  production-data:
     driver: local

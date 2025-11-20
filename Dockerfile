@@ -50,7 +50,7 @@ RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
 # Create data directory with proper permissions
-RUN mkdir -p /data && chown -R nodejs:nodejs /data
+RUN mkdir -p /app/data && chown -R nodejs:nodejs /app/data
 
 # Switch to non-root user
 USER nodejs
