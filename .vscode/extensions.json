@@ -1,0 +1,20 @@
+{
+  "recommendations": [
+    // Formatting and linting
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+
+    // React and JSX support
+    "dsznajder.es7-react-js-snippets",
+
+    // Tailwind CSS
+    "bradlc.vscode-tailwindcss",
+
+    // Path IntelliSense
+    "christian-kohler.path-intellisense",
+
+    // Additional helpful extensions
+    "streetsidesoftware.code-spell-checker",
+    "eamodio.gitlens"
+  ]
+}

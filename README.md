@@ -12,6 +12,7 @@ A brutalist-designed home network dashboard with Google OAuth authentication, ro
 - **Responsive Layout**: Works on desktop, tablet, and mobile with adaptive dialogs
 - **Dark/Light Mode**: Automatically follows system preference
 - **Docker Deployment**: Easy deployment with Docker Compose
+- **Cloudflare Tunnel**: Secure HTTPS access without port forwarding or SSL certificate management
 
 ## Prerequisites
 
@@ -60,6 +61,52 @@ Before you can run the application, you need to set up Google OAuth credentials:
    - Copy the "Client ID" and "Client Secret"
    - You'll need these for the `.env` file
 
+## Cloudflare Tunnel Setup (For HTTPS Access)
+
+For production deployment with HTTPS, you'll use Cloudflare Tunnel. This eliminates the need for:
+
+- Port forwarding on your router
+- Firewall configuration
+- Manual SSL certificate management
+- Exposing your home IP address
+
+**Steps:**
+
+1. **Sign up for Cloudflare** (free account works)
+   - Visit https://www.cloudflare.com/
+   - Add your domain to Cloudflare (update nameservers at your domain registrar)
+
+2. **Create a Tunnel**
+   - Go to https://one.dash.cloudflare.com/
+   - Navigate to **Networks** → **Tunnels**
+   - Click **Create a tunnel**
+   - Select **Cloudflared** connector type
+   - Name your tunnel (e.g., "home-dashboard")
+   - Click **Save tunnel**
+
+3. **Copy the Tunnel Token**
+   - After creating the tunnel, you'll see installation commands
+   - Copy the token from the command (looks like `eyJh...`)
+   - Save this for the `.env` file
+
+4. **Configure Public Hostname**
+   - Click on the **Published application routes** tab
+   - Click **Add a public hostname**
+   - Configure:
+     - **Subdomain**: (leave blank for root domain)
+     - **Domain**: Select your domain
+     - **Path**: (leave blank)
+     - **Service Type**: HTTP
+     - **URL**: `http://localhost:3031`
+   - Click **Save**
+
+5. **Update Google OAuth**
+   - Go back to Google Cloud Console → OAuth screen
+   - Update **Authorized JavaScript origins** to: `https://yourdomain.com`
+   - Update **Authorized redirect URIs** to: `https://yourdomain.com/auth/google/callback`
+
+That's it! No port forwarding or firewall changes needed.
+
 ## Installation
 
 ### 1. Clone or Download the Project
@@ -86,13 +133,17 @@ PORT=3030
 GOOGLE_CLIENT_ID=your_client_id_here.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=your_client_secret_here
 
-# Update with your server's IP or domain
-GOOGLE_CALLBACK_URL=http://192.168.1.100:3030/auth/google/callback
+# For local dev: http://localhost:3030/auth/google/callback
+# For production with Cloudflare Tunnel: https://yourdomain.com/auth/google/callback
+GOOGLE_CALLBACK_URL=https://yourdomain.com/auth/google/callback
 
 # Generate a random secret (use: openssl rand -base64 32)
 SESSION_SECRET=your_random_secret_here
 
 DATABASE_PATH=/data/database.db
+
+# Cloudflare Tunnel Token (paste the token you copied earlier)
+CLOUDFLARE_TUNNEL_TOKEN=your_cloudflare_tunnel_token_here
 ```
 
 ### 3. Add Your First Admin User
@@ -108,6 +159,7 @@ npm run seed
 ```
 
 The script will prompt you for:
+
 - Your email address (the one you'll use to log in with Google)
 - Your name (optional)
 
@@ -126,7 +178,10 @@ docker-compose logs -f
 docker-compose down
 ```
 
-The application will be available at `http://localhost:3030` or `http://your-server-ip:3030`
+The application will be available at:
+
+- **Production (with Cloudflare Tunnel)**: `https://yourdomain.com`
+- **Local development**: `http://localhost:3030`
 
 ## Usage
 
@@ -169,12 +224,14 @@ As an admin user:
 The user's Google account details will be automatically linked when they first log in.
 
 **User Roles:**
+
 - **Admin**: Can manage services and users
 - **Read Only**: Can only view and access services
 
 ### Removing Access
 
 To remove a user's access:
+
 1. Go to Admin → Users
 2. Click the trash icon next to the user
 3. Confirm deletion
@@ -203,30 +260,79 @@ npm run dev
 Backend runs on `http://localhost:3030`
 Frontend dev server runs on `http://localhost:5173`
 
+### Code Quality Tools
+
+The project includes ESLint and Prettier for maintaining code quality:
+
+```bash
+# Run ESLint on entire codebase
+npm run lint
+
+# Auto-fix ESLint issues
+npm run lint:fix
+
+# Format code with Prettier
+npm run format
+
+# Check formatting without changes
+npm run format:check
+
+# Lint frontend code only
+cd client && npm run lint
+```
+
+**ESLint Setup**: Uses flat config (v9.x) with plugins for React, React Hooks, JSON, and Markdown. Code follows React best practices with proper hooks usage and zero lint errors.
+
+**Prettier Setup**: Configured with Tailwind CSS plugin for automatic class sorting.
+
+### Recommended VS Code Extensions
+
+The project includes extension recommendations in `.vscode/extensions.json`:
+
+- **Prettier** - Code formatting
+- **ESLint** - Real-time linting
+- **ES7+ React Snippets** - Quick React component scaffolding
+- **Tailwind CSS IntelliSense** - Autocomplete and class previews
+- **Path IntelliSense** - Import path autocomplete
+- **Code Spell Checker** - Catch typos
+- **GitLens** - Enhanced Git integration
+
+VS Code will prompt to install these when you open the project.
+
 ### Project Structure
 
 ```
 home-network-dashboard/
-├── server/               # Backend Express server
-│   ├── config/          # Database and Passport configuration
-│   ├── middleware/      # Auth and admin middleware
-│   ├── models/          # Database models
-│   ├── routes/          # API routes
-│   └── server.js        # Main server file
-├── client/              # Frontend React app
-│   └── src/
-│       ├── components/  # React components (inc. unified Dialog)
-│       ├── context/     # Auth context
-│       ├── hooks/       # Custom hooks
-│       ├── utils/       # API utilities
-│       └── styles/      # Tailwind CSS
-├── scripts/             # Utility scripts
-│   └── seed.js         # Admin user setup
-├── data/               # SQLite database (created at runtime)
+├── packages/
+│   ├── server/              # Backend Express server
+│   │   ├── config/          # Database and Passport configuration
+│   │   ├── middleware/      # Auth and admin middleware
+│   │   ├── models/          # Database models
+│   │   ├── routes/          # API routes
+│   │   ├── scripts/         # Utility scripts (admin user setup)
+│   │   └── server.js        # Main server file
+│   └── client/              # Frontend React app
+│       └── src/
+│           ├── components/
+│           │   ├── pages/           # Route-level components
+│           │   ├── features/        # Feature-based components
+│           │   │   ├── services/    # Service cards and forms
+│           │   │   ├── calendar/    # Calendar and event displays
+│           │   │   ├── notes/       # Sticky notes and dialogs
+│           │   │   └── admin/       # Admin management components
+│           │   ├── common/          # Reusable UI components
+│           │   └── layout/          # Layout components
+│           ├── context/     # Auth context
+│           ├── hooks/       # Custom hooks
+│           ├── utils/       # API utilities
+│           └── styles/      # Tailwind CSS
+├── data/                    # SQLite database (created at runtime)
 ├── Dockerfile
 ├── docker-compose.yml
-└── .env                # Environment variables
+└── .env                    # Environment variables
 ```
+
+**Component Organization**: Uses feature-based grouping with path aliases (`@pages`, `@features`, `@common`, `@layout`) for clean imports and improved maintainability.
 
 ## Troubleshooting
 
@@ -294,9 +400,18 @@ Edit `server/models/init-db.js` to modify the default services that are seeded o
 ### Customizing Dialogs
 
 All dialogs use a unified `Dialog.jsx` component with consistent styling. To customize dialog appearance:
+
 - Edit `client/src/components/Dialog.jsx`
 - Modify header background color, border styles, or spacing
 - All existing dialogs (notes, events, forms) will automatically update
+- Mobile-optimized: Dialogs are full-screen on mobile (< 640px) with fixed header/footer and scrollable content
+
+**Dialog Interaction Features:**
+
+- Body scroll lock prevents underlying page from scrolling when dialog is open
+- Text selection can extend outside dialog boundary without closing it
+- Click-outside-to-close requires both mousedown and mouseup on backdrop
+- Consistent behavior on both desktop and mobile
 
 ## License
 
@@ -305,6 +420,7 @@ MIT License - Feel free to use and modify for your home network!
 ## Support
 
 For issues and questions, please check:
+
 - Google OAuth setup documentation
 - Docker documentation
 - Express.js documentation

@@ -2,14 +2,25 @@
   "name": "home-network-dashboard",
   "version": "1.0.0",
   "description": "A brutalist home network dashboard with Google OAuth",
-  "main": "server/server.js",
+  "private": true,
   "workspaces": [
-    "client"
+    "packages/*"
   ],
   "scripts": {
-    "start": "node server/server.js",
-    "dev": "nodemon server/server.js",
-    "seed": "node scripts/seed.js"
+    "deploy": "./scripts/deploy-production.sh",
+    "backup:dev": "node packages/server/scripts/checkpoint-db.js",
+    "dev": "npm run dev:server & npm run dev:client",
+    "dev:server": "npm run dev --workspace=home-dashboard-server",
+    "dev:client": "npm run dev --workspace=home-dashboard-client",
+    "start": "npm run start --workspace=home-dashboard-server",
+    "seed": "npm run seed --workspace=home-dashboard-server",
+    "recover": "node packages/server/scripts/recover-data.js",
+    "build": "npm run build --workspace=home-dashboard-client",
+    "preview": "npm run preview --workspace=home-dashboard-client",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "keywords": [
     "dashboard",
@@ -19,21 +30,14 @@
   ],
   "author": "",
   "license": "MIT",
-  "dependencies": {
-    "better-sqlite3": "^11.8.1",
-    "connect-sqlite3": "^0.9.13",
-    "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
-    "express": "^4.18.2",
-    "express-session": "^1.17.3",
-    "express-validator": "^7.0.1",
-    "googleapis": "^165.0.0",
-    "helmet": "^7.1.0",
-    "passport": "^0.7.0",
-    "passport-google-oauth20": "^2.0.0"
-  },
   "devDependencies": {
-    "nodemon": "^3.0.2"
+    "@eslint/js": "^9.39.1",
+    "@eslint/json": "^0.14.0",
+    "@eslint/markdown": "^7.5.1",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react": "^7.37.5",
+    "globals": "^16.5.0",
+    "prettier": "^3.6.2"
   },
   "engines": {
     "node": ">=18.0.0"
