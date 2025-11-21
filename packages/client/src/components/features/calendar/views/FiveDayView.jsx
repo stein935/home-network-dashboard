@@ -104,7 +104,7 @@ export function FiveDayView({
               </>
             )}
             <div
-              className={`divide-y ${isToday ? 'divide-accent1' : 'divide-border'}`}
+              className={`divide-y ${isToday ? 'divide-accent1' : 'divide-border'} -mx-2`}
             >
               {dayEvents.slice(0, 5).map((event, eventIdx) => {
                 // Find calendar color (only show dot if 2+ calendars)
@@ -116,7 +116,7 @@ export function FiveDayView({
                 return (
                   <div
                     key={eventIdx}
-                    className="flex cursor-pointer items-center gap-1 truncate py-1 font-body text-xs text-text transition-colors hover:bg-accent1/10"
+                    className="flex cursor-pointer items-center gap-1 truncate px-2 py-1 font-body text-xs text-text transition-colors hover:bg-accent1/10"
                     title={event.summary}
                     onClick={() => setSelectedEvent(event)}
                   >
@@ -143,7 +143,7 @@ export function FiveDayView({
                   onClick={() =>
                     setExpandedDay({ date: day, events: dayEvents })
                   }
-                  className="cursor-pointer py-1 text-xs text-accent1 hover:text-accent2"
+                  className="w-full cursor-pointer px-2 py-1 text-left text-xs text-accent1 hover:text-accent2"
                 >
                   +{dayEvents.length - 5} more
                 </button>

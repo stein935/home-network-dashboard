@@ -116,7 +116,7 @@ export function MonthView({
                 {day}
               </div>
               <div
-                className={`flex-1 divide-y overflow-hidden ${isToday ? 'divide-accent1' : 'divide-border'}`}
+                className={`flex-1 divide-y overflow-hidden ${isToday ? 'divide-accent1' : 'divide-border'} -mx-2`}
               >
                 {dayEvents.slice(0, 2).map((event, eventIdx) => {
                   // Find calendar color (only show dot if 2+ calendars)
@@ -127,7 +127,7 @@ export function MonthView({
                   return (
                     <div
                       key={eventIdx}
-                      className="flex cursor-pointer items-center gap-1 truncate py-1 text-xs text-text transition-colors hover:bg-accent1/10"
+                      className="flex cursor-pointer items-center gap-1 truncate px-2 py-1 text-xs text-text transition-colors hover:bg-accent1/10"
                       title={event.summary}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -151,7 +151,7 @@ export function MonthView({
                 {dayEvents.length > 2 && (
                   <button
                     onClick={() => setExpandedDay({ date, events: dayEvents })}
-                    className="cursor-pointer py-1 text-xs text-accent1 hover:text-accent2"
+                    className="w-full cursor-pointer px-2 py-1 text-left text-xs text-accent1 hover:text-accent2"
                   >
                     +{dayEvents.length - 2} more
                   </button>
