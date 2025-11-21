@@ -193,11 +193,11 @@
   }
 
   .note-message-content ul[data-type='taskList'] {
-    @apply ml-0 list-none;
+    @apply ml-0 list-none divide-y divide-black/50;
   }
 
   .note-message-content ul[data-type='taskList'] > li {
-    @apply flex items-start gap-2;
+    @apply mb-0 flex items-center gap-2 py-1;
   }
 
   .note-message-content ul[data-type='taskList'] > li input[type='checkbox'] {
@@ -210,7 +210,7 @@
     ul[data-type='taskList']
     > li:has(input[type='checkbox']:checked) {
     text-decoration: line-through;
-    @apply text-black/50;
+    @apply text-black/50 accent-accent1;
   }
 
   /* Keep checkbox itself not struck through */
@@ -281,11 +281,11 @@
   }
 
   .rich-text-editor-content ul[data-type='taskList'] {
-    @apply ml-0 list-none;
+    @apply ml-0 list-none divide-y divide-black/50;
   }
 
   .rich-text-editor-content ul[data-type='taskList'] > li {
-    @apply flex items-start gap-2;
+    @apply my-0 flex items-center gap-2 py-1;
   }
 
   .rich-text-editor-content
@@ -326,5 +326,22 @@
 
   .rich-text-editor-content .formatted-date {
     @apply inline-block cursor-pointer rounded-full bg-accent1 px-3 py-1 font-semibold text-white transition-colors hover:bg-accent2;
+  }
+
+  .rich-text-editor-content blockquote {
+    @apply mb-3 border-l-4 border-accent2 pl-4 italic;
+  }
+
+  .rich-text-editor-content hr {
+    @apply my-4 border-t-2 border-black;
+  }
+
+  /* Also add styles for note message content */
+  .note-message-content blockquote {
+    @apply mb-2 border-l-4 border-accent2 pl-4 italic;
+  }
+
+  .note-message-content hr {
+    @apply my-2 border-t-2 border-black;
   }
 }
