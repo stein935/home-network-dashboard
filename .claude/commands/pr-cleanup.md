@@ -42,7 +42,7 @@ description: Create PR, merge, and cleanup feature branch
 
 **Create PR:**
 
-- Create PR to merge feature branch into `dev` using `gh pr create`
+- **IMPORTANT** Create PR to merge feature branch into `dev` using `gh pr create`
 - Include summary of changes:
   - Brief description of what changed
   - Why the changes were made
@@ -55,16 +55,17 @@ description: Create PR, merge, and cleanup feature branch
 
 **Wait for merge (Automated):**
 
-- Poll PR status every 30 seconds using `gh pr view <pr-number> --json state`
-- Report current status to user:
-  - "PR #123 created, waiting for merge..."
-  - "PR status: OPEN (checking again in 30s)"
-- Continue polling until PR state is `MERGED`
-- If PR is closed without merging, report and abort cleanup
-- Maximum wait time: 30 minutes (60 checks)
-- If timeout reached, notify user and exit:
-  - "PR has not been merged after 30 minutes"
-  - "Please merge manually and run cleanup steps when ready"
+- Use the monitoring script: `./scripts/wait-for-pr-merge.sh <pr-number>`
+- The script will:
+  - Poll PR status every 30 seconds
+  - Report current status to user after each check
+  - Continue until PR state is `MERGED`
+  - Exit with error if PR is closed without merging
+  - Timeout after 30 minutes (60 checks)
+- IMPORTANT: Report the script output to the user as it runs so they can see progress
+- If script exits with code 0: PR was merged successfully, proceed to cleanup
+- If script exits with code 1: PR was closed without merging, abort cleanup
+- If script exits with code 2: Timeout reached, notify user and abort cleanup
 
 ### 4. Cleanup
 

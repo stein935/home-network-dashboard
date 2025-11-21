@@ -46,7 +46,10 @@ Read and update relevant documentation ONLY if the changes affect:
 
 ### 5. Completion
 
-**ONLY after user confirms testing is complete**, end operation with message: "💥💣💥 Boom! Task COMPLETE! 💥💣💥"
+**ONLY after user confirms testing is complete**
+
+- Delete the task from the ready list in @local/prompt-drafts/task-list.md
+- End operation with message: "💥💣💥 Boom! Task COMPLETE! 💥💣💥"
 
 ## Error Handling
 

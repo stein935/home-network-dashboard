@@ -413,11 +413,34 @@ function initializeDatabase() {
       due_date TEXT,
       color TEXT NOT NULL,
       display_order INTEGER NOT NULL DEFAULT 0,
+      width INTEGER NOT NULL DEFAULT 1 CHECK(width >= 1 AND width <= 4),
+      height INTEGER NOT NULL DEFAULT 1 CHECK(height >= 1 AND height <= 3),
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       FOREIGN KEY (section_id) REFERENCES sections(id) ON DELETE CASCADE
     )
   `);
+
+  // Check if notes table needs migration for width and height columns
+  const notesTableInfo = db.prepare('PRAGMA table_info(notes)').all();
+  const notesTableExists = notesTableInfo.length > 0;
+  const hasWidth = notesTableInfo.find((col) => col.name === 'width');
+  const hasHeight = notesTableInfo.find((col) => col.name === 'height');
+
+  if (notesTableExists && (!hasWidth || !hasHeight)) {
+    console.log('Adding width and height columns to notes table...');
+    if (!hasWidth) {
+      db.exec(
+        'ALTER TABLE notes ADD COLUMN width INTEGER NOT NULL DEFAULT 1 CHECK(width >= 1 AND width <= 4)'
+      );
+    }
+    if (!hasHeight) {
+      db.exec(
+        'ALTER TABLE notes ADD COLUMN height INTEGER NOT NULL DEFAULT 1 CHECK(height >= 1 AND height <= 3)'
+      );
+    }
+    console.log('Width and height columns added to notes table');
+  }
 
   // Create scrapers table
   db.exec(`

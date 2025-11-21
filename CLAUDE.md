@@ -160,7 +160,7 @@ import { getDueDateCategory } from '@utils/dateUtils';
 
 **sections**: id, name, display_order, is_default
 
-**notes**: id, title, message, color, due_date (nullable), author_id, author_name, section_id, display_order, created_at, updated_at
+**notes**: id, title, message, color, due_date (nullable), author_id, author_name, section_id, display_order, width (1-4), height (1-3), created_at, updated_at
 
 ## Key Features
 
@@ -213,8 +213,8 @@ import { getDueDateCategory } from '@utils/dateUtils';
 
 - GET `/api/notes` - List all notes
 - GET `/api/notes/section/:sectionId` - Get notes for a specific section
-- POST `/api/notes` - Create note (requires: title, message, color, sectionId; optional: dueDate)
-- PUT `/api/notes/:id` - Update note (author can edit own notes)
+- POST `/api/notes` - Create note (requires: title, message, color, sectionId; optional: dueDate, width (1-4), height (1-3))
+- PUT `/api/notes/:id` - Update note (author can edit own notes; optional: width, height)
 - DELETE `/api/notes/:id` - Delete note (author or admin only)
 - PUT `/api/notes/reorder` - Update display order via drag-and-drop
 
@@ -469,6 +469,7 @@ Sticky notes are section-specific notes that appear alongside services within co
 
 - Drag-and-drop reordering within sections
 - Customizable colors (10 color palette: yellows, pinks, blues, greens)
+- **Configurable sizes**: Width (1-4 columns) and Height (1-3 rows) for flexible layouts
 - Optional due dates with intelligent categorization
 - Urgency badges: "DUE TODAY" (red), "DUE SOON" (orange), "OVERDUE" (red alert)
 - Future dates displayed without badge
@@ -491,11 +492,16 @@ Sticky notes are section-specific notes that appear alongside services within co
 
 **Display Rules:**
 
-- Notes shown in masonry grid layout
-- Aspect ratio: square (1:1)
-- Size range: min 200px, max 280px
+- Notes shown in CSS Grid with tight packing (`grid-flow-dense`)
+- Grid cells are square (1:1 aspect ratio), calculated dynamically based on column width
+- Notes span multiple cells based on configured width and height
+- Default size: 1x1 (single cell, square)
+- Width values (1-4) map to Tailwind `col-span` classes
+- Height values (1-3) map to Tailwind `row-span` classes
+- Responsive behavior: notes wider than available columns automatically span full width
+- Grid configuration: 1 column (mobile), 2 columns (tablet), 4 columns (desktop)
 - Ring highlight on drag-over (blue)
-- Responsive grid with auto-fit columns
+- Content naturally scales with note dimensions
 
 ## Unified Dialog Component
 

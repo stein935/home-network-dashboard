@@ -287,7 +287,7 @@ export default function RichTextEditor({
   return (
     <div className="border-2 border-black">
       {/* Toolbar */}
-      <div className="bg-neutral1 flex flex-wrap items-center gap-1 border-b-2 border-black p-2">
+      <div className="sticky -top-4 z-10 flex flex-wrap items-center gap-1 border-b-2 border-black bg-neutral-100 p-2 sm:-top-6">
         {/* Text Styling */}
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBold().run()}
@@ -387,7 +387,7 @@ export default function RichTextEditor({
 
       {/* Character Counter */}
       <div
-        className={`border-t-2 border-black px-4 py-2 font-mono text-sm ${isOverLimit ? 'bg-red-100 font-bold text-red-700' : 'bg-neutral1 text-neutral4'} `}
+        className={`border-t-2 border-black bg-neutral-100 px-4 py-2 font-mono text-sm ${isOverLimit ? 'bg-red-100 font-bold text-red-700' : 'bg-neutral1 text-neutral4'} `}
       >
         {charCount} / {maxLength} characters
         {isOverLimit && ' (over limit!)'}

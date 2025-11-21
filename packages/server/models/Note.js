@@ -27,6 +27,8 @@ class Note {
     authorName,
     dueDate,
     color,
+    width = 1,
+    height = 1,
   }) {
     // Get the highest display_order for this section and add 1
     const maxOrder = db
@@ -38,8 +40,8 @@ class Note {
 
     const now = new Date().toISOString();
     const stmt = db.prepare(`
-      INSERT INTO notes (section_id, title, message, author_email, author_name, due_date, color, display_order, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO notes (section_id, title, message, author_email, author_name, due_date, color, display_order, width, height, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     const result = stmt.run(
       sectionId,
@@ -50,13 +52,15 @@ class Note {
       dueDate || null,
       color,
       displayOrder,
+      width,
+      height,
       now,
       now
     );
     return this.findById(result.lastInsertRowid);
   }
 
-  static update(id, { title, message, dueDate, color }) {
+  static update(id, { title, message, dueDate, color, width, height }) {
     const now = new Date().toISOString();
 
     // Build dynamic UPDATE query based on provided fields
@@ -78,6 +82,14 @@ class Note {
     if (color !== undefined) {
       updates.push('color = ?');
       values.push(color);
+    }
+    if (width !== undefined) {
+      updates.push('width = ?');
+      values.push(width);
+    }
+    if (height !== undefined) {
+      updates.push('height = ?');
+      values.push(height);
     }
 
     // Always update the updated_at timestamp

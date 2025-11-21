@@ -104,7 +104,8 @@
   }
 
   .sticky-note-card {
-    @apply aspect-square h-full w-full overflow-hidden border-4 border-black shadow-[8px_8px_0_0_rgba(0,0,0,1)] transition-all duration-200;
+    @apply h-full w-full overflow-hidden border-4 border-black shadow-[8px_8px_0_0_rgba(0,0,0,1)] transition-all duration-200;
+    min-height: 200px;
   }
 
   .sticky-note-card-hover {
@@ -208,8 +209,8 @@
   .note-message-content
     ul[data-type='taskList']
     > li:has(input[type='checkbox']:checked) {
-    color: #6b7280;
     text-decoration: line-through;
+    @apply text-black/50;
   }
 
   /* Keep checkbox itself not struck through */
