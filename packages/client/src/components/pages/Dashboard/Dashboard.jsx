@@ -127,6 +127,11 @@ export function Dashboard() {
             handle: '.sortable-handle',
             ghostClass: 'opacity-50',
             group: 'notes', // Allow dragging between sections
+            onMove: function (e) {
+              if (e.related.classList.contains('element-fixed')) {
+                return false;
+              }
+            },
             onEnd: async (evt) => {
               const fromSectionId = parseInt(
                 evt.from.getAttribute('data-notes-section')
@@ -533,19 +538,23 @@ export function Dashboard() {
                               />
                             </div>
                           ))}
+                          <button
+                            onClick={() => handleNewNote(section.id)}
+                            className={`element-fixed group min-h-[100px] w-full transition-colors hover:text-accent1 ${
+                              getSectionNotes(section.id).length === 0
+                                ? 'col-span-full'
+                                : 'min-h-[100px] rounded border-3 border-dashed border-border/30'
+                            }`}
+                            aria-label="Add new note"
+                            title="Add new note"
+                          >
+                            <StickyNote size={36} className="inline" />
+                            <Plus
+                              size={18}
+                              className="-ml-[40px] inline h-[20px] w-[20px] rounded-full border-2 border-border bg-white group-hover:border-accent1 group-hover:bg-accent1 group-hover:text-white"
+                            />
+                          </button>
                         </div>
-                        <button
-                          onClick={() => handleNewNote(section.id)}
-                          className="group mt-6 min-h-[100px] w-full rounded border-3 border-dashed border-border/30 transition-colors hover:text-accent1"
-                          aria-label="Add new note"
-                          title="Add new note"
-                        >
-                          <StickyNote size={36} className="inline" />
-                          <Plus
-                            size={18}
-                            className="-ml-[40px] inline h-[20px] w-[20px] rounded-full border-2 border-border bg-white group-hover:border-accent1 group-hover:bg-accent1 group-hover:text-white"
-                          />
-                        </button>
                       </div>
                     </div>
                   )}
