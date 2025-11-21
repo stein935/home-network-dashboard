@@ -1,6 +1,6 @@
 export function Privacy() {
   return (
-    <div className="prose prose-slate m-auto max-w-[800px] p-6 pb-20 md:p-12 md:pb-28">
+    <div className="prose prose-slate mx-auto my-0 max-w-[800px] border-5 border-black bg-white p-6 pb-20 shadow-brutal sm:my-20 md:p-20 md:pb-28">
       <h1 className="mb-2 inline font-display text-display-sm uppercase text-text">
         HOME <span className="text-accent1">DASHBOARD</span>
       </h1>
