@@ -21,6 +21,8 @@ import {
   Heading1,
   Heading2,
   Heading3,
+  Quote,
+  Minus,
 } from 'lucide-react';
 import {
   countHtmlChars,
@@ -46,6 +48,7 @@ function looksLikeMarkdown(text) {
     /```[\s\S]*```/m, // Code blocks: ```code```
     /`[^`]+`/m, // Inline code: `code`
     /^>\s/m, // Blockquotes: > quote
+    /^[-*_]{3,}\s*$/m, // Horizontal rules: ---, ___, ***
   ];
 
   return markdownPatterns.some((pattern) => pattern.test(text));
@@ -215,6 +218,16 @@ export default function RichTextEditor({
       StarterKit.configure({
         heading: {
           levels: [1, 2, 3],
+        },
+        blockquote: {
+          HTMLAttributes: {
+            class: 'border-l-4 border-black pl-4 italic',
+          },
+        },
+        horizontalRule: {
+          HTMLAttributes: {
+            class: 'my-4 border-t-2 border-black',
+          },
         },
       }),
       Underline,
@@ -514,6 +527,22 @@ export default function RichTextEditor({
           isActive={editor.isActive('taskList')}
           icon={CheckSquare}
           label="Task List"
+        />
+
+        <ToolbarDivider />
+
+        {/* Blockquote & Horizontal Rule */}
+        <ToolbarButton
+          onClick={() => editor.chain().focus().toggleBlockquote().run()}
+          isActive={editor.isActive('blockquote')}
+          icon={Quote}
+          label="Blockquote"
+        />
+        <ToolbarButton
+          onClick={() => editor.chain().focus().setHorizontalRule().run()}
+          isActive={false}
+          icon={Minus}
+          label="Horizontal Rule"
         />
 
         <ToolbarDivider />
