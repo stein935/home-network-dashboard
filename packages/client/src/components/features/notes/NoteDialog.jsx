@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Save, Trash2 } from 'lucide-react';
+import { Save, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { NOTE_COLORS, getRandomColor } from '@utils/noteColors';
 import { useNotification } from '@hooks/useNotification';
 import { Dialog } from '@common/Dialog';
@@ -23,6 +23,9 @@ export function NoteDialog({ note, sectionId, onSave, onDelete, onClose }) {
     note?.due_date ? note.due_date.split('T')[0] : ''
   );
   const [color, setColor] = useState(note?.color || getRandomColor());
+  const [width, setWidth] = useState(note?.width || 1);
+  const [height, setHeight] = useState(note?.height || 1);
+  const [more, setMore] = useState(isCreateMode);
 
   // Track if form has been modified (for edit mode) - use useMemo instead of useEffect
   const isDirty = useMemo(() => {
@@ -31,9 +34,21 @@ export function NoteDialog({ note, sectionId, onSave, onDelete, onClose }) {
       title !== note.title ||
       message !== initialMessage ||
       (dueDate || '') !== (note.due_date ? note.due_date.split('T')[0] : '') ||
-      color !== note.color
+      color !== note.color ||
+      width !== note.width ||
+      height !== note.height
     );
-  }, [title, message, dueDate, color, note, isCreateMode, initialMessage]);
+  }, [
+    title,
+    message,
+    dueDate,
+    color,
+    width,
+    height,
+    note,
+    isCreateMode,
+    initialMessage,
+  ]);
 
   const handleSave = () => {
     if (!title.trim()) {
@@ -59,6 +74,8 @@ export function NoteDialog({ note, sectionId, onSave, onDelete, onClose }) {
       message: message, // Keep HTML as-is
       dueDate: dueDate || null,
       color,
+      width,
+      height,
     };
 
     if (isCreateMode) {
@@ -91,6 +108,10 @@ export function NoteDialog({ note, sectionId, onSave, onDelete, onClose }) {
       month: 'long',
       day: 'numeric',
     });
+  };
+
+  const toggleMore = () => {
+    setMore(!more); // Toggles the boolean value of isOn
   };
 
   const footer = (
@@ -144,45 +165,98 @@ export function NoteDialog({ note, sectionId, onSave, onDelete, onClose }) {
         />
       </div>
 
-      {/* Author (read-only in edit mode) */}
-      {!isCreateMode && (
-        <div>
-          <label className="mb-2 block font-display text-sm uppercase">
-            Author
-          </label>
-          <div className="input-brutal w-full cursor-not-allowed bg-gray-100">
-            {note.author_name}
+      <button
+        onClick={toggleMore}
+        className="flex w-full items-center justify-between gap-2 border-t-3 border-black pt-3 font-display text-sm uppercase"
+      >
+        More
+        {more ? (
+          <ChevronDown size={32} strokeWidth={3} className="text-accent1" />
+        ) : (
+          <ChevronRight size={32} strokeWidth={3} className="text-accent1" />
+        )}
+      </button>
+
+      {more && (
+        <div className="space-y-4">
+          {/* Author (read-only in edit mode) */}
+          {!isCreateMode && (
+            <div>
+              <label className="mb-2 block font-display text-sm uppercase">
+                Author
+              </label>
+              <div className="input-brutal w-full cursor-not-allowed bg-gray-100">
+                {note.author_name}
+              </div>
+            </div>
+          )}
+
+          {/* Date Created (read-only in edit mode) */}
+          {!isCreateMode && (
+            <div>
+              <label className="mb-2 block font-display text-sm uppercase">
+                Date Created
+              </label>
+              <div className="input-brutal w-full cursor-not-allowed bg-gray-100">
+                {formatDate(note.created_at)}
+              </div>
+            </div>
+          )}
+
+          {/* Due Date */}
+          <div>
+            <label className="mb-2 block font-display text-sm uppercase">
+              Due Date (Optional)
+            </label>
+            <input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="input-brutal box-border w-full max-w-full text-left"
+            />
+          </div>
+
+          {/* Size Configuration */}
+          <div>
+            <label className="mb-2 block font-display text-sm uppercase">
+              Size
+            </label>
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <label className="mb-1 block text-xs">Width</label>
+                <select
+                  value={width}
+                  onChange={(e) => setWidth(parseInt(e.target.value))}
+                  className="input-brutal w-full"
+                >
+                  {[1, 2, 3, 4].map((w) => (
+                    <option key={w} value={w}>
+                      {w}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="mb-1 block text-xs">Height</label>
+                <select
+                  value={height}
+                  onChange={(e) => setHeight(parseInt(e.target.value))}
+                  className="input-brutal w-full"
+                >
+                  {[1, 2, 3].map((h) => (
+                    <option key={h} value={h}>
+                      {h}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
         </div>
       )}
-
-      {/* Date Created (read-only in edit mode) */}
-      {!isCreateMode && (
-        <div>
-          <label className="mb-2 block font-display text-sm uppercase">
-            Date Created
-          </label>
-          <div className="input-brutal w-full cursor-not-allowed bg-gray-100">
-            {formatDate(note.created_at)}
-          </div>
-        </div>
-      )}
-
-      {/* Due Date */}
-      <div>
-        <label className="mb-2 block font-display text-sm uppercase">
-          Due Date (Optional)
-        </label>
-        <input
-          type="date"
-          value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
-          className="input-brutal w-full max-w-full"
-        />
-      </div>
 
       {/* Message */}
-      <div>
+      <div className="border-t-3 border-black pt-3">
         <label className="mb-2 block font-display text-sm uppercase">
           Message
         </label>

@@ -196,10 +196,10 @@ export function StickyNoteCard({ note, onEdit, onCheckboxToggle }) {
             className="note-message-content flex-1 overflow-hidden border-t-2 border-black pt-2 font-body text-sm text-black"
             dangerouslySetInnerHTML={{ __html: sanitizeHtml(note.message) }}
             style={{
-              overflow: 'hidden',
-              lineHeight: '1.5em',
+              // overflow: 'hidden',
+              // lineHeight: '1.5em',
               maskImage:
-                'linear-gradient(to bottom, black 0%, black 70%, transparent 100%)',
+                'linear-gradient(to top, transparent 0%, black 100px, black 100%)',
               WebkitMaskImage:
                 'linear-gradient(to bottom, black 0%, black 70%, transparent 100%)',
             }}
