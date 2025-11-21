@@ -23,6 +23,8 @@ const sanitizeOptions = {
     'span',
     'input',
     'label',
+    'hr',
+    'blockquote',
   ],
   allowedAttributes: {
     a: ['href', 'target', 'rel'],
@@ -30,9 +32,13 @@ const sanitizeOptions = {
     li: ['data-type', 'data-checked'],
     ul: ['data-type'],
     input: ['type', 'checked'],
+    blockquote: ['class'],
+    hr: ['class'],
   },
   allowedClasses: {
     span: ['formatted-date'],
+    blockquote: ['border-l-4', 'border-black', 'pl-4', 'italic', 'mb-2'],
+    hr: ['my-2', 'border-t-2', 'border-black'],
   },
   // Only allow specific input types (checkboxes for task lists)
   transformTags: {
