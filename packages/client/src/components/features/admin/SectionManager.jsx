@@ -150,10 +150,10 @@ export function SectionManager() {
         </div>
       ) : (
         <div className="overflow-x-auto border-5 border-border bg-surface shadow-brutal">
-          <table className="w-full">
+          <table className="w-full table-fixed">
             <thead className="border-b-3 border-border">
               <tr>
-                <th className="p-4 text-left font-display uppercase text-text">
+                <th className="w-28 p-4 text-left font-display uppercase text-text">
                   Order
                 </th>
                 <th className="p-4 text-left font-display uppercase text-text">
