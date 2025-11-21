@@ -176,8 +176,27 @@ export function ScraperManager() {
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Never';
-    const date = new Date(dateString);
-    return date.toLocaleString();
+    // Ensure the date string is treated as UTC if it doesn't have timezone info
+    let date = new Date(dateString);
+
+    // If the date string doesn't include 'Z' or timezone offset, treat it as UTC
+    if (
+      typeof dateString === 'string' &&
+      !dateString.includes('Z') &&
+      !dateString.match(/[+-]\d{2}:\d{2}$/)
+    ) {
+      date = new Date(dateString + 'Z');
+    }
+
+    return date.toLocaleString(undefined, {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    });
   };
 
   return (
@@ -234,8 +253,10 @@ export function ScraperManager() {
                   className="border-b-3 border-border last:border-b-0"
                 >
                   <td className="p-4">
-                    <div className="font-display uppercase">{scraper.name}</div>
-                    <div className="mt-1 text-sm text-text/60">
+                    <div className="truncate font-display uppercase">
+                      {scraper.name}
+                    </div>
+                    <div className="mt-1 max-w-[200px] truncate text-sm text-text/60">
                       {scraper.url}
                     </div>
                   </td>
@@ -263,32 +284,32 @@ export function ScraperManager() {
                       <button
                         onClick={() => handleTrigger(scraper.id)}
                         disabled={triggering === scraper.id}
-                        className="btn-brutal-sm flex items-center gap-1"
+                        className="btn-brutal-sm flex items-center gap-1 hover:opacity-80 disabled:bg-white"
                         title="Trigger now"
                       >
-                        <Play size={16} />
+                        <Play size={20} />
                         {triggering === scraper.id ? 'Running...' : 'Run'}
                       </button>
                       <button
                         onClick={() => handleViewLogs(scraper.id)}
-                        className="btn-brutal-sm flex items-center gap-1"
+                        className="btn-brutal-sm flex items-center gap-1 hover:opacity-80"
                         title="View logs"
                       >
-                        <FileText size={16} />
+                        <FileText size={20} />
                       </button>
                       <button
                         onClick={() => handleEditClick(scraper)}
-                        className="btn-brutal-sm flex items-center gap-1"
+                        className="btn-brutal-sm flex items-center gap-1 text-accent1 hover:opacity-80"
                         title="Edit"
                       >
-                        <Edit size={16} />
+                        <Edit size={20} />
                       </button>
                       <button
                         onClick={() => handleDelete(scraper)}
-                        className="btn-brutal-sm flex items-center gap-1 border-error text-error hover:bg-error hover:text-white"
+                        className="btn-brutal-sm flex items-center gap-1 text-error hover:opacity-80"
                         title="Delete"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={20} />
                       </button>
                     </div>
                   </td>
@@ -440,7 +461,7 @@ export function ScraperManager() {
                 No logs available for this scraper.
               </p>
             ) : (
-              logs.map((log) => (
+              logs.slice(0, 5).map((log) => (
                 <div
                   key={log.id}
                   className={`border-3 p-4 ${
