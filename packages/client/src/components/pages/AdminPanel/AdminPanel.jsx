@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Edit, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Trash2, Menu } from 'lucide-react';
 import * as Icons from 'lucide-react';
 import { servicesApi } from '@utils/api';
+import { useNotification } from '@hooks/useNotification';
 import UserManagement from '@features/admin/UserManagement';
 import ServiceForm from '@features/services/ServiceForm';
 import SectionManager from '@features/admin/SectionManager';
@@ -11,12 +12,14 @@ import Footer from '@layout/Footer';
 
 export function AdminPanel() {
   const navigate = useNavigate();
+  const { notify, confirm } = useNotification();
   const [activeTab, setActiveTab] = useState('services');
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showServiceForm, setShowServiceForm] = useState(false);
   const [editingService, setEditingService] = useState(null);
+  const [navCollapsed, setNavCollapsed] = useState(true);
 
   useEffect(() => {
     if (activeTab === 'services') {
@@ -62,16 +65,23 @@ export function AdminPanel() {
   };
 
   const handleDeleteService = async (serviceId) => {
-    if (!confirm('Are you sure you want to delete this service?')) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: 'Delete Service',
+      message:
+        'Are you sure you want to delete this service? This action cannot be undone.',
+      confirmText: 'Delete',
+      confirmVariant: 'danger',
+      cancelText: 'Cancel',
+    });
+
+    if (!confirmed) return;
 
     try {
       await servicesApi.delete(serviceId);
       fetchServices();
     } catch (err) {
       console.error('Error deleting service:', err);
-      alert('Failed to delete service');
+      notify.error('Failed to delete service');
     }
   };
 
@@ -90,6 +100,10 @@ export function AdminPanel() {
     setEditingService(null);
   };
 
+  const toggleNavCollapsed = () => {
+    setNavCollapsed(!navCollapsed); // Toggles the boolean value of isOn
+  };
+
   return (
     <div className="min-h-screen px-6 pb-0 pt-6 md:px-12 md:pt-12">
       <div className="mx-auto max-w-7xl">
@@ -103,16 +117,26 @@ export function AdminPanel() {
             Back to Dashboard
           </button>
 
-          <h1 className="font-display text-display-sm uppercase text-text sm:text-display-lg">
-            Admin <span className="text-accent1">Panel</span>
-          </h1>
+          <div className="flex items-center justify-between">
+            <h1 className="font-display text-display-sm uppercase text-text sm:text-display-lg">
+              Admin <span className="text-accent1">Panel</span>
+            </h1>
+            <button className="sm:hidden" onClick={toggleNavCollapsed}>
+              <Menu size={36} />
+            </button>
+          </div>
         </header>
 
         {/* Tabs */}
-        <div className="mb-8 flex flex-row flex-wrap gap-4 border-b-5 border-border">
+        <div
+          className={`flex flex-row flex-wrap gap-1 sm:gap-4 ${
+            navCollapsed ? 'max-sm:hidden' : 'visible'
+          } sm:visible`}
+          onClick={toggleNavCollapsed}
+        >
           <button
             onClick={() => setActiveTab('services')}
-            className={`w-full border-b-5 px-3 py-1 font-display uppercase transition-colors sm:w-auto sm:px-6 sm:py-3 ${
+            className={`w-full border-b-5 bg-gray-200 px-3 pb-1 pt-2 text-left font-display uppercase transition-colors sm:w-auto sm:bg-inherit sm:px-6 sm:py-3 sm:text-center ${
               activeTab === 'services'
                 ? 'border-accent1 text-accent1'
                 : 'border-transparent text-text/60 hover:text-text'
@@ -122,7 +146,7 @@ export function AdminPanel() {
           </button>
           <button
             onClick={() => setActiveTab('sections')}
-            className={`w-full border-b-5 px-3 py-1 font-display uppercase transition-colors sm:w-auto sm:px-6 sm:py-3 ${
+            className={`w-full border-b-5 bg-gray-200 px-3 py-1 text-left font-display uppercase transition-colors sm:w-auto sm:bg-inherit sm:px-6 sm:py-3 sm:text-center ${
               activeTab === 'sections'
                 ? 'border-accent1 text-accent1'
                 : 'border-transparent text-text/60 hover:text-text'
@@ -132,7 +156,7 @@ export function AdminPanel() {
           </button>
           <button
             onClick={() => setActiveTab('scrapers')}
-            className={`w-full border-b-5 px-3 py-1 font-display uppercase transition-colors sm:w-auto sm:px-6 sm:py-3 ${
+            className={`w-full border-b-5 bg-gray-200 px-3 py-1 text-left font-display uppercase transition-colors sm:w-auto sm:bg-inherit sm:px-6 sm:py-3 sm:text-center ${
               activeTab === 'scrapers'
                 ? 'border-accent1 text-accent1'
                 : 'border-transparent text-text/60 hover:text-text'
@@ -142,7 +166,7 @@ export function AdminPanel() {
           </button>
           <button
             onClick={() => setActiveTab('users')}
-            className={`w-full border-b-5 px-3 py-1 font-display uppercase transition-colors sm:w-auto sm:px-6 sm:py-3 ${
+            className={`w-full border-b-5 bg-gray-200 px-3 py-1 text-left font-display uppercase transition-colors sm:w-auto sm:bg-inherit sm:px-6 sm:py-3 sm:text-center ${
               activeTab === 'users'
                 ? 'border-accent1 text-accent1'
                 : 'border-transparent text-text/60 hover:text-text'
@@ -151,6 +175,7 @@ export function AdminPanel() {
             Users
           </button>
         </div>
+        <div className="mb-8 border-b-5 border-border"></div>
 
         {/* Content */}
         {activeTab === 'services' ? (
@@ -180,22 +205,22 @@ export function AdminPanel() {
               </div>
             ) : (
               <div className="overflow-x-auto border-5 border-border bg-surface shadow-brutal">
-                <table className="w-full">
+                <table className="w-full sm:table-fixed">
                   <thead className="border-b-3 border-border">
                     <tr>
-                      <th className="p-4 text-left font-display uppercase text-text">
-                        Type
-                      </th>
-                      <th className="p-4 text-left font-display uppercase text-text">
-                        Name
-                      </th>
-                      <th className="p-4 text-left font-display uppercase text-text">
-                        URL
-                      </th>
-                      <th className="p-4 text-left font-display uppercase text-text">
+                      <th className="p-2 text-left font-display uppercase text-text sm:w-20 sm:p-4">
                         Icon
                       </th>
-                      <th className="p-4 text-right font-display uppercase text-text">
+                      <th className="p-2 text-left font-display uppercase text-text sm:w-[15%] sm:p-4">
+                        Type
+                      </th>
+                      <th className="p-2 text-left font-display uppercase text-text sm:w-[20%] sm:p-4">
+                        Name
+                      </th>
+                      <th className="hidden p-2 text-left font-display uppercase text-text sm:table-cell sm:p-4">
+                        URL
+                      </th>
+                      <th className="p-2 text-right font-display uppercase text-text sm:w-28 sm:p-4">
                         Actions
                       </th>
                     </tr>
@@ -206,23 +231,23 @@ export function AdminPanel() {
                         key={service.id}
                         className="border-b border-border/30 last:border-0"
                       >
-                        <td className="p-4 font-body text-text">
-                          {service.card_type}
-                        </td>
-                        <td className="p-4 font-body text-text">
-                          {service.name}
-                        </td>
-                        <td className="max-w-xs break-all p-4 font-body text-sm text-text/70">
-                          {service.url}
-                        </td>
-                        <td className="p-4 font-body text-text">
+                        <td className="p-2 font-body text-text sm:p-4">
                           {(() => {
                             const IconComponent =
                               Icons[service.icon] || Icons.ExternalLink;
                             return <IconComponent size={24} strokeWidth={2} />;
                           })()}
                         </td>
-                        <td className="p-4 text-right">
+                        <td className="truncate p-2 font-body text-text sm:p-4">
+                          {service.card_type}
+                        </td>
+                        <td className="truncate p-2 font-body text-text sm:p-4">
+                          {service.name}
+                        </td>
+                        <td className="hidden truncate break-all p-2 font-body text-sm text-text/70 sm:table-cell sm:p-4">
+                          {service.url}
+                        </td>
+                        <td className="p-2 text-right sm:p-4">
                           <div className="flex justify-end gap-3">
                             <button
                               onClick={() => handleEditClick(service)}

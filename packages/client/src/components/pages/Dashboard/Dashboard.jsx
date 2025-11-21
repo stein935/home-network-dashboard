@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import Sortable from 'sortablejs';
 import { useAuth } from '@hooks/useAuth';
+import { useNotification } from '@hooks/useNotification';
 import { sectionsApi, notesApi, servicesApi } from '@utils/api';
 import { getRandomGreeting } from '@utils/greetings';
 import ServiceCard from '@features/services/ServiceCard';
@@ -17,6 +18,7 @@ import NoteDialog from '@features/notes/NoteDialog';
 
 export function Dashboard() {
   const { user, isAdmin } = useAuth();
+  const { notify } = useNotification();
   const [sectionsWithServices, setSectionsWithServices] = useState([]);
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,11 +27,82 @@ export function Dashboard() {
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState(null);
   const [selectedSectionId, setSelectedSectionId] = useState(null);
+  const [breakpoint, setBreakpoint] = useState('lg');
+  const [gridRowHeight, setGridRowHeight] = useState(200);
   const sortableRefs = useRef({});
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Responsive breakpoint detection using matchMedia
+  useEffect(() => {
+    const mediaQueries = [
+      window.matchMedia('(min-width: 1024px)'),
+      window.matchMedia('(min-width: 768px)'),
+    ];
+
+    const updateBreakpoint = () => {
+      if (mediaQueries[0].matches) {
+        setBreakpoint('lg');
+      } else if (mediaQueries[1].matches) {
+        setBreakpoint('md');
+      } else {
+        setBreakpoint('sm');
+      }
+    };
+
+    updateBreakpoint();
+    mediaQueries.forEach((mq) =>
+      mq.addEventListener('change', updateBreakpoint)
+    );
+
+    return () => {
+      mediaQueries.forEach((mq) =>
+        mq.removeEventListener('change', updateBreakpoint)
+      );
+    };
+  }, []);
+
+  // Calculate grid row height to match column width (for square cells)
+  useEffect(() => {
+    const calculateRowHeight = () => {
+      // Find any notes grid to measure
+      const firstGrid = document.querySelector('[data-notes-section]');
+      if (!firstGrid) return;
+
+      const containerWidth = firstGrid.offsetWidth;
+      const gap = 24; // 1.5rem = 24px (gap-6)
+
+      let numCols = 1;
+      if (breakpoint === 'lg') numCols = 4;
+      else if (breakpoint === 'md') numCols = 2;
+
+      // Calculate column width: (containerWidth - (numCols - 1) * gap) / numCols
+      const columnWidth = (containerWidth - (numCols - 1) * gap) / numCols;
+
+      setGridRowHeight(columnWidth);
+    };
+
+    // Calculate on breakpoint change
+    calculateRowHeight();
+
+    // Recalculate on window resize
+    const handleResize = () => calculateRowHeight();
+    window.addEventListener('resize', handleResize);
+
+    // Use ResizeObserver for more accurate detection
+    const resizeObserver = new ResizeObserver(calculateRowHeight);
+    const firstGrid = document.querySelector('[data-notes-section]');
+    if (firstGrid) {
+      resizeObserver.observe(firstGrid);
+    }
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      resizeObserver.disconnect();
+    };
+  }, [breakpoint, loading, sectionsWithServices]);
 
   // Initialize Sortable for services and notes grids
   useEffect(() => {
@@ -99,7 +172,7 @@ export function Dashboard() {
                 // Save to server in background
                 servicesApi.reorder(updates).catch((err) => {
                   console.error('Error reordering services:', err);
-                  alert('Failed to save service order');
+                  notify.error('Failed to save service order');
                   // Revert by fetching from server
                   fetchServices();
                 });
@@ -107,7 +180,7 @@ export function Dashboard() {
                 window.scrollTo(0, scrollY);
               } catch (err) {
                 console.error('Error reordering services:', err);
-                alert('Failed to reorder services');
+                notify.error('Failed to reorder services');
               }
             },
           });
@@ -125,6 +198,11 @@ export function Dashboard() {
             handle: '.sortable-handle',
             ghostClass: 'opacity-50',
             group: 'notes', // Allow dragging between sections
+            onMove: function (e) {
+              if (e.related.classList.contains('element-fixed')) {
+                return false;
+              }
+            },
             onEnd: async (evt) => {
               const fromSectionId = parseInt(
                 evt.from.getAttribute('data-notes-section')
@@ -216,7 +294,7 @@ export function Dashboard() {
                 window.scrollTo(0, scrollY);
               } catch (err) {
                 console.error('Error reordering notes:', err);
-                alert('Failed to reorder notes');
+                notify.error('Failed to reorder notes');
               }
             },
           });
@@ -239,7 +317,7 @@ export function Dashboard() {
       });
       sortableRefs.current = {};
     };
-  }, [loading, sectionsWithServices, notes, collapsedSections]);
+  }, [loading, sectionsWithServices, notes, collapsedSections, notify]);
 
   const fetchData = async () => {
     try {
@@ -325,7 +403,7 @@ export function Dashboard() {
       setSelectedSectionId(null);
     } catch (err) {
       console.error('Error saving note:', err);
-      alert('Failed to save note');
+      notify.error('Failed to save note');
     }
   };
 
@@ -338,7 +416,7 @@ export function Dashboard() {
       setSelectedSectionId(null);
     } catch (err) {
       console.error('Error deleting note:', err);
-      alert('Failed to delete note');
+      notify.error('Failed to delete note');
     }
   };
 
@@ -399,6 +477,31 @@ export function Dashboard() {
   // Get notes for a specific section
   const getSectionNotes = (sectionId) => {
     return notes.filter((note) => note.section_id === sectionId);
+  };
+
+  // Calculate grid span classes based on note dimensions and current breakpoint
+  const getGridClasses = (note) => {
+    const width = note.width || 1;
+    const height = note.height || 1;
+    const maxCols = breakpoint === 'lg' ? 4 : breakpoint === 'md' ? 2 : 1;
+
+    // Determine column span
+    let colSpan = 'col-span-1';
+    if (width >= maxCols) {
+      colSpan = 'col-span-full';
+    } else if (width === 4) {
+      colSpan = 'col-span-4';
+    } else if (width === 3) {
+      colSpan = 'col-span-3';
+    } else if (width === 2) {
+      colSpan = 'col-span-2';
+    }
+
+    // Determine row span
+    const rowSpan =
+      height === 3 ? 'row-span-3' : height === 2 ? 'row-span-2' : 'row-span-1';
+
+    return `${colSpan} ${rowSpan}`;
   };
 
   return (
@@ -519,11 +622,16 @@ export function Dashboard() {
                           className={`grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 ${
                             getSectionNotes(section.id).length === 0
                               ? 'min-h-[100px] rounded border-3 border-dashed border-border/30'
-                              : ''
+                              : 'grid-flow-dense'
                           }`}
+                          style={{ gridAutoRows: `${gridRowHeight}px` }}
                         >
                           {getSectionNotes(section.id).map((note) => (
-                            <div key={note.id} data-note-id={note.id}>
+                            <div
+                              key={note.id}
+                              data-note-id={note.id}
+                              className={getGridClasses(note)}
+                            >
                               <StickyNoteCard
                                 note={note}
                                 onEdit={handleEditNote}
@@ -531,19 +639,23 @@ export function Dashboard() {
                               />
                             </div>
                           ))}
+                          <button
+                            onClick={() => handleNewNote(section.id)}
+                            className={`element-fixed group min-h-[100px] w-full transition-colors hover:text-accent1 ${
+                              getSectionNotes(section.id).length === 0
+                                ? 'col-span-full'
+                                : 'min-h-[100px] rounded border-3 border-dashed border-border/30'
+                            }`}
+                            aria-label="Add new note"
+                            title="Add new note"
+                          >
+                            <StickyNote size={36} className="inline" />
+                            <Plus
+                              size={18}
+                              className="-ml-[40px] inline h-[20px] w-[20px] rounded-full border-2 border-border bg-white group-hover:border-accent1 group-hover:bg-accent1 group-hover:text-white"
+                            />
+                          </button>
                         </div>
-                        <button
-                          onClick={() => handleNewNote(section.id)}
-                          className="group mt-6 min-h-[100px] w-full rounded border-3 border-dashed border-border/30 transition-colors hover:text-accent1"
-                          aria-label="Add new note"
-                          title="Add new note"
-                        >
-                          <StickyNote size={36} className="inline" />
-                          <Plus
-                            size={18}
-                            className="-ml-[40px] inline h-[20px] w-[20px] rounded-full border-2 border-border bg-white group-hover:border-accent1 group-hover:bg-accent1 group-hover:text-white"
-                          />
-                        </button>
                       </div>
                     </div>
                   )}

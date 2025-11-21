@@ -23,6 +23,8 @@ const sanitizeOptions = {
     'span',
     'input',
     'label',
+    'hr',
+    'blockquote',
   ],
   allowedAttributes: {
     a: ['href', 'target', 'rel'],
@@ -30,9 +32,13 @@ const sanitizeOptions = {
     li: ['data-type', 'data-checked'],
     ul: ['data-type'],
     input: ['type', 'checked'],
+    blockquote: ['class'],
+    hr: ['class'],
   },
   allowedClasses: {
     span: ['formatted-date'],
+    blockquote: ['border-l-4', 'border-black', 'pl-4', 'italic', 'mb-2'],
+    hr: ['my-2', 'border-t-2', 'border-black'],
   },
   // Only allow specific input types (checkboxes for task lists)
   transformTags: {
@@ -86,6 +92,14 @@ const validateNote = [
     .trim()
     .matches(/^#[0-9A-Fa-f]{6}$/)
     .withMessage('Color must be a valid hex color code'),
+  body('width')
+    .optional()
+    .isInt({ min: 1, max: 4 })
+    .withMessage('Width must be between 1 and 4'),
+  body('height')
+    .optional()
+    .isInt({ min: 1, max: 3 })
+    .withMessage('Height must be between 1 and 3'),
 ];
 
 const validateNoteUpdate = [
@@ -111,6 +125,14 @@ const validateNoteUpdate = [
     .trim()
     .matches(/^#[0-9A-Fa-f]{6}$/)
     .withMessage('Color must be a valid hex color code'),
+  body('width')
+    .optional()
+    .isInt({ min: 1, max: 4 })
+    .withMessage('Width must be between 1 and 4'),
+  body('height')
+    .optional()
+    .isInt({ min: 1, max: 3 })
+    .withMessage('Height must be between 1 and 3'),
 ];
 
 // GET all notes (requires authentication)
@@ -154,7 +176,8 @@ router.post('/', isAuthenticated, validateNote, (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { sectionId, title, message, dueDate, color } = req.body;
+    const { sectionId, title, message, dueDate, color, width, height } =
+      req.body;
 
     // Sanitize HTML message to prevent XSS
     const sanitizedMessage = sanitizeMessage(message);
@@ -171,6 +194,8 @@ router.post('/', isAuthenticated, validateNote, (req, res) => {
       authorName,
       dueDate: dueDate || null,
       color,
+      width,
+      height,
     });
 
     console.log(`Note created: "${title}" by ${authorEmail}`);
@@ -194,7 +219,7 @@ router.put(
       }
 
       const { id } = req.params;
-      const { title, message, dueDate, color } = req.body;
+      const { title, message, dueDate, color, width, height } = req.body;
 
       const existingNote = Note.findById(id);
       if (!existingNote) {
@@ -209,6 +234,8 @@ router.put(
         message: sanitizedMessage,
         dueDate: dueDate || null,
         color,
+        width,
+        height,
       });
 
       console.log(`Note updated: "${note.title}" by ${req.user.email}`);

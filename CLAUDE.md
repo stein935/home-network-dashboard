@@ -68,8 +68,10 @@ home-network-dashboard/
 │       │   │   │   │   ├── ServiceCard.jsx     # Routes card rendering by type
 │       │   │   │   │   └── ServiceForm.jsx     # Service CRUD with calendar config
 │       │   │   │   ├── calendar/
-│       │   │   │   │   ├── CalendarCard.jsx    # Calendar with responsive views
+│       │   │   │   │   ├── CalendarCard.jsx    # Calendar with responsive views & multi-calendar
+│       │   │   │   │   ├── CalendarLegend.jsx  # Legend for multi-calendar indicators
 │       │   │   │   │   ├── EventDetailDialog.jsx # Event details with attendees/links
+│       │   │   │   │   ├── EventWithDot.jsx    # Wrapper for calendar color dots
 │       │   │   │   │   └── views/
 │       │   │   │   │       ├── DayView.jsx     # Day view component
 │       │   │   │   │       ├── WeekView.jsx    # Week view component
@@ -96,6 +98,7 @@ home-network-dashboard/
 │       │   │   └── useAuth.js             # Re-exports useAuth from context
 │       │   └── utils/
 │       │       ├── api.js                 # Axios with API endpoints
+│       │       ├── calendarColors.js      # Calendar color assignment (deterministic)
 │       │       ├── dateUtils.js           # Due date formatting & categorization
 │       │       ├── noteColors.js          # Sticky note color palette
 │       │       └── htmlUtils.js           # HTML sanitization and utilities
@@ -153,11 +156,11 @@ import { getDueDateCategory } from '@utils/dateUtils';
 
 **services**: id, name, url, icon, display_order, section_id, card_type (link/calendar)
 
-**service_config**: id, service_id, calendar_id, view_type (day/week/month)
+**service_config**: id, service_id, calendar_id (deprecated), calendar_ids (JSON array), view_type (day/week/fiveday/month)
 
 **sections**: id, name, display_order, is_default
 
-**notes**: id, title, message, color, due_date (nullable), author_id, author_name, section_id, display_order, created_at, updated_at
+**notes**: id, title, message, color, due_date (nullable), author_id, author_name, section_id, display_order, width (1-4), height (1-3), created_at, updated_at
 
 ## Key Features
 
@@ -204,14 +207,14 @@ import { getDueDateCategory } from '@utils/dateUtils';
 **Calendar** (authenticated)
 
 - GET `/api/calendar/calendars` - List user's Google calendars
-- GET `/api/calendar/events` - Get events for a calendar (params: calendarId, timeMin, timeMax)
+- GET `/api/calendar/events` - Get events for one or multiple calendars (params: calendarId OR calendarIds (comma-separated), timeMin, timeMax). Returns: `{ events: [], calendars: [], errors: [] }` for multi-calendar requests
 
 **Notes** (authenticated)
 
 - GET `/api/notes` - List all notes
 - GET `/api/notes/section/:sectionId` - Get notes for a specific section
-- POST `/api/notes` - Create note (requires: title, message, color, sectionId; optional: dueDate)
-- PUT `/api/notes/:id` - Update note (author can edit own notes)
+- POST `/api/notes` - Create note (requires: title, message, color, sectionId; optional: dueDate, width (1-4), height (1-3))
+- PUT `/api/notes/:id` - Update note (author can edit own notes; optional: width, height)
 - DELETE `/api/notes/:id` - Delete note (author or admin only)
 - PUT `/api/notes/reorder` - Update display order via drag-and-drop
 
@@ -437,9 +440,16 @@ The service card system supports different card types via the `card_type` field:
 **Calendar Card Features:**
 
 - Four view modes: Day, Week (Sunday-Saturday), 5 Day (Monday-Friday), Month (traditional grid)
+- **Multi-calendar support**: Display events from up to 5 Google calendars in one card
+  - Calendar selection: Multi-select dropdown in admin panel (max 5 calendars)
+  - Visual differentiation: Colored dots next to events (shown when 2+ calendars configured)
+  - Calendar legend: Displays below date header with calendar names and color indicators
+  - Deterministic colors: Same calendar always gets same color (based on calendar ID hash)
+  - Graceful degradation: Shows accessible calendars, displays errors for inaccessible ones in legend
+  - Backward compatible: Single-calendar cards continue to work without dots/legend
 - Event detail dialog with attendees, response status, organizer, meeting/hangout links
 - Responsive layouts: Month view disabled <950px, week/5-day views stack <800px
-- Event deduplication, all-day event support
+- Event deduplication, all-day event support (across multiple calendars)
 - Navigation controls (prev/next/today) with view persistence
 - 5 Day view: Shows Monday-Friday work week, jumps by 7 days for calendar week alignment, "Today" button shows upcoming Monday's week on weekends
 - Configurable calendar selection and default view type
@@ -459,6 +469,7 @@ Sticky notes are section-specific notes that appear alongside services within co
 
 - Drag-and-drop reordering within sections
 - Customizable colors (10 color palette: yellows, pinks, blues, greens)
+- **Configurable sizes**: Width (1-4 columns) and Height (1-3 rows) for flexible layouts
 - Optional due dates with intelligent categorization
 - Urgency badges: "DUE TODAY" (red), "DUE SOON" (orange), "OVERDUE" (red alert)
 - Future dates displayed without badge
@@ -481,11 +492,16 @@ Sticky notes are section-specific notes that appear alongside services within co
 
 **Display Rules:**
 
-- Notes shown in masonry grid layout
-- Aspect ratio: square (1:1)
-- Size range: min 200px, max 280px
+- Notes shown in CSS Grid with tight packing (`grid-flow-dense`)
+- Grid cells are square (1:1 aspect ratio), calculated dynamically based on column width
+- Notes span multiple cells based on configured width and height
+- Default size: 1x1 (single cell, square)
+- Width values (1-4) map to Tailwind `col-span` classes
+- Height values (1-3) map to Tailwind `row-span` classes
+- Responsive behavior: notes wider than available columns automatically span full width
+- Grid configuration: 1 column (mobile), 2 columns (tablet), 4 columns (desktop)
 - Ring highlight on drag-over (blue)
-- Responsive grid with auto-fit columns
+- Content naturally scales with note dimensions
 
 ## Unified Dialog Component
 

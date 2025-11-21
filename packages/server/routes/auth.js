@@ -8,19 +8,29 @@ router.get(
   passport.authenticate('google', {
     scope: ['profile', 'email', 'https://www.googleapis.com/auth/calendar'],
     accessType: 'offline',
-    prompt: 'consent',
+    prompt: 'select_account',
   })
 );
 
 // Google OAuth callback
 router.get(
   '/google/callback',
+  (req, res, next) => {
+    console.log('[OAuth Callback] Received callback from Google');
+    console.log('[OAuth Callback] Query params:', req.query);
+    console.log('[OAuth Callback] Referer:', req.get('referer'));
+    next();
+  },
   passport.authenticate('google', {
     failureRedirect: '/auth/failure',
   }),
   (req, res) => {
+    console.log('[OAuth Callback] Authentication successful');
+    console.log('[OAuth Callback] User:', req.user?.email);
+
     // Successful authentication, redirect to dashboard
     if (process.env.NODE_ENV === 'production') {
+      console.log('[OAuth Callback] Production mode - redirecting to /');
       return res.redirect('/');
     }
 
@@ -30,12 +40,20 @@ router.get(
     if (!redirectUrl && req.get('referer')) {
       // Extract origin from referer (e.g., http://home-dashboard.local:5173/)
       const referer = new URL(req.get('referer'));
-      redirectUrl = `${referer.protocol}//${referer.host}/`;
+
+      // Ignore Google domains as referer (from OAuth flow)
+      if (
+        !referer.hostname.includes('google.com') &&
+        !referer.hostname.includes('accounts.google.com')
+      ) {
+        redirectUrl = `${referer.protocol}//${referer.host}/`;
+      }
     }
 
     // Final fallback to localhost
     redirectUrl = redirectUrl || 'http://localhost:5173/';
 
+    console.log('[OAuth Callback] Redirecting to:', redirectUrl);
     res.redirect(redirectUrl);
   }
 );

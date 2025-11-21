@@ -246,42 +246,94 @@ function initializeDatabase() {
   const configTableInfo = db.prepare('PRAGMA table_info(service_config)').all();
   const configTableExists = configTableInfo.length > 0;
 
+  // Check if fiveday migration has already been done by checking the view_type constraint
+  let needsFivedayMigration = false;
   if (configTableExists) {
-    // Always migrate to ensure fiveday support
+    const tableSchema = db
+      .prepare(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='service_config'"
+      )
+      .get();
+    // Check if the constraint includes 'fiveday'
+    needsFivedayMigration =
+      tableSchema && !tableSchema.sql.includes("'fiveday'");
+  }
+
+  if (configTableExists && needsFivedayMigration) {
+    // Only migrate if fiveday is not already supported
     console.log(
       'Migrating service_config table to support fiveday view type...'
     );
 
-    // Create new table with updated constraint
-    db.exec(`
-      CREATE TABLE service_config_new (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        service_id INTEGER NOT NULL UNIQUE,
-        calendar_id TEXT,
-        view_type TEXT CHECK(view_type IN ('day', 'week', 'fiveday', 'month')) DEFAULT 'week',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE
-      )
-    `);
+    // Check if calendar_ids column exists in old table
+    const hasCalendarIdsInOldTable = configTableInfo.find(
+      (col) => col.name === 'calendar_ids'
+    );
+
+    // Create new table with updated constraint including calendar_ids if it exists
+    if (hasCalendarIdsInOldTable) {
+      db.exec(`
+        CREATE TABLE service_config_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          service_id INTEGER NOT NULL UNIQUE,
+          calendar_id TEXT,
+          calendar_ids TEXT,
+          view_type TEXT CHECK(view_type IN ('day', 'week', 'fiveday', 'month')) DEFAULT 'week',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE
+        )
+      `);
+    } else {
+      db.exec(`
+        CREATE TABLE service_config_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          service_id INTEGER NOT NULL UNIQUE,
+          calendar_id TEXT,
+          view_type TEXT CHECK(view_type IN ('day', 'week', 'fiveday', 'month')) DEFAULT 'week',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE
+        )
+      `);
+    }
 
     // Copy data from old table
     const existingConfigs = db.prepare('SELECT * FROM service_config').all();
     if (existingConfigs.length > 0) {
-      const insertStmt = db.prepare(`
-        INSERT INTO service_config_new (id, service_id, calendar_id, view_type, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `);
+      if (hasCalendarIdsInOldTable) {
+        const insertStmt = db.prepare(`
+          INSERT INTO service_config_new (id, service_id, calendar_id, calendar_ids, view_type, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `);
 
-      for (const config of existingConfigs) {
-        insertStmt.run(
-          config.id,
-          config.service_id,
-          config.calendar_id,
-          config.view_type,
-          config.created_at,
-          config.updated_at
-        );
+        for (const config of existingConfigs) {
+          insertStmt.run(
+            config.id,
+            config.service_id,
+            config.calendar_id,
+            config.calendar_ids,
+            config.view_type,
+            config.created_at,
+            config.updated_at
+          );
+        }
+      } else {
+        const insertStmt = db.prepare(`
+          INSERT INTO service_config_new (id, service_id, calendar_id, view_type, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `);
+
+        for (const config of existingConfigs) {
+          insertStmt.run(
+            config.id,
+            config.service_id,
+            config.calendar_id,
+            config.view_type,
+            config.created_at,
+            config.updated_at
+          );
+        }
       }
     }
 
@@ -290,8 +342,8 @@ function initializeDatabase() {
     db.exec('ALTER TABLE service_config_new RENAME TO service_config');
 
     console.log('service_config migration complete');
-  } else {
-    // Create fresh table with fiveday support
+  } else if (!configTableExists) {
+    // Create fresh table with fiveday support (only if table doesn't exist)
     db.exec(`
       CREATE TABLE service_config (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -303,6 +355,50 @@ function initializeDatabase() {
         FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE
       )
     `);
+  }
+
+  // Re-query table info after fiveday migration (table may have been recreated)
+  const updatedConfigTableInfo = db
+    .prepare('PRAGMA table_info(service_config)')
+    .all();
+  const updatedConfigTableExists = updatedConfigTableInfo.length > 0;
+
+  // Check if we need to add calendar_ids column for multi-calendar support
+  const hasCalendarIds = updatedConfigTableInfo.find(
+    (col) => col.name === 'calendar_ids'
+  );
+
+  if (updatedConfigTableExists && !hasCalendarIds) {
+    console.log(
+      'Adding calendar_ids column to service_config for multi-calendar support...'
+    );
+
+    // Add new column
+    db.exec('ALTER TABLE service_config ADD COLUMN calendar_ids TEXT');
+
+    // Migrate existing single calendar_id to array format
+    const configs = db
+      .prepare('SELECT id, calendar_id FROM service_config')
+      .all();
+    if (configs.length > 0) {
+      const updateStmt = db.prepare(
+        'UPDATE service_config SET calendar_ids = ? WHERE id = ?'
+      );
+
+      const migrateConfigs = db.transaction(() => {
+        for (const config of configs) {
+          if (config.calendar_id) {
+            // Convert single calendar_id to JSON array with one element
+            updateStmt.run(JSON.stringify([config.calendar_id]), config.id);
+          }
+        }
+      });
+      migrateConfigs();
+    }
+
+    console.log(
+      'Multi-calendar migration complete. Note: calendar_id column kept for rollback safety.'
+    );
   }
 
   // Create notes table
@@ -317,11 +413,34 @@ function initializeDatabase() {
       due_date TEXT,
       color TEXT NOT NULL,
       display_order INTEGER NOT NULL DEFAULT 0,
+      width INTEGER NOT NULL DEFAULT 1 CHECK(width >= 1 AND width <= 4),
+      height INTEGER NOT NULL DEFAULT 1 CHECK(height >= 1 AND height <= 3),
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       FOREIGN KEY (section_id) REFERENCES sections(id) ON DELETE CASCADE
     )
   `);
+
+  // Check if notes table needs migration for width and height columns
+  const notesTableInfo = db.prepare('PRAGMA table_info(notes)').all();
+  const notesTableExists = notesTableInfo.length > 0;
+  const hasWidth = notesTableInfo.find((col) => col.name === 'width');
+  const hasHeight = notesTableInfo.find((col) => col.name === 'height');
+
+  if (notesTableExists && (!hasWidth || !hasHeight)) {
+    console.log('Adding width and height columns to notes table...');
+    if (!hasWidth) {
+      db.exec(
+        'ALTER TABLE notes ADD COLUMN width INTEGER NOT NULL DEFAULT 1 CHECK(width >= 1 AND width <= 4)'
+      );
+    }
+    if (!hasHeight) {
+      db.exec(
+        'ALTER TABLE notes ADD COLUMN height INTEGER NOT NULL DEFAULT 1 CHECK(height >= 1 AND height <= 3)'
+      );
+    }
+    console.log('Width and height columns added to notes table');
+  }
 
   // Create scrapers table
   db.exec(`

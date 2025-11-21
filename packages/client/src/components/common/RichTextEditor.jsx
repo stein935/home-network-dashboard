@@ -5,6 +5,9 @@ import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
+import { Extension } from '@tiptap/core';
+import { Plugin } from '@tiptap/pm/state';
+import { marked } from 'marked';
 import FormattedDate from './FormattedDateExtension';
 import {
   Bold,
@@ -18,12 +21,169 @@ import {
   Heading1,
   Heading2,
   Heading3,
+  Quote,
+  Minus,
 } from 'lucide-react';
 import {
   countHtmlChars,
   insertFormattedDate,
   formatDateShort,
 } from '@utils/htmlUtils';
+
+/**
+ * Detects if pasted text looks like markdown
+ * @param {string} text - Text to check
+ * @returns {boolean} - True if text looks like markdown
+ */
+function looksLikeMarkdown(text) {
+  // Check for common markdown patterns
+  const markdownPatterns = [
+    /^#{1,6}\s/m, // Headings: # Header
+    /\*\*[^*]+\*\*/m, // Bold: **text**
+    /\*[^*]+\*/m, // Italic: *text*
+    /\[[^\]]+\]\([^)]+\)/m, // Links: [text](url)
+    /^[-*+]\s/m, // Unordered lists: - item
+    /^\d+\.\s/m, // Ordered lists: 1. item
+    /^[-*+]?\s*\[[x\s]\]/m, // Task lists: - [ ] task OR [ ] task (with or without dash)
+    /```[\s\S]*```/m, // Code blocks: ```code```
+    /`[^`]+`/m, // Inline code: `code`
+    /^>\s/m, // Blockquotes: > quote
+    /^[-*_]{3,}\s*$/m, // Horizontal rules: ---, ___, ***
+  ];
+
+  return markdownPatterns.some((pattern) => pattern.test(text));
+}
+
+/**
+ * Pre-process text to convert non-standard task list format to standard markdown
+ * Converts "[ ] Task" to "- [ ] Task"
+ * @param {string} text - Text to process
+ * @returns {string} - Processed text
+ */
+function preprocessTaskLists(text) {
+  // Split into lines
+  const lines = text.split('\n');
+  const processedLines = lines.map((line) => {
+    // Match task lists that don't start with a dash
+    // Pattern: optional whitespace, then [ ] or [x], then space and text
+    const taskMatch = line.match(/^(\s*)(\[[x\s]\])(\s+.+)/i);
+    if (taskMatch) {
+      // Add dash before the checkbox
+      const indent = taskMatch[1];
+      const checkbox = taskMatch[2];
+      const rest = taskMatch[3];
+      return `${indent}- ${checkbox}${rest}`;
+    }
+    return line;
+  });
+
+  return processedLines.join('\n');
+}
+
+// Configure marked for GitHub-flavored markdown with task lists
+marked.setOptions({
+  gfm: true, // GitHub Flavored Markdown
+  breaks: true, // Convert \n to <br>
+});
+
+/**
+ * Convert marked's task list HTML to TipTap's expected format
+ * @param {string} html - HTML from marked parser
+ * @returns {string} - HTML with TipTap task list format
+ */
+function convertTaskListsToTipTap(html) {
+  // Create a temporary DOM element to parse the HTML
+  const div = document.createElement('div');
+  div.innerHTML = html;
+
+  // Find all list items with checkboxes
+  const listItems = div.querySelectorAll('li');
+  listItems.forEach((li) => {
+    const checkbox = li.querySelector('input[type="checkbox"]');
+    if (checkbox) {
+      // This is a task list item
+      const isChecked = checkbox.checked || checkbox.hasAttribute('checked');
+
+      // Get the parent ul
+      const ul = li.parentElement;
+      if (ul && ul.tagName === 'UL') {
+        // Mark the ul as a task list
+        ul.setAttribute('data-type', 'taskList');
+      }
+
+      // CRITICAL: Set data-type="taskItem" on the li (required by TipTap schema)
+      li.setAttribute('data-type', 'taskItem');
+
+      // Set data-checked attribute on the li
+      li.setAttribute('data-checked', isChecked ? 'true' : 'false');
+
+      // Keep the checkbox element but ensure it has the correct checked state
+      checkbox.checked = isChecked;
+      if (isChecked) {
+        checkbox.setAttribute('checked', 'checked');
+      } else {
+        checkbox.removeAttribute('checked');
+      }
+    }
+  });
+
+  return div.innerHTML;
+}
+
+/**
+ * Custom extension for handling markdown paste
+ */
+const MarkdownPaste = Extension.create({
+  name: 'markdownPaste',
+
+  addProseMirrorPlugins() {
+    const editor = this.editor;
+
+    return [
+      new Plugin({
+        props: {
+          handlePaste(_view, event) {
+            const text = event.clipboardData?.getData('text/plain');
+
+            // If we have plain text and it looks like markdown, parse it
+            if (text && looksLikeMarkdown(text)) {
+              try {
+                // Pre-process task lists to add dashes if missing
+                const processedText = preprocessTaskLists(text);
+
+                // Convert markdown to HTML using marked (synchronous)
+                const parseResult = marked.parse(processedText, {
+                  async: false,
+                });
+
+                // marked.parse might return a Promise or string depending on config
+                // Ensure we have the HTML string
+                let html =
+                  typeof parseResult === 'string'
+                    ? parseResult
+                    : String(parseResult);
+
+                // Convert task lists to TipTap format
+                html = convertTaskListsToTipTap(html);
+
+                // Insert the HTML content
+                editor.commands.insertContent(html);
+
+                return true; // Prevent default paste behavior
+              } catch (error) {
+                console.error('Error parsing markdown:', error);
+                // Fall back to default paste behavior on error
+                return false;
+              }
+            }
+
+            return false; // Allow default paste behavior
+          },
+        },
+      }),
+    ];
+  },
+});
 
 /**
  * Rich text editor component with brutalist toolbar
@@ -59,6 +219,16 @@ export default function RichTextEditor({
         heading: {
           levels: [1, 2, 3],
         },
+        blockquote: {
+          HTMLAttributes: {
+            class: 'border-l-4 border-black pl-4 italic',
+          },
+        },
+        horizontalRule: {
+          HTMLAttributes: {
+            class: 'my-4 border-t-2 border-black',
+          },
+        },
       }),
       Underline,
       Link.configure({
@@ -80,6 +250,7 @@ export default function RichTextEditor({
         },
       }),
       FormattedDate,
+      MarkdownPaste, // Custom paste handler for markdown detection
     ],
     content: content || '<p></p>',
     onUpdate: ({ editor }) => {
@@ -287,7 +458,7 @@ export default function RichTextEditor({
   return (
     <div className="border-2 border-black">
       {/* Toolbar */}
-      <div className="bg-neutral1 flex flex-wrap items-center gap-1 border-b-2 border-black p-2">
+      <div className="sticky -top-4 z-10 flex flex-wrap items-center gap-1 border-b-2 border-black bg-neutral-100 p-2 sm:-top-6">
         {/* Text Styling */}
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBold().run()}
@@ -360,6 +531,22 @@ export default function RichTextEditor({
 
         <ToolbarDivider />
 
+        {/* Blockquote & Horizontal Rule */}
+        <ToolbarButton
+          onClick={() => editor.chain().focus().toggleBlockquote().run()}
+          isActive={editor.isActive('blockquote')}
+          icon={Quote}
+          label="Blockquote"
+        />
+        <ToolbarButton
+          onClick={() => editor.chain().focus().setHorizontalRule().run()}
+          isActive={false}
+          icon={Minus}
+          label="Horizontal Rule"
+        />
+
+        <ToolbarDivider />
+
         {/* Link & Date */}
         <ToolbarButton
           onClick={toggleLink}
@@ -387,7 +574,7 @@ export default function RichTextEditor({
 
       {/* Character Counter */}
       <div
-        className={`border-t-2 border-black px-4 py-2 font-mono text-sm ${isOverLimit ? 'bg-red-100 font-bold text-red-700' : 'bg-neutral1 text-neutral4'} `}
+        className={`border-t-2 border-black bg-neutral-100 px-4 py-2 font-mono text-sm ${isOverLimit ? 'bg-red-100 font-bold text-red-700' : 'bg-neutral1 text-neutral4'} `}
       >
         {charCount} / {maxLength} characters
         {isOverLimit && ' (over limit!)'}

@@ -57,38 +57,39 @@ export function NoteDetailModal({ note, onClose, onEdit }) {
           <X size={20} className="text-black" />
         </button>
 
-        {/* Due date badge */}
-        {dueDateCategory !== 'none' && dueDateCategory !== 'future' && (
-          <div
-            className={`mb-4 ${badgeConfig.bgColor} ${badgeConfig.textColor} inline-flex items-center gap-1 border-2 border-black px-2 py-1 font-body text-xs font-bold`}
-          >
-            {IconComponent && <IconComponent size={12} />}
-            <span>{badgeConfig.label}</span>
-          </div>
-        )}
-
         {/* Title */}
         <h3 className="mb-3 break-words font-display text-2xl uppercase text-black">
           {note.title}
         </h3>
 
-        {/* Author */}
-        <p className="mb-3 font-body text-sm text-black/70">
-          {note.author_name}
-        </p>
+        <div className="mb-2 flex items-end justify-between">
+          {/* Author */}
+          <p className="font-body text-xs text-black/70">
+            From: {note.author_name}
+          </p>
 
-        {/* Due date display (for future dates) */}
-        {note.due_date &&
-          (dueDateCategory === 'future' || dueDateCategory === 'none') && (
-            <p className="mb-3 flex items-center gap-1 font-body text-sm text-black/60">
-              <Calendar size={14} />
-              {formattedDueDate}
-            </p>
+          {/* Due date display (for future dates or when no urgent badge) */}
+          {note.due_date &&
+            (dueDateCategory === 'future' || dueDateCategory === 'none') && (
+              <p className="flex items-center gap-1 font-body text-xs text-black/60">
+                <Calendar size={12} />
+                {formattedDueDate}
+              </p>
+            )}
+          {/* Due date badge - only show if not 'none' or 'future' */}
+          {dueDateCategory !== 'none' && dueDateCategory !== 'future' && (
+            <div
+              className={`${badgeConfig.bgColor} ${badgeConfig.textColor} -mt-12 flex items-center gap-1 border-2 border-black px-2 py-1 font-body text-xs font-bold`}
+            >
+              {IconComponent && <IconComponent size={12} />}
+              <span>{badgeConfig.label}</span>
+            </div>
           )}
+        </div>
 
         {/* Full message content */}
         <div
-          className="note-message-content mb-6 font-body text-base text-black"
+          className="note-message-content mb-6 border-t-2 border-black pt-2 font-body text-base text-black"
           dangerouslySetInnerHTML={{ __html: sanitizeHtml(note.message) }}
         />
 

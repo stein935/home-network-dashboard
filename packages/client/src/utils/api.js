@@ -44,10 +44,24 @@ export const authApi = {
 // Calendar API
 export const calendarApi = {
   getCalendars: () => api.get('/api/calendar/calendars'),
-  getEvents: (calendarId, timeMin, timeMax) =>
-    api.get('/api/calendar/events', {
-      params: { calendarId, timeMin, timeMax },
-    }),
+  getEvents: (calendarIds, timeMin, timeMax) => {
+    // Support both single calendar ID (string) and multiple IDs (array)
+    const params = new URLSearchParams();
+    params.append('timeMin', timeMin);
+    params.append('timeMax', timeMax);
+
+    if (Array.isArray(calendarIds)) {
+      // Multiple calendar IDs: send as comma-separated string
+      if (calendarIds.length > 0) {
+        params.append('calendarIds', calendarIds.join(','));
+      }
+    } else if (calendarIds) {
+      // Single calendar ID: backward compatibility
+      params.append('calendarId', calendarIds);
+    }
+
+    return api.get(`/api/calendar/events?${params.toString()}`);
+  },
 };
 
 // Notes API

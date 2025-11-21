@@ -42,8 +42,8 @@ const FormattedDate = Mark.create({
     ];
   },
 
-  // Make it inclusive so it wraps the text
-  inclusive: true,
+  // Make it non-inclusive so typing after date pill doesn't go inside it
+  inclusive: false,
 });
 
 export default FormattedDate;

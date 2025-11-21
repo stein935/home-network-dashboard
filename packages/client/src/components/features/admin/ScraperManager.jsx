@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Play, FileText } from 'lucide-react';
 import { scraperApi, calendarApi } from '@utils/api';
+import { useNotification } from '@hooks/useNotification';
 import { Dialog } from '@common/Dialog';
 
 export function ScraperManager() {
+  const { notify, confirm } = useNotification();
   const [scrapers, setScrapers] = useState([]);
   const [calendars, setCalendars] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -117,20 +119,22 @@ export function ScraperManager() {
   };
 
   const handleDelete = async (scraper) => {
-    if (
-      !confirm(
-        `Are you sure you want to delete "${scraper.name}"? This will also delete all associated logs.`
-      )
-    ) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: 'Delete Scraper',
+      message: `Are you sure you want to delete "${scraper.name}"? This will also delete all associated logs. This action cannot be undone.`,
+      confirmText: 'Delete',
+      confirmVariant: 'danger',
+      cancelText: 'Cancel',
+    });
+
+    if (!confirmed) return;
 
     try {
       await scraperApi.delete(scraper.id);
       fetchScrapers();
     } catch (err) {
       console.error('Error deleting scraper:', err);
-      alert(err.response?.data?.error || 'Failed to delete scraper');
+      notify.error(err.response?.data?.error || 'Failed to delete scraper');
     }
   };
 
@@ -139,16 +143,16 @@ export function ScraperManager() {
       setTriggering(scraperId);
       const response = await scraperApi.trigger(scraperId);
       if (response.data.success) {
-        alert(
-          `Scraper triggered successfully!\n${response.data.eventsCreated} events created, ${response.data.eventsUpdated} events updated.`
+        notify.success(
+          `Scraper triggered successfully! ${response.data.eventsCreated} events created, ${response.data.eventsUpdated} events updated.`
         );
       } else {
-        alert(`Scraper failed: ${response.data.message}`);
+        notify.error(`Scraper failed: ${response.data.message}`);
       }
       fetchScrapers();
     } catch (err) {
       console.error('Error triggering scraper:', err);
-      alert(err.response?.data?.error || 'Failed to trigger scraper');
+      notify.error(err.response?.data?.error || 'Failed to trigger scraper');
     } finally {
       setTriggering(null);
     }
@@ -161,7 +165,7 @@ export function ScraperManager() {
       setShowLogs(true);
     } catch (err) {
       console.error('Error fetching logs:', err);
-      alert('Failed to load logs');
+      notify.error('Failed to load logs');
     }
   };
 
@@ -172,8 +176,27 @@ export function ScraperManager() {
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Never';
-    const date = new Date(dateString);
-    return date.toLocaleString();
+    // Ensure the date string is treated as UTC if it doesn't have timezone info
+    let date = new Date(dateString);
+
+    // If the date string doesn't include 'Z' or timezone offset, treat it as UTC
+    if (
+      typeof dateString === 'string' &&
+      !dateString.includes('Z') &&
+      !dateString.match(/[+-]\d{2}:\d{2}$/)
+    ) {
+      date = new Date(dateString + 'Z');
+    }
+
+    return date.toLocaleString(undefined, {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    });
   };
 
   return (
@@ -230,8 +253,10 @@ export function ScraperManager() {
                   className="border-b-3 border-border last:border-b-0"
                 >
                   <td className="p-4">
-                    <div className="font-display uppercase">{scraper.name}</div>
-                    <div className="mt-1 text-sm text-text/60">
+                    <div className="truncate font-display uppercase">
+                      {scraper.name}
+                    </div>
+                    <div className="mt-1 max-w-[200px] truncate text-sm text-text/60">
                       {scraper.url}
                     </div>
                   </td>
@@ -259,32 +284,32 @@ export function ScraperManager() {
                       <button
                         onClick={() => handleTrigger(scraper.id)}
                         disabled={triggering === scraper.id}
-                        className="btn-brutal-sm flex items-center gap-1"
+                        className="btn-brutal-sm flex items-center gap-1 hover:opacity-80 disabled:bg-white"
                         title="Trigger now"
                       >
-                        <Play size={16} />
+                        <Play size={20} />
                         {triggering === scraper.id ? 'Running...' : 'Run'}
                       </button>
                       <button
                         onClick={() => handleViewLogs(scraper.id)}
-                        className="btn-brutal-sm flex items-center gap-1"
+                        className="btn-brutal-sm flex items-center gap-1 hover:opacity-80"
                         title="View logs"
                       >
-                        <FileText size={16} />
+                        <FileText size={20} />
                       </button>
                       <button
                         onClick={() => handleEditClick(scraper)}
-                        className="btn-brutal-sm flex items-center gap-1"
+                        className="btn-brutal-sm flex items-center gap-1 text-accent1 hover:opacity-80"
                         title="Edit"
                       >
-                        <Edit size={16} />
+                        <Edit size={20} />
                       </button>
                       <button
                         onClick={() => handleDelete(scraper)}
-                        className="btn-brutal-sm flex items-center gap-1 border-error text-error hover:bg-error hover:text-white"
+                        className="btn-brutal-sm flex items-center gap-1 text-error hover:opacity-80"
                         title="Delete"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={20} />
                       </button>
                     </div>
                   </td>
@@ -436,7 +461,7 @@ export function ScraperManager() {
                 No logs available for this scraper.
               </p>
             ) : (
-              logs.map((log) => (
+              logs.slice(0, 5).map((log) => (
                 <div
                   key={log.id}
                   className={`border-3 p-4 ${
