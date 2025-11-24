@@ -1,0 +1,52 @@
+# Files to exclude from cloud deployment
+# Only runtime artifacts are transferred
+
+# Development files
+.git/
+.github/
+node_modules/
+.env.development
+.env.local
+
+# Client source code (we only transfer the built dist/)
+packages/client/src/
+packages/client/public/
+packages/client/index.html
+packages/client/vite.config.js
+packages/client/postcss.config.js
+packages/client/tailwind.config.js
+packages/client/.eslintrc.js
+
+# Documentation
+*.md
+CLAUDE.md
+README.md
+LICENSE
+
+# Development scripts
+scripts/seed.js
+scripts/add-admin.js
+scripts/migrate-to-docker-volume.sh
+scripts/backup-dev.sh
+scripts/recover-dev.sh
+
+# Development data
+data/
+
+# Build artifacts (we keep client/dist but exclude everything else)
+packages/server/dist/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
