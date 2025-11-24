@@ -15,6 +15,7 @@ import ServiceCard from '@features/services/ServiceCard';
 import StickyNoteCard from '@features/notes/StickyNoteCard';
 import Footer from '@layout/Footer';
 import NoteDialog from '@features/notes/NoteDialog';
+import { Dialog } from '@common/Dialog';
 
 export function Dashboard() {
   const { user, isAdmin } = useAuth();
@@ -27,6 +28,8 @@ export function Dashboard() {
   const [noteDialogOpen, setNoteDialogOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState(null);
   const [selectedSectionId, setSelectedSectionId] = useState(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState(null);
   const [breakpoint, setBreakpoint] = useState('lg');
   const [gridRowHeight, setGridRowHeight] = useState(200);
   const sortableRefs = useRef({});
@@ -474,6 +477,89 @@ export function Dashboard() {
     }
   };
 
+  const handleTaskDelete = async (noteId, taskIndex, isChecked) => {
+    // Only show confirmation for unchecked tasks
+    if (!isChecked) {
+      // Store task info and show confirmation dialog
+      setTaskToDelete({ noteId, taskIndex });
+      setDeleteConfirmOpen(true);
+    } else {
+      // For checked tasks, delete immediately without confirmation
+      await performTaskDelete(noteId, taskIndex);
+    }
+  };
+
+  const performTaskDelete = async (noteId, taskIndex) => {
+    try {
+      // Find the note
+      const note = notes.find((n) => n.id === noteId);
+      if (!note) return;
+
+      // Parse HTML
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(note.message, 'text/html');
+
+      // Get all task lists and find all task items
+      const taskLists = doc.querySelectorAll('ul[data-type="taskList"]');
+      let allTaskItems = [];
+      taskLists.forEach((taskList) => {
+        const items = taskList.querySelectorAll('li');
+        allTaskItems = allTaskItems.concat(Array.from(items));
+      });
+
+      // Remove the task item at the specified index
+      if (allTaskItems[taskIndex]) {
+        const taskItem = allTaskItems[taskIndex];
+        const parentTaskList = taskItem.parentElement;
+        taskItem.remove();
+
+        // If task list is now empty, add an empty task item to maintain the list
+        if (parentTaskList && parentTaskList.children.length === 0) {
+          const emptyTaskItem = doc.createElement('li');
+          emptyTaskItem.setAttribute('data-type', 'taskItem');
+          emptyTaskItem.setAttribute('data-checked', 'false');
+
+          const checkbox = doc.createElement('input');
+          checkbox.setAttribute('type', 'checkbox');
+
+          const label = doc.createElement('label');
+          label.appendChild(checkbox);
+
+          const textSpan = doc.createElement('span');
+
+          emptyTaskItem.appendChild(label);
+          emptyTaskItem.appendChild(textSpan);
+          parentTaskList.appendChild(emptyTaskItem);
+        }
+      }
+
+      // Serialize back to HTML
+      const updatedMessage = doc.body.innerHTML;
+
+      // Update the note via API
+      await notesApi.update(noteId, { message: updatedMessage });
+
+      // Refresh notes
+      await fetchNotes();
+    } catch (err) {
+      console.error('Error deleting task:', err);
+      notify.error('Failed to delete task');
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (taskToDelete) {
+      await performTaskDelete(taskToDelete.noteId, taskToDelete.taskIndex);
+    }
+    setDeleteConfirmOpen(false);
+    setTaskToDelete(null);
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteConfirmOpen(false);
+    setTaskToDelete(null);
+  };
+
   // Get notes for a specific section
   const getSectionNotes = (sectionId) => {
     return notes.filter((note) => note.section_id === sectionId);
@@ -636,6 +722,7 @@ export function Dashboard() {
                                 note={note}
                                 onEdit={handleEditNote}
                                 onCheckboxToggle={handleCheckboxToggle}
+                                onTaskDelete={handleTaskDelete}
                               />
                             </div>
                           ))}
@@ -675,6 +762,36 @@ export function Dashboard() {
             onDelete={handleDeleteNote}
             onClose={handleCloseDialog}
           />
+        )}
+
+        {/* Delete Task Confirmation Dialog */}
+        {deleteConfirmOpen && (
+          <Dialog
+            title="Delete Task"
+            onClose={handleCancelDelete}
+            maxWidth="max-w-md"
+            footer={
+              <div className="flex w-full gap-2">
+                <button
+                  onClick={handleConfirmDelete}
+                  className="flex-1 border-3 border-black bg-red-500 px-6 py-3 font-display text-lg uppercase text-white transition-colors hover:bg-red-600"
+                >
+                  Delete
+                </button>
+                <button
+                  onClick={handleCancelDelete}
+                  className="flex-1 border-3 border-black bg-surface px-6 py-3 font-display text-lg uppercase text-text transition-colors hover:bg-border/20"
+                >
+                  Cancel
+                </button>
+              </div>
+            }
+          >
+            <p className="font-body text-base text-text">
+              Are you sure you want to delete this task? This action cannot be
+              undone.
+            </p>
+          </Dialog>
         )}
       </div>
     </div>
