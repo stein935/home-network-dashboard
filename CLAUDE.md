@@ -481,6 +481,10 @@ Sticky notes are section-specific notes that appear alongside services within co
 - Author or admin can delete notes
 - Character limits: title (200 chars), message (5000 chars)
 - Rich text content support with automatic line-height optimization
+- **Inline task addition**: `+` button below each task list for quick task entry without opening full editor
+  - Rapid entry mode: press Enter to add task and keep input open for next task
+  - Escape or click away to cancel
+  - Works in both card view and "See more" modal view
 
 **Due Date Categories:**
 

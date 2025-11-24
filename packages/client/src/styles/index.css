@@ -10,6 +10,19 @@
   }
 }
 
+@layer utilities {
+  /* Chrome, Safari, Edge, and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* IE and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+}
+
 @layer components {
   .btn-brutal {
     @apply cursor-pointer border-3 border-border bg-surface px-6 py-3 font-display uppercase shadow-brutal transition-all duration-200 hover:translate-x-1 hover:translate-y-1 hover:shadow-none active:translate-x-2 active:translate-y-2;
@@ -32,7 +45,7 @@
   }
 
   .service-card {
-    @apply card-brutal flex min-h-[200px] cursor-pointer flex-col items-center justify-center p-6;
+    @apply card-brutal flex min-h-[200px] cursor-pointer flex-col items-center justify-center p-3 sm:p-6;
   }
 
   .service-card:hover {
@@ -143,20 +156,6 @@
     line-height: 1.5;
   }
 
-  /* Remove margins when content is truncated to prevent overlap */
-  /* .note-message-content.truncated p,
-  .note-message-content.truncated h1,
-  .note-message-content.truncated h2,
-  .note-message-content.truncated h3,
-  .note-message-content.truncated ul,
-  .note-message-content.truncated ol {
-    margin: 0 !important;
-  } */
-
-  .note-message-content p {
-    @apply mb-2;
-  }
-
   .note-message-content p:last-child {
     @apply mb-0;
   }
@@ -218,6 +217,23 @@
   /* Keep checkbox itself not struck through */
   .note-message-content ul[data-type='taskList'] > li input[type='checkbox'] {
     text-decoration: none !important;
+  }
+
+  /* Task delete button responsive behavior */
+  /* Mobile: Always visible */
+  .task-delete-btn {
+    @apply opacity-100;
+  }
+
+  /* Desktop: Only visible on task item hover */
+  @media (min-width: 640px) {
+    .task-delete-btn {
+      @apply opacity-0 transition-opacity duration-200;
+    }
+
+    .note-message-content ul[data-type='taskList'] > li:hover .task-delete-btn {
+      @apply opacity-100;
+    }
   }
 
   .note-message-content strong {
