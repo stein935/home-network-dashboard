@@ -249,109 +249,90 @@ import { getDueDateCategory } from '@utils/dateUtils';
 
 **Note on Paths**: The server now runs from `packages/server/` but loads `.env` from project root. Database and session paths are resolved relative to project root automatically.
 
-## Docker Deployment
+## Cloud Deployment
 
-**Production deployment** uses Docker with Cloudflare Tunnel for secure HTTPS access:
+**Production deployment** uses Docker on a cloud VM with Cloudflare Tunnel for secure HTTPS access.
+
+**Quick Deploy**:
 
 ```bash
-# Recommended: Safe deploy with automatic backup and verification
+# Set VM host and deploy
+export VM_HOST=your-vm-ip
 npm run deploy
-
-# Manual deployment steps (not recommended - use npm run deploy instead)
-# Build and start
-docker-compose up -d --build
-
-# View logs
-docker-compose logs -f
-
-# View specific service logs
-docker-compose logs -f cloudflared
-docker-compose logs -f home-dashboard
-
-# Stop (use -t 30 for graceful 30-second shutdown)
-docker-compose down -t 30
 ```
 
-**Safe Deployment Process** (`npm run deploy`):
+**Deployment Process**:
 
-The deploy command performs the following steps to prevent database corruption:
+The `npm run deploy` script performs these steps:
 
-1. **Build frontend** - Compiles React app for production
-2. **Backup production database** - Creates timestamped backup inside Docker volume and commits all WAL files (if container is running)
-3. **Graceful shutdown** - Stops containers with 30-second timeout for clean shutdown
-4. **Rebuild images** - Builds fresh Docker images without cache
-5. **Start containers** - Launches home-dashboard and cloudflared services
-6. **Verify status** - Confirms containers are running and displays status
+1. **Build frontend locally** - Compiles React app for production
+2. **Transfer files to VM** - Uses rsync to sync only runtime artifacts (excludes dev files via `.deployignore`)
+3. **Build and start containers** - Runs `docker-compose` on VM to rebuild and start services
 
-**Database Isolation**:
+**Environment Variables**:
 
-- **Development database**: `./data/database.db` (local machine, bind mount)
-  - Used by `npm run dev:server` for local development
-  - Backs up to `./data/backups/` using `npm run backup:dev`
-  - Recoverable using `npm run recover`
+Set these before deploying:
 
-- **Production database**: Docker volume `production-data:/app/data/production.db`
-  - Completely isolated from development database
-  - Persisted in Docker-managed volume (survives container rebuilds)
-  - Backs up to `/app/data/backups/` inside container during deployment
-  - When deployed to remote machine, starts fresh (or restore from volume backup)
+- `VM_HOST` - Cloud VM IP address (required)
+- `VM_USER` - SSH user (default: ubuntu)
+- `VM_PATH` - Remote directory (default: ~/home-network-dashboard)
+- `SSH_KEY` - SSH key path (default: ~/.ssh/id_rsa)
 
-**Database Protection Features**:
-
-- **Automatic backups**: Each deployment creates timestamped backup inside Docker volume (keeps last 10)
-- **WAL checkpoint**: Forces SQLite to commit pending writes before shutdown
-- **Graceful shutdown**: 30-second timeout prevents abrupt database closure
-- **Volume persistence**: Production data survives container rebuilds and updates
-
-**Docker configuration**:
+**Docker Configuration**:
 
 - **Two services**: `home-dashboard` (Node.js app) and `cloudflared` (Cloudflare Tunnel)
 - Node.js app runs on internal port 3031 (not exposed publicly)
 - Cloudflare Tunnel provides secure HTTPS access without port forwarding
 - NODE_ENV automatically set to `production`
-- Frontend built and served as static files from backend
+- Frontend served as static files from backend
 - **Production data**: Docker volume `production-data` mounted at `/app/data`
-- **Session database**: Stored in same Docker volume at `/app/data/sessions.db`
-- Environment variables set in `docker-compose.yml` and `.env`
+- **Session database**: Stored in Docker volume at `/app/data/sessions.db`
 
-**Migrating from Old Deployment** (one-time migration):
-
-If you're upgrading from the old deployment structure where dev and production shared `./data/database.db`, you need to migrate your production data to the new Docker volume:
+**Managing Production**:
 
 ```bash
-# Run migration script to copy existing production data to Docker volume
-./scripts/migrate-to-docker-volume.sh
+# View logs
+ssh $VM_USER@$VM_HOST 'cd ~/home-network-dashboard && docker-compose logs -f'
 
-# Deploy with new configuration
-npm run deploy
+# Check status
+ssh $VM_USER@$VM_HOST 'cd ~/home-network-dashboard && docker-compose ps'
 
-# Verify production is working, then optionally remove old data directory
-# rm -rf ./data  # Only after verifying production works!
+# Restart containers
+ssh $VM_USER@$VM_HOST 'cd ~/home-network-dashboard && docker-compose restart'
+
+# Create admin user
+ssh $VM_USER@$VM_HOST 'cd ~/home-network-dashboard && docker exec home-network-dashboard node packages/server/scripts/add-admin.js email@example.com "Name"'
 ```
 
-**Managing Production Database**:
+**Continuous Deployment**:
 
-```bash
-# View production database backups
-docker exec home-network-dashboard ls -lh /app/data/backups/
+Automatic deployment to production on every merge to `main` branch is configured via GitHub Actions.
 
-# Backup production volume to local machine
-docker run --rm -v home-network-dashboard_production-data:/data -v $(pwd):/backup alpine tar czf /backup/production-backup.tar.gz /data
+**Setup Requirements**:
 
-# Restore production volume from backup
-docker run --rm -v home-network-dashboard_production-data:/data -v $(pwd):/backup alpine tar xzf /backup/production-backup.tar.gz -C /
+Configure these secrets in GitHub repository settings (Settings → Secrets and variables → Actions):
 
-# Create admin user in production
-docker exec home-network-dashboard node packages/server/scripts/add-admin.js email@example.com "Name"
+- `VM_HOST` - Cloud VM IP address
+- `VM_USER` - SSH username (e.g., ubuntu)
+- `VM_SSH_KEY` - Private SSH key content for VM access
+- `VM_PATH` - Remote directory path (default: ~/home-network-dashboard)
 
-# Transfer production volume to remote machine
-# On source machine:
-docker run --rm -v home-network-dashboard_production-data:/data -v $(pwd):/backup alpine tar czf /backup/production-data.tar.gz -C / data
+**Workflow Behavior**:
 
-# On remote machine (after copying the tar.gz):
-docker volume create home-network-dashboard_production-data
-docker run --rm -v home-network-dashboard_production-data:/data -v $(pwd):/backup alpine tar xzf /backup/production-data.tar.gz -C /
-```
+1. Triggers automatically on push to `main` branch
+2. Runs code quality checks (lint and format validation)
+3. Builds frontend in GitHub runner
+4. Transfers files to VM via rsync (same as manual deployment)
+5. Rebuilds and restarts Docker containers on VM
+6. Displays deployment status and logs in GitHub Actions UI
+
+**Manual Deployment**:
+
+You can still deploy manually using `npm run deploy` when needed. The GitHub Actions workflow uses the same deployment process as the manual script.
+
+**Viewing Deployment History**:
+
+Navigate to the "Actions" tab in your GitHub repository to see all deployment runs, logs, and status.
 
 **Cloudflare Tunnel Setup**:
 
@@ -406,17 +387,19 @@ Required in `.env`:
 
 - `GOOGLE_CLIENT_ID` - OAuth client ID
 - `GOOGLE_CLIENT_SECRET` - OAuth client secret
-- `GOOGLE_CALLBACK_URL` - OAuth redirect URI (e.g., `http://localhost:3030/auth/google/callback` for dev, `https://yourdomain.com/auth/google/callback` for production)
+- `GOOGLE_CALLBACK_URL` - OAuth redirect URI
+  - Dev: `http://localhost:3030/auth/google/callback`
+  - Production: `https://yourdomain.com/auth/google/callback`
 - `SESSION_SECRET` - Session encryption key
 - `DATABASE_PATH` - SQLite database path
 - `NODE_ENV` - production/development
-- `PORT` - Server port (default 3030 for dev, 3031 for Docker production)
-- `CLOUDFLARE_TUNNEL_TOKEN` - Cloudflare Tunnel token for production HTTPS (required for production deployment)
+- `PORT` - Server port (3030 for dev, 3031 for production)
+- `CLOUDFLARE_TUNNEL_TOKEN` - Cloudflare Tunnel token for production HTTPS
 
 Optional in `.env`:
 
-- `CLIENT_URL` - Frontend URL to redirect to after OAuth (auto-detected from referer if not set)
-- `VITE_API_URL` - Backend API URL for Vite proxy (defaults to `http://localhost:3030`, useful for custom domains)
+- `CLIENT_URL` - Frontend URL to redirect after OAuth (auto-detected from referer if not set)
+- `VITE_API_URL` - Backend API URL for Vite proxy (defaults to `http://localhost:3030`)
 
 ## Current State
 
@@ -424,7 +407,7 @@ Fully functional with Google OAuth, role-based access, link/calendar card types,
 
 **Drag and Drop**: Services and notes support drag-and-drop reordering with full mobile touch support via SortableJS library. Native touch support on mobile devices, scroll position and collapsed section state preserved during reorder operations. Sortable instances are initialized for expanded sections only.
 
-**Production Deployment**: Cloudflare Tunnel integration provides secure HTTPS access without port forwarding or manual SSL certificate management. Zero-config deployment with automatic SSL, DDoS protection, and no router configuration required.
+**Cloud Deployment**: Runs on cloud VM with Docker and Cloudflare Tunnel for secure HTTPS access. Optimized deployment process builds frontend locally and syncs only runtime artifacts to VM.
 
 **Code Quality**: Full ESLint and Prettier setup with zero lint errors. Code follows React best practices including proper hooks usage (useCallback, useMemo), no unused variables, and optimized component rendering.
 
@@ -481,6 +464,10 @@ Sticky notes are section-specific notes that appear alongside services within co
 - Author or admin can delete notes
 - Character limits: title (200 chars), message (5000 chars)
 - Rich text content support with automatic line-height optimization
+- **Inline task addition**: `+` button below each task list for quick task entry without opening full editor
+  - Rapid entry mode: press Enter to add task and keep input open for next task
+  - Escape or click away to cancel
+  - Works in both card view and "See more" modal view
 
 **Due Date Categories:**
 
