@@ -312,10 +312,18 @@ Automatic deployment to production on every merge to `main` branch is configured
 
 Configure these secrets in GitHub repository settings (Settings → Secrets and variables → Actions):
 
+**VM Access:**
 - `VM_HOST` - Cloud VM IP address
 - `VM_USER` - SSH username (e.g., ubuntu)
 - `VM_SSH_KEY` - Private SSH key content for VM access
 - `VM_PATH` - Remote directory path (default: ~/home-network-dashboard)
+
+**Application Environment:**
+- `GOOGLE_CLIENT_ID` - Google OAuth client ID
+- `GOOGLE_CLIENT_SECRET` - Google OAuth client secret
+- `GOOGLE_CALLBACK_URL` - OAuth callback URL (e.g., https://steineck.io/auth/google/callback)
+- `SESSION_SECRET` - Session encryption secret key
+- `CLOUDFLARE_TUNNEL_TOKEN` - Cloudflare Tunnel token for HTTPS access
 
 **Workflow Behavior**:
 
@@ -323,8 +331,9 @@ Configure these secrets in GitHub repository settings (Settings → Secrets and 
 2. Runs code quality checks (lint and format validation)
 3. Builds frontend in GitHub runner
 4. Transfers files to VM via rsync (same as manual deployment)
-5. Rebuilds and restarts Docker containers on VM
-6. Displays deployment status and logs in GitHub Actions UI
+5. Creates `.env` file on VM from GitHub Secrets
+6. Rebuilds and restarts Docker containers on VM
+7. Displays deployment status and logs in GitHub Actions UI
 
 **Manual Deployment**:
 
