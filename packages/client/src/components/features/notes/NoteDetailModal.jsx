@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, useEffect } from 'react';
 import {
   Clock,
   AlertCircle,
@@ -14,7 +14,14 @@ import {
 } from '../../../utils/dateUtils';
 import { sanitizeHtml } from '../../../utils/htmlUtils';
 
-export function NoteDetailModal({ note, onClose, onEdit }) {
+export function NoteDetailModal({
+  note,
+  onClose,
+  onEdit,
+  onCheckboxToggle,
+  onTaskDelete,
+}) {
+  const messageRef = useRef(null);
   const dueDateCategory = getDueDateCategory(note.due_date);
   const formattedDueDate = formatDueDate(note.due_date);
   const badgeConfig = getDueDateBadgeConfig(dueDateCategory);
@@ -34,6 +41,128 @@ export function NoteDetailModal({ note, onClose, onEdit }) {
         return null;
     }
   }, [badgeConfig.icon]);
+
+  // Sync checkbox states based on data-checked attribute
+  useEffect(() => {
+    if (!messageRef.current) return;
+
+    const taskLists = messageRef.current.querySelectorAll(
+      'ul[data-type="taskList"]'
+    );
+    taskLists.forEach((taskList) => {
+      const taskItems = taskList.querySelectorAll('li');
+      taskItems.forEach((taskItem) => {
+        const checkbox = taskItem.querySelector('input[type="checkbox"]');
+        if (checkbox) {
+          const isChecked = taskItem.getAttribute('data-checked') === 'true';
+          checkbox.checked = isChecked;
+        }
+      });
+    });
+  }, [note.message]);
+
+  // Handle checkbox clicks
+  useEffect(() => {
+    const messageEl = messageRef.current;
+    if (!messageEl || !onCheckboxToggle) return;
+
+    const handleCheckboxClick = (e) => {
+      if (e.target.type === 'checkbox') {
+        e.stopPropagation();
+
+        // Find the task item element
+        const taskList = e.target.closest('ul[data-type="taskList"]');
+        if (!taskList) return;
+
+        const taskItem = e.target.closest('li');
+        if (!taskItem) return;
+
+        // Toggle checkbox state
+        const newChecked = e.target.checked;
+
+        // Immediately update the data-checked attribute for instant visual feedback
+        taskItem.setAttribute('data-checked', newChecked ? 'true' : 'false');
+
+        // Get all task items from ALL task lists to find the global index
+        const allTaskLists = messageEl.querySelectorAll(
+          'ul[data-type="taskList"]'
+        );
+        let allTaskItems = [];
+        allTaskLists.forEach((tl) => {
+          const items = tl.querySelectorAll('li');
+          allTaskItems = allTaskItems.concat(Array.from(items));
+        });
+        const checkboxIndex = allTaskItems.indexOf(taskItem);
+
+        // Call callback with note ID, checkbox index, and new state
+        onCheckboxToggle(note.id, checkboxIndex, newChecked);
+      }
+    };
+
+    messageEl.addEventListener('click', handleCheckboxClick);
+
+    return () => {
+      messageEl.removeEventListener('click', handleCheckboxClick);
+    };
+  }, [note.id, onCheckboxToggle, note.message]);
+
+  // Inject delete buttons for task items
+  useEffect(() => {
+    const messageEl = messageRef.current;
+    if (!messageEl || !onTaskDelete) return;
+
+    const taskLists = messageEl.querySelectorAll('ul[data-type="taskList"]');
+
+    // Get all task items to calculate global indices
+    let allTaskItems = [];
+    taskLists.forEach((taskList) => {
+      const items = taskList.querySelectorAll('li');
+      allTaskItems = allTaskItems.concat(Array.from(items));
+    });
+
+    // Inject delete button for each task item
+    allTaskItems.forEach((taskItem, globalIndex) => {
+      // Skip if delete button already exists
+      if (taskItem.querySelector('.task-delete-btn')) return;
+
+      // Make task item a flex container for button positioning
+      taskItem.style.display = 'flex';
+      taskItem.style.alignItems = 'center';
+      taskItem.style.gap = '0.5rem';
+
+      // Create delete button
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className =
+        'task-delete-btn ml-auto flex-shrink-0 flex h-5 w-5 items-center justify-center border-2 border-black bg-red-100 text-black transition-colors hover:bg-red-200';
+      deleteBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14"></path>
+        </svg>
+      `;
+      deleteBtn.setAttribute('aria-label', 'Delete task');
+
+      // Handle click
+      deleteBtn.onclick = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+
+        // Get checked state
+        const isChecked = taskItem.getAttribute('data-checked') === 'true';
+
+        // Call delete handler
+        onTaskDelete(note.id, globalIndex, isChecked);
+      };
+
+      // Append button to task item
+      taskItem.appendChild(deleteBtn);
+    });
+
+    // Cleanup function to remove buttons
+    return () => {
+      const buttons = messageEl?.querySelectorAll('.task-delete-btn');
+      buttons?.forEach((btn) => btn.remove());
+    };
+  }, [note.id, note.message, onTaskDelete]);
 
   return (
     <div
@@ -89,6 +218,7 @@ export function NoteDetailModal({ note, onClose, onEdit }) {
 
         {/* Full message content */}
         <div
+          ref={messageRef}
           className="note-message-content mb-6 border-t-2 border-black pt-2 font-body text-base text-black"
           dangerouslySetInnerHTML={{ __html: sanitizeHtml(note.message) }}
         />

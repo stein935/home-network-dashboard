@@ -16,7 +16,12 @@ import {
 import { sanitizeHtml } from '@utils/htmlUtils';
 import { NoteDetailModal } from './NoteDetailModal';
 
-export function StickyNoteCard({ note, onEdit, onCheckboxToggle }) {
+export function StickyNoteCard({
+  note,
+  onEdit,
+  onCheckboxToggle,
+  onTaskDelete,
+}) {
   const [isDragHandleHovered, setIsDragHandleHovered] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [hasOverflow, setHasOverflow] = useState(false);
@@ -109,6 +114,64 @@ export function StickyNoteCard({ note, onEdit, onCheckboxToggle }) {
       messageEl.removeEventListener('click', handleCheckboxClick);
     };
   }, [note.id, onCheckboxToggle, note.message]);
+
+  // Inject delete buttons for task items
+  useEffect(() => {
+    const messageEl = messageRef.current;
+    if (!messageEl || !onTaskDelete) return;
+
+    const taskLists = messageEl.querySelectorAll('ul[data-type="taskList"]');
+
+    // Get all task items to calculate global indices
+    let allTaskItems = [];
+    taskLists.forEach((taskList) => {
+      const items = taskList.querySelectorAll('li');
+      allTaskItems = allTaskItems.concat(Array.from(items));
+    });
+
+    // Inject delete button for each task item
+    allTaskItems.forEach((taskItem, globalIndex) => {
+      // Skip if delete button already exists
+      if (taskItem.querySelector('.task-delete-btn')) return;
+
+      // Make task item a flex container for button positioning
+      taskItem.style.display = 'flex';
+      taskItem.style.alignItems = 'center';
+      taskItem.style.gap = '0.5rem';
+
+      // Create delete button
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className =
+        'task-delete-btn ml-auto flex-shrink-0 flex h-5 w-5 items-center justify-center border-2 border-black bg-red-100 text-black transition-colors hover:bg-red-200';
+      deleteBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14"></path>
+        </svg>
+      `;
+      deleteBtn.setAttribute('aria-label', 'Delete task');
+
+      // Handle click
+      deleteBtn.onclick = (e) => {
+        e.stopPropagation(); // Prevent edit dialog from opening
+        e.preventDefault();
+
+        // Get checked state
+        const isChecked = taskItem.getAttribute('data-checked') === 'true';
+
+        // Call delete handler
+        onTaskDelete(note.id, globalIndex, isChecked);
+      };
+
+      // Append button to task item
+      taskItem.appendChild(deleteBtn);
+    });
+
+    // Cleanup function to remove buttons
+    return () => {
+      const buttons = messageEl?.querySelectorAll('.task-delete-btn');
+      buttons?.forEach((btn) => btn.remove());
+    };
+  }, [note.id, note.message, onTaskDelete]);
 
   const dueDateCategory = getDueDateCategory(note.due_date);
   const formattedDueDate = formatDueDate(note.due_date);
@@ -250,6 +313,8 @@ export function StickyNoteCard({ note, onEdit, onCheckboxToggle }) {
           note={note}
           onClose={() => setShowDetailView(false)}
           onEdit={onEdit}
+          onCheckboxToggle={onCheckboxToggle}
+          onTaskDelete={onTaskDelete}
         />
       )}
     </>
