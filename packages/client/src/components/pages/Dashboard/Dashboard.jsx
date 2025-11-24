@@ -519,16 +519,16 @@ export function Dashboard() {
           emptyTaskItem.setAttribute('data-type', 'taskItem');
           emptyTaskItem.setAttribute('data-checked', 'false');
 
+          const label = doc.createElement('label');
           const checkbox = doc.createElement('input');
           checkbox.setAttribute('type', 'checkbox');
-
-          const label = doc.createElement('label');
-          label.appendChild(checkbox);
-
           const textSpan = doc.createElement('span');
 
+          // Structure: <li><label><input><span></span></label></li>
+          label.appendChild(checkbox);
+          label.appendChild(textSpan);
           emptyTaskItem.appendChild(label);
-          emptyTaskItem.appendChild(textSpan);
+
           parentTaskList.appendChild(emptyTaskItem);
         }
       }
@@ -558,6 +558,85 @@ export function Dashboard() {
   const handleCancelDelete = () => {
     setDeleteConfirmOpen(false);
     setTaskToDelete(null);
+  };
+
+  const handleTaskAdd = async (noteId, listIndex, taskText) => {
+    try {
+      // Find the note
+      const note = notes.find((n) => n.id === noteId);
+      if (!note) {
+        console.error('Note not found:', noteId);
+        return;
+      }
+
+      // Parse HTML
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(note.message, 'text/html');
+
+      // Find target task list
+      const taskLists = doc.querySelectorAll('ul[data-type="taskList"]');
+      const targetList = taskLists[listIndex];
+
+      if (!targetList) {
+        console.error('Task list not found at index:', listIndex);
+        return;
+      }
+
+      // Check if list has only empty placeholder
+      const existingTasks = targetList.querySelectorAll(
+        'li[data-type="taskItem"]'
+      );
+      const hasOnlyEmpty =
+        existingTasks.length === 1 &&
+        !existingTasks[0].querySelector('p')?.textContent.trim();
+
+      if (hasOnlyEmpty) {
+        // Replace empty placeholder with actual task
+        const taskItem = existingTasks[0];
+        let p = taskItem.querySelector('p');
+        if (p) {
+          p.textContent = taskText;
+        } else {
+          // Empty placeholder doesn't have a <p> tag yet, create one
+          p = doc.createElement('p');
+          p.textContent = taskText;
+          taskItem.appendChild(p);
+        }
+      } else {
+        // Create new task item matching correct structure
+        const taskItem = doc.createElement('li');
+        taskItem.setAttribute('data-type', 'taskItem');
+        taskItem.setAttribute('data-checked', 'false');
+
+        const label = doc.createElement('label');
+        const checkbox = doc.createElement('input');
+        checkbox.setAttribute('type', 'checkbox');
+        const span = doc.createElement('span');
+
+        // Structure: <li><label><input><span></span></label><p>text</p></li>
+        label.appendChild(checkbox);
+        label.appendChild(span);
+        taskItem.appendChild(label);
+
+        const p = doc.createElement('p');
+        p.textContent = taskText;
+        taskItem.appendChild(p);
+
+        targetList.appendChild(taskItem);
+      }
+
+      // Serialize and update
+      const updatedMessage = doc.body.innerHTML;
+      console.log('Updating note with new task:', taskText);
+      await notesApi.update(noteId, { message: updatedMessage });
+      console.log('Refreshing notes...');
+      await fetchNotes();
+      console.log('Task added successfully');
+    } catch (err) {
+      console.error('Error adding task:', err);
+      notify.error('Failed to add task');
+      throw err; // Re-throw to handle in component
+    }
   };
 
   // Get notes for a specific section
@@ -723,6 +802,7 @@ export function Dashboard() {
                                 onEdit={handleEditNote}
                                 onCheckboxToggle={handleCheckboxToggle}
                                 onTaskDelete={handleTaskDelete}
+                                onTaskAdd={handleTaskAdd}
                               />
                             </div>
                           ))}
