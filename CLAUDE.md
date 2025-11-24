@@ -313,12 +313,14 @@ Automatic deployment to production on every merge to `main` branch is configured
 Configure these secrets in GitHub repository settings (Settings → Secrets and variables → Actions):
 
 **VM Access:**
+
 - `VM_HOST` - Cloud VM IP address
 - `VM_USER` - SSH username (e.g., ubuntu)
 - `VM_SSH_KEY` - Private SSH key content for VM access
 - `VM_PATH` - Remote directory path (default: ~/home-network-dashboard)
 
 **Application Environment:**
+
 - `GOOGLE_CLIENT_ID` - Google OAuth client ID
 - `GOOGLE_CLIENT_SECRET` - Google OAuth client secret
 - `GOOGLE_CALLBACK_URL` - OAuth callback URL (e.g., https://steineck.io/auth/google/callback)
