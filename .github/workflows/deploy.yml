@@ -1,0 +1,87 @@
+# cSpell:words deployignore ENDSSH
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to Cloud VM
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Build frontend
+        run: npm run build --workspace=home-dashboard-client
+
+      - name: Verify build output
+        run: |
+          if [ ! -d "packages/client/dist" ]; then
+            echo "Error: Build output not found at packages/client/dist"
+            exit 1
+          fi
+          echo "Build artifacts verified"
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Create remote directory
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} \
+            "mkdir -p ${{ secrets.VM_PATH || '~/home-network-dashboard' }}"
+
+      - name: Transfer files to VM
+        run: |
+          rsync -avz --delete \
+            --exclude-from='.deployignore' \
+            -e "ssh -i ~/.ssh/deploy_key" \
+            ./ ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:${{ secrets.VM_PATH || '~/home-network-dashboard' }}/
+
+      - name: Deploy with Docker Compose
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'ENDSSH'
+          cd ${{ secrets.VM_PATH || '~/home-network-dashboard' }}
+
+          # Stop containers gracefully
+          docker-compose down -t 30 2>/dev/null || true
+
+          # Build and start containers
+          docker-compose build --no-cache
+          docker-compose up -d
+
+          # Show status
+          echo ""
+          echo "Container status:"
+          docker-compose ps
+          ENDSSH
+
+      - name: Deployment summary
+        run: |
+          echo "✅ Deployment complete!"
+          echo "Application URL: https://steineck.io"
+          echo ""
+          echo "To view logs:"
+          echo "  ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} 'cd ${{ secrets.VM_PATH || '~/home-network-dashboard' }} && docker-compose logs -f'"

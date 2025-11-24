@@ -304,6 +304,36 @@ ssh $VM_USER@$VM_HOST 'cd ~/home-network-dashboard && docker-compose restart'
 ssh $VM_USER@$VM_HOST 'cd ~/home-network-dashboard && docker exec home-network-dashboard node packages/server/scripts/add-admin.js email@example.com "Name"'
 ```
 
+**Continuous Deployment**:
+
+Automatic deployment to production on every merge to `main` branch is configured via GitHub Actions.
+
+**Setup Requirements**:
+
+Configure these secrets in GitHub repository settings (Settings → Secrets and variables → Actions):
+
+- `VM_HOST` - Cloud VM IP address
+- `VM_USER` - SSH username (e.g., ubuntu)
+- `VM_SSH_KEY` - Private SSH key content for VM access
+- `VM_PATH` - Remote directory path (default: ~/home-network-dashboard)
+
+**Workflow Behavior**:
+
+1. Triggers automatically on push to `main` branch
+2. Runs code quality checks (lint and format validation)
+3. Builds frontend in GitHub runner
+4. Transfers files to VM via rsync (same as manual deployment)
+5. Rebuilds and restarts Docker containers on VM
+6. Displays deployment status and logs in GitHub Actions UI
+
+**Manual Deployment**:
+
+You can still deploy manually using `npm run deploy` when needed. The GitHub Actions workflow uses the same deployment process as the manual script.
+
+**Viewing Deployment History**:
+
+Navigate to the "Actions" tab in your GitHub repository to see all deployment runs, logs, and status.
+
 **Cloudflare Tunnel Setup**:
 
 Production uses Cloudflare Tunnel for zero-config HTTPS with automatic SSL certificates:
