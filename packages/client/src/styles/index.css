@@ -220,6 +220,23 @@
     text-decoration: none !important;
   }
 
+  /* Task delete button responsive behavior */
+  /* Mobile: Always visible */
+  .task-delete-btn {
+    @apply opacity-100;
+  }
+
+  /* Desktop: Only visible on task item hover */
+  @media (min-width: 640px) {
+    .task-delete-btn {
+      @apply opacity-0 transition-opacity duration-200;
+    }
+
+    .note-message-content ul[data-type='taskList'] > li:hover .task-delete-btn {
+      @apply opacity-100;
+    }
+  }
+
   .note-message-content strong {
     @apply font-bold;
   }
