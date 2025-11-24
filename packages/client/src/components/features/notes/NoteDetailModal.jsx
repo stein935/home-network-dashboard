@@ -1,4 +1,4 @@
-import { useMemo, useRef, useEffect } from 'react';
+import { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import {
   Clock,
   AlertCircle,
@@ -20,8 +20,12 @@ export function NoteDetailModal({
   onEdit,
   onCheckboxToggle,
   onTaskDelete,
+  onTaskAdd,
 }) {
+  const [activeInputIndex, setActiveInputIndex] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
   const messageRef = useRef(null);
+  const inputRef = useRef(null);
   const dueDateCategory = getDueDateCategory(note.due_date);
   const formattedDueDate = formatDueDate(note.due_date);
   const badgeConfig = getDueDateBadgeConfig(dueDateCategory);
@@ -106,6 +110,45 @@ export function NoteDetailModal({
     };
   }, [note.id, onCheckboxToggle, note.message]);
 
+  // Handle task addition - define before useEffect that uses it
+  const handleAddTask = useCallback(async () => {
+    if (!inputRef.current || isSaving) return;
+
+    const taskText = inputRef.current.value.trim();
+    if (!taskText) return;
+
+    setIsSaving(true);
+    try {
+      await onTaskAdd(note.id, activeInputIndex, taskText);
+      // Keep input open for rapid entry (clear value)
+      if (inputRef.current) {
+        inputRef.current.value = '';
+        inputRef.current.focus();
+      }
+    } catch (err) {
+      console.error('Error adding task:', err);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [isSaving, onTaskAdd, note.id, activeInputIndex]);
+
+  const handleCancelInput = useCallback(() => {
+    setActiveInputIndex(null);
+  }, []);
+
+  const handleInputKeyDown = useCallback(
+    (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleAddTask();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        handleCancelInput();
+      }
+    },
+    [handleAddTask, handleCancelInput]
+  );
+
   // Inject delete buttons for task items
   useEffect(() => {
     const messageEl = messageRef.current;
@@ -133,7 +176,7 @@ export function NoteDetailModal({
       // Create delete button
       const deleteBtn = document.createElement('button');
       deleteBtn.className =
-        'task-delete-btn ml-auto flex-shrink-0 flex h-5 w-5 items-center justify-center border-2 border-black bg-red-100 text-black transition-colors hover:bg-red-200';
+        'task-delete-btn ml-auto flex-shrink-0 flex h-4 w-4 items-center justify-center text-black border border-1 border-black rounded-full bg-white/20 hover:bg-white/30';
       deleteBtn.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M5 12h14"></path>
@@ -163,6 +206,103 @@ export function NoteDetailModal({
       buttons?.forEach((btn) => btn.remove());
     };
   }, [note.id, note.message, onTaskDelete]);
+
+  // Inject + buttons and input below task lists
+  useEffect(() => {
+    const messageEl = messageRef.current;
+    if (!messageEl || !onTaskAdd) return;
+
+    const taskLists = messageEl.querySelectorAll('ul[data-type="taskList"]');
+
+    taskLists.forEach((taskList, listIndex) => {
+      // Remove existing containers first
+      const existingContainer = taskList.nextElementSibling;
+      if (existingContainer?.classList.contains('task-add-btn-container')) {
+        existingContainer.remove();
+      }
+
+      // Create container
+      const container = document.createElement('div');
+      container.className = 'task-add-btn-container mt-1';
+
+      // Show input if this list is active
+      if (activeInputIndex === listIndex) {
+        // Create input container
+        const inputContainer = document.createElement('div');
+        inputContainer.className = 'flex items-center mb-[8px]';
+        inputContainer.onclick = (e) => e.stopPropagation();
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className =
+          'flex-1 px-2 py-1 border border-1 border-black text-sm outline-none rounded-sm';
+        input.placeholder = 'New task...';
+        input.disabled = isSaving;
+
+        input.onkeydown = handleInputKeyDown;
+        input.onblur = () => {
+          // Delay to allow button clicks
+          setTimeout(() => {
+            if (activeInputIndex === listIndex) {
+              handleCancelInput();
+            }
+          }, 200);
+        };
+
+        // Set ref for focus management
+        if (inputRef.current !== input) {
+          inputRef.current = input;
+          setTimeout(() => input.focus(), 0);
+        }
+
+        inputContainer.appendChild(input);
+        container.appendChild(inputContainer);
+      } else {
+        // Create + button
+        const addBtn = document.createElement('button');
+        addBtn.className =
+          'task-add-btn flex items-center gap-1 text-xs mb-3 border border-1 border-black rounded-md py-1 px-2 bg-white/20 hover:bg-white/30';
+        addBtn.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 5v14M5 12h14"></path>
+          </svg>
+          <span>Add task</span>
+        `;
+        addBtn.setAttribute('aria-label', 'Add task to list');
+
+        addBtn.onclick = (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          setActiveInputIndex(listIndex);
+        };
+
+        container.appendChild(addBtn);
+      }
+
+      taskList.parentNode.insertBefore(container, taskList.nextSibling);
+    });
+
+    // Cleanup function
+    return () => {
+      const containers = messageEl?.querySelectorAll('.task-add-btn-container');
+      containers?.forEach((container) => {
+        // Detach event handlers before removing to prevent blur from triggering
+        const input = container.querySelector('input');
+        if (input) {
+          input.onblur = null;
+          input.onkeydown = null;
+        }
+        container.remove();
+      });
+    };
+  }, [
+    note.message,
+    onTaskAdd,
+    activeInputIndex,
+    isSaving,
+    handleInputKeyDown,
+    handleCancelInput,
+  ]);
 
   return (
     <div
