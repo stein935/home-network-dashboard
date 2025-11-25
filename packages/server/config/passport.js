@@ -11,7 +11,7 @@ function setupPassport() {
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         callbackURL: process.env.GOOGLE_CALLBACK_URL,
         accessType: 'offline',
-        prompt: 'select_account',
+        prompt: 'consent', // Force consent screen to always get refresh token
       },
       async (accessToken, refreshToken, profile, done) => {
         try {
@@ -47,6 +47,11 @@ function setupPassport() {
           if (accessToken) {
             User.updateGoogleTokens(user.id, accessToken, refreshToken);
             console.log('[OAuth Strategy] Updated tokens');
+            if (!refreshToken) {
+              console.warn(
+                '[OAuth Strategy] WARNING: No refresh token received. User may need to revoke access and re-authenticate.'
+              );
+            }
           }
 
           // Update last login timestamp
