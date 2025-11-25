@@ -198,6 +198,9 @@
   }
 
   .note-message-content ul[data-type='taskList'] > li {
+    span {
+      @apply italic text-black/50;
+    }
     @apply mb-0 flex items-center gap-2 py-1;
   }
 

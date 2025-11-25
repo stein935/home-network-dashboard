@@ -378,7 +378,7 @@ export function CalendarCard({ service }) {
             disabled={windowWidth && windowWidth < MONTH_VIEW_MIN_WIDTH}
             className={`border-3 px-3 py-1 font-display text-sm uppercase transition-colors ${
               windowWidth && windowWidth < MONTH_VIEW_MIN_WIDTH
-                ? ''
+                ? 'hidden'
                 : 'text-text'
             } ${selectedViewType === 'month' ? 'border-accent1 bg-accent1 text-white' : 'border-border'}`}
             title={
