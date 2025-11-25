@@ -16,6 +16,15 @@ class CalendarService {
       );
     }
 
+    if (!tokens.refreshToken) {
+      console.warn(
+        `User ${userId} is missing refresh token. Access will expire in 1 hour.`
+      );
+      console.warn(
+        'User should log out and log back in to obtain a refresh token for permanent access.'
+      );
+    }
+
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
