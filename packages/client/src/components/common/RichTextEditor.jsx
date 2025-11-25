@@ -9,6 +9,7 @@ import { Extension } from '@tiptap/core';
 import { Plugin } from '@tiptap/pm/state';
 import { marked } from 'marked';
 import FormattedDate from './FormattedDateExtension';
+import { Dialog } from '@common/Dialog';
 import {
   Bold,
   Italic,
@@ -209,6 +210,11 @@ export default function RichTextEditor({
     return today.toISOString().split('T')[0];
   });
 
+  // State for link dialog
+  const [showLinkDialog, setShowLinkDialog] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkError, setLinkError] = useState('');
+
   // Ref to track if we're editing an existing date
   const editingDateElement = useRef(null);
   const editorContainerRef = useRef(null);
@@ -406,20 +412,56 @@ export default function RichTextEditor({
 
   const ToolbarDivider = () => <div className="h-8 w-px bg-black" />;
 
+  /**
+   * Validate URL - must start with http:// or https://
+   * @param {string} url - URL to validate
+   * @returns {boolean} - True if valid
+   */
+  const validateUrl = (url) => {
+    if (!url) return false;
+    return url.startsWith('http://') || url.startsWith('https://');
+  };
+
   const toggleLink = () => {
     const previousUrl = editor.getAttributes('link').href;
-    const url = window.prompt('Enter URL:', previousUrl);
+    setLinkUrl(previousUrl || '');
+    setLinkError('');
+    setShowLinkDialog(true);
+  };
 
-    if (url === null) {
-      return;
-    }
-
-    if (url === '') {
+  const handleLinkInsert = () => {
+    // Handle empty URL (remove link)
+    if (linkUrl === '') {
       editor.chain().focus().extendMarkRange('link').unsetLink().run();
+      setShowLinkDialog(false);
+      setLinkUrl('');
+      setLinkError('');
       return;
     }
 
-    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+    // Validate URL
+    if (!validateUrl(linkUrl)) {
+      setLinkError('URL must start with http:// or https://');
+      return;
+    }
+
+    // Insert/update link
+    editor
+      .chain()
+      .focus()
+      .extendMarkRange('link')
+      .setLink({ href: linkUrl })
+      .run();
+    setShowLinkDialog(false);
+    setLinkUrl('');
+    setLinkError('');
+  };
+
+  const handleLinkDialogClose = () => {
+    setShowLinkDialog(false);
+    setLinkUrl('');
+    setLinkError('');
+    editor.commands.focus();
   };
 
   const insertDate = () => {
@@ -616,6 +658,68 @@ export default function RichTextEditor({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Link Dialog */}
+      {showLinkDialog && (
+        <Dialog
+          title={linkUrl ? 'Edit Link' : 'Insert Link'}
+          onClose={handleLinkDialogClose}
+          maxWidth="max-w-lg"
+          footer={
+            <div className="flex gap-3">
+              <button
+                onClick={handleLinkInsert}
+                className="btn-brutal-primary flex-1"
+              >
+                {linkUrl ? 'Update Link' : 'Insert Link'}
+              </button>
+              <button
+                onClick={handleLinkDialogClose}
+                className="btn-brutal flex-1"
+              >
+                Cancel
+              </button>
+            </div>
+          }
+        >
+          <div className="space-y-4">
+            <div>
+              <label
+                htmlFor="link-url-input"
+                className="mb-2 block font-display text-sm uppercase"
+              >
+                URL
+              </label>
+              <input
+                id="link-url-input"
+                type="text"
+                value={linkUrl}
+                onChange={(e) => {
+                  setLinkUrl(e.target.value);
+                  setLinkError('');
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleLinkInsert();
+                  }
+                }}
+                className="input-brutal w-full"
+                placeholder="https://example.com"
+                autoFocus
+              />
+              {linkError && (
+                <p className="mt-2 text-sm font-bold text-red-700">
+                  {linkError}
+                </p>
+              )}
+            </div>
+            <p className="text-neutral4 text-sm">
+              Clear the URL field to remove the link.
+            </p>
+          </div>
+        </Dialog>
       )}
     </div>
   );
