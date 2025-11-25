@@ -27,7 +27,9 @@ export function EventDetailDialog({ event, onClose }) {
   };
 
   const formatDateOnly = (dateString) => {
-    const date = new Date(dateString);
+    // For date-only strings (YYYY-MM-DD), parse manually to avoid timezone shifts
+    // Adding 'T00:00:00' without 'Z' keeps it in local time
+    const date = new Date(dateString + 'T00:00:00');
     return date.toLocaleDateString('en-US', {
       weekday: 'long',
       month: 'long',
@@ -53,12 +55,8 @@ export function EventDetailDialog({ event, onClose }) {
           </div>
           {event.allDay ? (
             <div className="font-body text-text">
+              <div className="mb-1 font-bold">All day</div>
               <div>{formatDateOnly(event.start)}</div>
-              {event.start !== event.end && (
-                <div className="mt-1 text-sm text-text/70">
-                  Ends: {formatDateOnly(event.end)}
-                </div>
-              )}
             </div>
           ) : (
             <div className="font-body text-text">
