@@ -29,16 +29,7 @@ description: Create PR, merge, and cleanup feature branch
 - Ensure local branch is up to date with remote
 - If remote is ahead, pull latest changes
 
-### 2. Test Build
-
-- Run `npm run build` to verify production build succeeds
-- **If build fails:**
-  - Report the build errors clearly
-  - Abort the PR and cleanup command
-  - Suggest fixing the build errors and re-running /pr-cleanup
-  - Exit without proceeding
-
-### 3. Pull Request
+### 2. Pull Request
 
 **Create PR:**
 
@@ -67,7 +58,7 @@ description: Create PR, merge, and cleanup feature branch
 - If script exits with code 1: PR was closed without merging, abort cleanup
 - If script exits with code 2: Timeout reached, notify user and abort cleanup
 
-### 4. Cleanup
+### 3. Cleanup
 
 **Confirm branch deletion:**
 
@@ -90,7 +81,7 @@ description: Create PR, merge, and cleanup feature branch
 - Skip branch deletion
 - Inform user: "Feature branch preserved: `<branch-name>`"
 
-### 5. Completion
+### 4. Completion
 
 End operation with message:
 

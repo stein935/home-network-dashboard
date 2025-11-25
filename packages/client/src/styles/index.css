@@ -156,6 +156,10 @@
     line-height: 1.5;
   }
 
+  .note-message-content p {
+    @apply mb-2;
+  }
+
   .note-message-content p:last-child {
     @apply mb-0;
   }
@@ -198,6 +202,9 @@
   }
 
   .note-message-content ul[data-type='taskList'] > li {
+    p {
+      @apply mb-0;
+    }
     span {
       @apply italic text-black/50;
     }

@@ -31,18 +31,7 @@ description: Commit and push changes during development (no PR creation)
 - Run `git fetch` to verify connection to remote repository
 - Report any connection issues before proceeding
 
-### 2. Format and Lint
-
-- Run `npm run format` to fix formatting automatically
-- Run `npm run lint:fix` to fix auto-fixable lint issues
-- Run `npm run lint` to check for remaining issues
-- **If lint returns issues that couldn't be fixed automatically:**
-  - Review each lint error
-  - Fix the issues manually
-  - Re-run `npm run lint` to confirm all issues are resolved
-  - Do not proceed until lint passes with zero errors
-
-### 3. Organize Commits
+### 2. Organize Commits
 
 **Analyze changes:**
 
@@ -76,22 +65,13 @@ git add packages/client/src/utils/api.js
 git commit -m "Integrate foo API with frontend"
 ```
 
-### 4. Push to Remote
+### 3. Push to Remote
 
 - Push the feature branch to remote: `git push -u origin <branch-name>`
 - Confirm push was successful
 - Report the branch name and commit count
 
-## Error Handling
-
-If any step fails:
-
-- Report the error clearly
-- Suggest potential solutions
-- Ask for guidance before proceeding
-- Do not move to the next step until the issue is resolved
-
-## Completion
+## 4. Completion
 
 End operation with message:
 
@@ -104,3 +84,12 @@ Summary:
 - Files changed
 - Next steps: "Ready for more changes, or run /pr-cleanup when ready to merge"
 ```
+
+## Error Handling
+
+If any step fails:
+
+- Report the error clearly
+- Suggest potential solutions
+- Ask for guidance before proceeding
+- Do not move to the next step until the issue is resolved

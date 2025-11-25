@@ -1,0 +1,47 @@
+# cSpell:words deployignore ENDSSH
+name: Validate
+
+on:
+  push:
+    branches:
+      - '**'
+      - '!main'
+
+jobs:
+  validate:
+    name: Format, Lint and Build on Push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Build frontend
+        run: npm run build --workspace=home-dashboard-client
+
+      - name: Verify build output
+        run: |
+          if [ ! -d "packages/client/dist" ]; then
+            echo "Error: Build output not found at packages/client/dist"
+            exit 1
+          fi
+          echo "Build artifacts verified"
+
+      - name: Validation summary
+        run: |
+          echo "✅ Validation complete!"

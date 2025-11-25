@@ -46,6 +46,16 @@ export function NoteDetailModal({
     }
   }, [badgeConfig.icon]);
 
+  // Lock body scroll when dialog is open
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
   // Sync checkbox states based on data-checked attribute
   useEffect(() => {
     if (!messageRef.current) return;
@@ -314,7 +324,7 @@ export function NoteDetailModal({
       }}
     >
       <div
-        className="relative h-full w-full max-w-2xl overflow-y-auto border-4 border-black p-6 shadow-brutal sm:max-h-[90vh]"
+        className="relative flex h-full w-full max-w-2xl flex-col border-4 border-black p-6 shadow-brutal sm:max-h-[90vh]"
         style={{ backgroundColor: note.color }}
       >
         {/* Close button */}
@@ -359,26 +369,26 @@ export function NoteDetailModal({
         {/* Full message content */}
         <div
           ref={messageRef}
-          className="note-message-content mb-6 border-t-2 border-black pt-2 font-body text-base text-black"
+          className="note-message-content no-scrollbar min-h-0 flex-1 overflow-y-auto border-t-2 border-black pb-6 pt-2 font-body text-base text-black"
           dangerouslySetInnerHTML={{ __html: sanitizeHtml(note.message) }}
         />
 
         {/* Action buttons */}
-        <div className="left flex gap-[1px]">
+        <div className="left flex gap-[1px] border-t-2 border-black pt-2">
           <button
             onClick={(e) => {
               e.stopPropagation();
               onClose();
               if (onEdit) onEdit(note);
             }}
-            className="flex items-center gap-1 bg-black/10 px-4 py-2 font-body text-sm text-black transition-colors hover:bg-black/20"
+            className="flex w-1/2 items-center justify-center gap-1 bg-black/10 px-4 py-2 font-body text-sm text-black transition-colors hover:bg-black/20"
           >
             <Edit2 size={16} />
             <span>Edit</span>
           </button>
           <button
             onClick={onClose}
-            className="flex items-center gap-1 bg-black/10 px-4 py-2 font-body text-sm text-black transition-colors hover:bg-black/20"
+            className="flex w-1/2 items-center justify-center gap-1 bg-black/10 px-4 py-2 font-body text-sm text-black transition-colors hover:bg-black/20"
           >
             <span>Close</span>
           </button>
