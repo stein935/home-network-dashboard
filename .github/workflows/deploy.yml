@@ -93,10 +93,24 @@ jobs:
           docker-compose ps
           ENDSSH
 
+      - name: Clear OAuth tokens (force re-authentication)
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'ENDSSH'
+          cd ${{ secrets.VM_PATH || '~/home-network-dashboard' }}
+
+          echo "Clearing OAuth tokens for all users..."
+          docker exec home-network-dashboard node packages/server/scripts/clear-tokens.js
+
+          echo ""
+          echo "⚠️  All users will need to log out and log back in to re-authenticate"
+          ENDSSH
+
       - name: Deployment summary
         run: |
           echo "✅ Deployment complete!"
           echo "Application URL: https://steineck.io"
+          echo ""
+          echo "⚠️  IMPORTANT: All users must log out and log back in to get refresh tokens"
           echo ""
           echo "To view logs:"
           echo "  ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} 'cd ${{ secrets.VM_PATH || '~/home-network-dashboard' }} && docker-compose logs -f'"
