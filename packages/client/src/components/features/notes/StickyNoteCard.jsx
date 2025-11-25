@@ -29,6 +29,7 @@ export function StickyNoteCard({
   const [showDetailView, setShowDetailView] = useState(false);
   const [activeInputIndex, setActiveInputIndex] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isScrolledToBottom, setIsScrolledToBottom] = useState(false);
   const messageRef = useRef(null);
   const titleRef = useRef(null);
   const inputRef = useRef(null);
@@ -54,6 +55,26 @@ export function StickyNoteCard({
     window.addEventListener('resize', checkOverflow);
     return () => window.removeEventListener('resize', checkOverflow);
   }, [note.title, note.message]);
+
+  // Detect scroll position to hide gradient at bottom
+  useEffect(() => {
+    const messageEl = messageRef.current;
+    if (!messageEl) return;
+
+    const handleScroll = () => {
+      const isAtBottom =
+        Math.abs(
+          messageEl.scrollHeight - messageEl.scrollTop - messageEl.clientHeight
+        ) < 1;
+      setIsScrolledToBottom(isAtBottom);
+    };
+
+    // Check initial state
+    handleScroll();
+
+    messageEl.addEventListener('scroll', handleScroll);
+    return () => messageEl.removeEventListener('scroll', handleScroll);
+  }, [note.message]);
 
   // Sync checkbox states based on data-checked attribute
   useEffect(() => {
@@ -272,7 +293,7 @@ export function StickyNoteCard({
         // Create + button
         const addBtn = document.createElement('button');
         addBtn.className =
-          'task-add-btn flex items-center gap-1 text-xs mb-3 border border-1 border-black rounded-md py-1 px-2 bg-white/20 hover:bg-white/30';
+          'task-add-btn flex items-center gap-1 text-xs mb-3 border border-1 border-black rounded-md py-1 px-2 bg-white/20 hover:bg-white/30 ';
         addBtn.innerHTML = `
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 5v14M5 12h14"></path>
@@ -402,20 +423,24 @@ export function StickyNoteCard({
             )}
           </div>
 
-          {/* Message */}
-          <div
-            ref={messageRef}
-            className="note-message-content no-scrollbar flex-1 overflow-y-scroll border-t-2 border-black pt-2 font-body text-sm text-black"
-            dangerouslySetInnerHTML={{ __html: sanitizeHtml(note.message) }}
-            style={{
-              // overflow: 'hidden',
-              // lineHeight: '1.5em',
-              maskImage:
-                'linear-gradient(to top, transparent 0%, black 100px, black 100%)',
-              WebkitMaskImage:
-                'linear-gradient(to bottom, black 0%, black 70%, transparent 100%)',
-            }}
-          />
+          {/* Message with gradient overlay */}
+          <div className="relative flex-1 overflow-hidden">
+            <div
+              ref={messageRef}
+              className="note-message-content no-scrollbar absolute inset-0 overflow-y-scroll border-t-2 border-black pt-2 font-body text-sm text-black"
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(note.message) }}
+            />
+            {/* Gradient overlay - fades in/out with transition */}
+            <div
+              className="pointer-events-none absolute bottom-0 left-0 right-0 h-[70px] transition-opacity duration-300 ease-in-out"
+              style={{
+                background:
+                  'linear-gradient(to top, currentColor, transparent)',
+                opacity: hasOverflow && !isScrolledToBottom ? 1 : 0,
+                color: note.color,
+              }}
+            />
+          </div>
         </div>
 
         {/* Button cluster */}
