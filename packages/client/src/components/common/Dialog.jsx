@@ -67,7 +67,7 @@ export function Dialog({
       onMouseUp={handleMouseUp}
     >
       <div
-        className={`flex h-screen w-screen flex-col border-5 border-border bg-surface shadow-brutal sm:h-auto sm:w-full ${maxWidth}`}
+        className={`m-4 flex flex-col border-5 border-border bg-surface shadow-brutal sm:h-auto sm:w-full ${maxWidth}`}
       >
         {/* Header */}
         <div className="flex flex-shrink-0 items-center justify-between border-b-4 border-border bg-accent1 p-4 text-white sm:p-6">
@@ -88,7 +88,7 @@ export function Dialog({
 
         {/* Content */}
         <div
-          className={`flex-1 space-y-4 overflow-y-auto p-4 sm:max-h-[70vh] sm:flex-none sm:space-y-6 sm:p-6 ${contentClassName}`}
+          className={`max-h-[70vh] flex-1 space-y-4 overflow-y-auto p-4 sm:flex-none sm:space-y-6 sm:p-6 ${contentClassName}`}
         >
           {children}
         </div>
