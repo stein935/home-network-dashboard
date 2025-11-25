@@ -7,7 +7,7 @@ import { useNotification } from '@hooks/useNotification';
 import UserManagement from '@features/admin/UserManagement';
 import ServiceForm from '@features/services/ServiceForm';
 import SectionManager from '@features/admin/SectionManager';
-import { ScraperManager } from '@features/admin/ScraperManager';
+import { GetDataManager } from '@features/admin/GetDataManager';
 import Footer from '@layout/Footer';
 
 export function AdminPanel() {
@@ -155,14 +155,14 @@ export function AdminPanel() {
             Sections
           </button>
           <button
-            onClick={() => setActiveTab('scrapers')}
+            onClick={() => setActiveTab('get-data')}
             className={`w-full border-b-5 bg-gray-200 px-3 py-1 text-left font-display uppercase transition-colors sm:w-auto sm:bg-inherit sm:px-6 sm:py-3 sm:text-center ${
-              activeTab === 'scrapers'
+              activeTab === 'get-data'
                 ? 'border-accent1 text-accent1'
                 : 'border-transparent text-text/60 hover:text-text'
             }`}
           >
-            Scrapers
+            Get Data
           </button>
           <button
             onClick={() => setActiveTab('users')}
@@ -274,8 +274,8 @@ export function AdminPanel() {
           </div>
         ) : activeTab === 'sections' ? (
           <SectionManager />
-        ) : activeTab === 'scrapers' ? (
-          <ScraperManager />
+        ) : activeTab === 'get-data' ? (
+          <GetDataManager />
         ) : (
           <UserManagement />
         )}

@@ -1,35 +1,43 @@
 const db = require('../config/database');
 
+/**
+ * Data Function Log Model (formerly ScraperLog)
+ * Manages execution logs for data functions.
+ *
+ * Note: This model works with the data_function_logs table.
+ * For backward compatibility, the class name remains "ScraperLog"
+ * but all operations use the data_function_logs table.
+ */
 class ScraperLog {
-  static getAllForScraper(scraperId) {
+  static getAllForScraper(functionId) {
     return db
       .prepare(
-        'SELECT * FROM scraper_logs WHERE scraper_id = ? ORDER BY run_at DESC'
+        'SELECT * FROM data_function_logs WHERE function_id = ? ORDER BY run_at DESC'
       )
-      .all(scraperId);
+      .all(functionId);
   }
 
-  static getRecent(scraperId, limit = 10) {
+  static getRecent(functionId, limit = 10) {
     return db
       .prepare(
-        'SELECT * FROM scraper_logs WHERE scraper_id = ? ORDER BY run_at DESC LIMIT ?'
+        'SELECT * FROM data_function_logs WHERE function_id = ? ORDER BY run_at DESC LIMIT ?'
       )
-      .all(scraperId, limit);
+      .all(functionId, limit);
   }
 
   static create(
-    scraperId,
+    functionId,
     status,
     message = null,
     eventsCreated = 0,
     eventsUpdated = 0
   ) {
     const stmt = db.prepare(`
-      INSERT INTO scraper_logs (scraper_id, status, message, events_created, events_updated)
+      INSERT INTO data_function_logs (function_id, status, message, events_created, events_updated)
       VALUES (?, ?, ?, ?, ?)
     `);
     const result = stmt.run(
-      scraperId,
+      functionId,
       status,
       message,
       eventsCreated,
@@ -40,7 +48,7 @@ class ScraperLog {
 
   static deleteOlderThan(days = 30) {
     const stmt = db.prepare(`
-      DELETE FROM scraper_logs
+      DELETE FROM data_function_logs
       WHERE run_at < datetime('now', '-' || ? || ' days')
     `);
     return stmt.run(days);
