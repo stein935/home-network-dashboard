@@ -523,11 +523,14 @@ export function Dashboard() {
           const checkbox = doc.createElement('input');
           checkbox.setAttribute('type', 'checkbox');
           const textSpan = doc.createElement('span');
+          const p = doc.createElement('p');
+          p.innerHTML = '<span>No tasks in list ...</span>';
 
-          // Structure: <li><label><input><span></span></label></li>
+          // Structure: <li><label><input><span></span></label><p>No tasks in list ...</p></li>
           label.appendChild(checkbox);
           label.appendChild(textSpan);
           emptyTaskItem.appendChild(label);
+          emptyTaskItem.appendChild(p);
 
           parentTaskList.appendChild(emptyTaskItem);
         }
@@ -588,7 +591,8 @@ export function Dashboard() {
       );
       const hasOnlyEmpty =
         existingTasks.length === 1 &&
-        !existingTasks[0].querySelector('p')?.textContent.trim();
+        existingTasks[0].querySelector('p').textContent ===
+          'No tasks in list ...';
 
       if (hasOnlyEmpty) {
         // Replace empty placeholder with actual task

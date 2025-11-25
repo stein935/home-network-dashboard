@@ -76,7 +76,7 @@ export function WeekView({
           >
             {isNarrow ? (
               // Horizontal layout for narrow view
-              <div className="mb-2 flex items-center gap-3">
+              <div className="mb-2 flex items-center justify-between gap-3">
                 <div
                   className={`min-w-[60px] font-display text-sm uppercase ${isToday ? 'text-accent1' : 'text-text'}`}
                 >
@@ -86,7 +86,6 @@ export function WeekView({
                   className={`font-display text-lg ${isToday ? 'text-accent1' : 'text-text'}`}
                 >
                   {day.toLocaleDateString('en-US', {
-                    month: 'short',
                     day: 'numeric',
                   })}
                 </div>
