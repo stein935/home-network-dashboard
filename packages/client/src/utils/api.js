@@ -74,7 +74,16 @@ export const notesApi = {
   delete: (id) => api.delete(`/api/notes/${id}`),
 };
 
-// Scraper API
+// GetData API (for data functions)
+export const getDataApi = {
+  getAll: () => api.get('/api/get-data'),
+  getById: (id) => api.get(`/api/get-data/${id}`),
+  trigger: (id) => api.post(`/api/get-data/${id}/trigger`),
+  getLogs: (id, limit = 10) =>
+    api.get(`/api/get-data/${id}/logs`, { params: { limit } }),
+};
+
+// Scraper API (Deprecated - use getDataApi instead)
 export const scraperApi = {
   getAll: () => api.get('/api/scrapers'),
   getById: (id) => api.get(`/api/scrapers/${id}`),
