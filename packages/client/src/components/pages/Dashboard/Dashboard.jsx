@@ -631,13 +631,9 @@ export function Dashboard() {
 
       // Serialize and update
       const updatedMessage = doc.body.innerHTML;
-      console.log('Updating note with new task:', taskText);
       await notesApi.update(noteId, { message: updatedMessage });
-      console.log('Refreshing notes...');
       await fetchNotes();
-      console.log('Task added successfully');
     } catch (err) {
-      console.error('Error adding task:', err);
       notify.error('Failed to add task');
       throw err; // Re-throw to handle in component
     }
