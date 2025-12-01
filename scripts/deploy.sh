@@ -65,14 +65,9 @@ rsync -avz --delete \
 echo -e "${GREEN}✓ Files transferred${NC}"
 echo ""
 
-# Step 5: Transfer .env if it exists
-if [ -f ".env" ]; then
-  echo -e "${BLUE}[4/6] Transferring .env file...${NC}"
-  scp -i "$SSH_KEY" .env "$VM_USER@$VM_HOST:$VM_PATH/.env"
-  echo -e "${GREEN}✓ Environment file transferred${NC}"
-else
-  echo -e "${RED}⚠ Warning: No .env file found. You'll need to create one on the VM.${NC}"
-fi
+# Step 5: Skip .env transfer (use existing .env on VM)
+echo -e "${BLUE}[4/6] Skipping .env transfer (using existing .env on VM)...${NC}"
+echo -e "${GREEN}✓ Using production .env on VM${NC}"
 echo ""
 
 # Step 6: Build and start Docker containers on VM
