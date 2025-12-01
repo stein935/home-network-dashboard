@@ -39,16 +39,24 @@ home-network-dashboard/
 │   │   │   ├── Service.js        # Service CRUD operations
 │   │   │   ├── ServiceConfig.js  # Calendar config operations
 │   │   │   ├── Section.js        # Section CRUD with services
-│   │   │   └── Note.js           # Note CRUD operations
+│   │   │   ├── Note.js           # Note CRUD operations
+│   │   │   ├── DataFunction.js   # Data function model
+│   │   │   └── DataFunctionLog.js # Data function log model
+│   │   ├── dataFunctions/
+│   │   │   ├── index.js          # Data function registry
+│   │   │   └── marcyLunches.js   # Marcy Lunches menu data function
 │   │   ├── routes/
 │   │   │   ├── auth.js           # /auth/* - OAuth endpoints
 │   │   │   ├── services.js       # /api/services - CRUD with config
 │   │   │   ├── sections.js       # /api/sections - CRUD
 │   │   │   ├── users.js          # /api/users - admin only
 │   │   │   ├── calendar.js       # /api/calendar - Calendar API proxy
-│   │   │   └── notes.js          # /api/notes - CRUD for sticky notes
+│   │   │   ├── notes.js          # /api/notes - CRUD for sticky notes
+│   │   │   └── getData.js        # /api/get-data - Data function management
 │   │   ├── services/
-│   │   │   └── calendarService.js # Google Calendar API integration
+│   │   │   ├── calendarService.js # Google Calendar API integration
+│   │   │   ├── getDataService.js  # Data function orchestration
+│   │   │   └── scheduler.js       # Cron-based task scheduler
 │   │   ├── scripts/
 │   │   │   └── seed.js           # Add initial admin user
 │   │   ├── server.js             # Express app entry
@@ -83,7 +91,8 @@ home-network-dashboard/
 │       │   │   │   │   └── NoteDetailModal.jsx # Note detail view modal
 │       │   │   │   └── admin/
 │       │   │   │       ├── SectionManager.jsx  # Section management
-│       │   │   │       └── UserManagement.jsx  # User whitelist management
+│       │   │   │       ├── UserManagement.jsx  # User whitelist management
+│       │   │   │       └── GetDataManager.jsx  # Data function management
 │       │   │   ├── common/                     # Reusable UI components
 │       │   │   │   ├── Dialog.jsx              # Unified dialog component (blue header)
 │       │   │   │   ├── RichTextEditor.jsx      # TipTap-based rich text editor
@@ -162,6 +171,10 @@ import { getDueDateCategory } from '@utils/dateUtils';
 
 **notes**: id, title, message, color, due_date (nullable), author_id, author_name, section_id, display_order, width (1-4), height (1-3), created_at, updated_at
 
+**data_functions**: id, name, function_key (unique), calendar_id, cron_schedule, enabled, last_run, created_at, updated_at
+
+**data_function_logs**: id, function_id, status (success/error), message, events_created, events_updated, run_at
+
 ## Key Features
 
 1. **Authentication**: Google OAuth with whitelist-based access
@@ -169,8 +182,9 @@ import { getDueDateCategory } from '@utils/dateUtils';
 3. **Service Cards**: Link and calendar card types, organized in collapsible sections
 4. **Calendar Integration**: Day/week/month views with event details, attendees, meeting links
 5. **Sticky Notes**: Draggable notes with due dates, color coding, and urgency badges
-6. **Admin Interface**: Manage services, sections, and user access
-7. **Responsive Design**: Brutalist styling with adaptive layouts
+6. **Automated Data Collection**: Scheduled data functions that fetch from external APIs and create calendar events
+7. **Admin Interface**: Manage services, sections, user access, and data functions
+8. **Responsive Design**: Brutalist styling with adaptive layouts
 
 ## API Endpoints
 
@@ -217,6 +231,12 @@ import { getDueDateCategory } from '@utils/dateUtils';
 - PUT `/api/notes/:id` - Update note (author can edit own notes; optional: width, height)
 - DELETE `/api/notes/:id` - Delete note (author or admin only)
 - PUT `/api/notes/reorder` - Update display order via drag-and-drop
+
+**Get Data** (authenticated, admin only for trigger)
+
+- GET `/api/get-data` - List all data functions with metadata
+- POST `/api/get-data/:id/trigger` - Manually trigger data function execution (admin only)
+- GET `/api/get-data/:id/logs` - Get execution logs for a data function (returns last 10 logs)
 
 ## Development
 
@@ -562,6 +582,57 @@ All dialogs in the application use a shared Dialog component for consistency and
 - SectionManager - Add/edit sections
 - UserManagement - Add users to whitelist
 
+## Data Functions
+
+Data functions are automated tasks that fetch data from external APIs and create Google Calendar events. Functions are hard-coded in the codebase (no CRUD from UI) to maintain security and prevent arbitrary code execution.
+
+**Architecture:**
+
+- **Registry Pattern**: Functions defined in `packages/server/dataFunctions/` and registered in `index.js`
+- **Scheduler Service**: Node-cron executes enabled functions based on cron schedules
+- **GetData Service**: Core orchestrator with retry logic and error handling
+- **Database Tracking**: Stores function metadata, enabled state, last run time, and execution logs
+
+**Execution Flow:**
+
+1. Scheduler triggers function based on cron schedule
+2. GetDataService fetches data via function's `fetchData()` method
+3. Service transforms data via function's `parseData()` method
+4. Service queries existing events in date range
+5. Service deletes events matching `summaryPrefix` (deduplication)
+6. Service creates new events via Calendar API
+7. Service logs execution results (success/error, events created/deleted)
+
+**Retry Logic:**
+
+- 3 retry attempts with exponential backoff
+- Delays: 5 minutes, 15 minutes, 30 minutes
+- Continues on partial failures (logs errors, proceeds with remaining events)
+
+**Deduplication Strategy:**
+
+- Events identified by `summaryPrefix` (e.g., '🔥' for hot lunch, '🍱' for bistro)
+- Existing events deleted before creating new ones
+- Ensures menu/data changes always reflected accurately
+- Works across date ranges (fetches events in min/max date range)
+
+**Built-in Functions:**
+
+- **Marcy Lunches** (`marcy-lunches`)
+  - Fetches school lunch menus from LinqConnect API
+  - Creates 2 events per day: Hot Lunch (🔥) and Bistro (🍱)
+  - Runs daily at 6:00 AM
+  - Date range: Tomorrow through +7 days
+  - Deduplicates shared items by recipe name
+
+**Admin Interface:**
+
+- View all data functions with metadata
+- See calendar name, schedule, last run time, status
+- Manually trigger execution
+- View execution logs (last 10 runs)
+- No Add/Edit/Delete (functions are code-defined)
+
 ## Common Tasks
 
 **Note**: All server code is in `packages/server/`, all client code is in `packages/client/`.
@@ -583,3 +654,65 @@ All dialogs in the application use a shared Dialog component for consistency and
 - Server: `npm install <package> --workspace=home-dashboard-server`
 - Client: `npm install <package> --workspace=home-dashboard-client`
 - Root (shared): `npm install <package> -D` (for dev tools like eslint, prettier)
+
+**Add new data function**:
+
+1. Create new file in `packages/server/dataFunctions/` (e.g., `myFunction.js`)
+2. Implement required exports:
+   - `name` (string) - Display name
+   - `functionKey` (string) - Unique identifier (kebab-case)
+   - `calendarId` (string) - Target Google Calendar ID
+   - `schedule` (string) - Cron expression (e.g., `'0 6 * * *'` for 6:00 AM daily)
+   - `enabled` (boolean) - Whether function is active
+   - `fetchData()` (async function) - Fetches data from external API, returns raw data
+   - `parseData(apiData)` (function) - Transforms API data into calendar events array
+3. Register in `packages/server/dataFunctions/index.js` by adding to `dataFunctions` object
+4. Add database seed in `packages/server/models/init-db.js` (optional, or add manually via sqlite3)
+5. Calendar events must include:
+   - `summary` (string) - Event title
+   - `description` (string) - Event details
+   - `start` (object) - `{ date: 'YYYY-MM-DD' }` for all-day events
+   - `end` (object) - `{ date: 'YYYY-MM-DD' }` (next day for all-day events)
+   - `summaryPrefix` (string) - Emoji or prefix for deduplication (e.g., '🔥', '🍱')
+
+**Example Data Function**:
+
+```javascript
+const axios = require('axios');
+
+module.exports = {
+  name: 'My Data Function',
+  functionKey: 'my-function',
+  calendarId: 'calendar-id@group.calendar.google.com',
+  schedule: '0 6 * * *', // Daily at 6:00 AM
+  enabled: true,
+
+  fetchData: async function () {
+    const response = await axios.get('https://api.example.com/data', {
+      timeout: 30000,
+    });
+    return response.data;
+  },
+
+  parseData: function (apiData) {
+    const events = [];
+    for (const item of apiData.items) {
+      events.push({
+        summary: `🎯 ${item.title}`,
+        description: item.description,
+        start: { date: item.date },
+        end: { date: getNextDay(item.date) },
+        summaryPrefix: '🎯',
+      });
+    }
+    return events;
+  },
+};
+
+function getNextDay(isoDate) {
+  const [year, month, day] = isoDate.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + 1);
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+}
+```

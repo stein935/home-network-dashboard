@@ -21,6 +21,14 @@ function setupPassport() {
           console.log('[OAuth Strategy] Email:', email);
           console.log('[OAuth Strategy] Has access token:', !!accessToken);
           console.log('[OAuth Strategy] Has refresh token:', !!refreshToken);
+          console.log(
+            '[OAuth Strategy] Access token (first 20 chars):',
+            accessToken?.substring(0, 20)
+          );
+          console.log(
+            '[OAuth Strategy] Refresh token (first 20 chars):',
+            refreshToken?.substring(0, 20)
+          );
 
           // Check if user exists in whitelist by email
           let user = User.findByEmail(email);

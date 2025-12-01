@@ -442,34 +442,165 @@ function initializeDatabase() {
     console.log('Width and height columns added to notes table');
   }
 
-  // Create scrapers table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS scrapers (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      url TEXT NOT NULL,
-      calendar_id TEXT NOT NULL,
-      cron_schedule TEXT NOT NULL DEFAULT '0 6 * * *',
-      enabled BOOLEAN NOT NULL DEFAULT 1,
-      last_run DATETIME,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
+  // Check if we need to migrate scrapers table to data_functions
+  const scrapersTableInfo = db.prepare('PRAGMA table_info(scrapers)').all();
+  const scrapersTableExists = scrapersTableInfo.length > 0;
+  const hasFunctionKey = scrapersTableInfo.find(
+    (col) => col.name === 'function_key'
+  );
 
-  // Create scraper_logs table
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS scraper_logs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      scraper_id INTEGER NOT NULL,
-      status TEXT NOT NULL CHECK(status IN ('success', 'error')),
-      message TEXT,
-      events_created INTEGER DEFAULT 0,
-      events_updated INTEGER DEFAULT 0,
-      run_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (scraper_id) REFERENCES scrapers(id) ON DELETE CASCADE
+  // Check if data_functions table already exists (migration already done)
+  const dataFunctionsTableInfo = db
+    .prepare('PRAGMA table_info(data_functions)')
+    .all();
+  const dataFunctionsTableExists = dataFunctionsTableInfo.length > 0;
+
+  if (scrapersTableExists && !hasFunctionKey && !dataFunctionsTableExists) {
+    // Migrate scrapers to data_functions
+    console.log('Migrating scrapers table to data_functions...');
+
+    // Create new data_functions table (remove url, add function_key)
+    db.exec(`
+      CREATE TABLE data_functions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        function_key TEXT UNIQUE NOT NULL,
+        calendar_id TEXT NOT NULL,
+        cron_schedule TEXT NOT NULL DEFAULT '0 6 * * *',
+        enabled BOOLEAN NOT NULL DEFAULT 1,
+        last_run DATETIME,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Copy existing data (generate function_key from name)
+    const existingScrapers = db.prepare('SELECT * FROM scrapers').all();
+    if (existingScrapers.length > 0) {
+      const insertStmt = db.prepare(`
+        INSERT INTO data_functions (id, name, function_key, calendar_id, cron_schedule, enabled, last_run, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+
+      const migrate = db.transaction(() => {
+        for (const scraper of existingScrapers) {
+          // Generate function_key from name (lowercase, replace spaces with hyphens)
+          const functionKey = scraper.name.toLowerCase().replace(/\s+/g, '-');
+          insertStmt.run(
+            scraper.id,
+            scraper.name,
+            functionKey,
+            scraper.calendar_id,
+            scraper.cron_schedule,
+            scraper.enabled,
+            scraper.last_run,
+            scraper.created_at,
+            scraper.updated_at
+          );
+        }
+      });
+      migrate();
+    }
+
+    // Migrate scraper_logs to data_function_logs
+    console.log('Migrating scraper_logs to data_function_logs...');
+
+    db.exec(`
+      CREATE TABLE data_function_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        function_id INTEGER NOT NULL,
+        status TEXT NOT NULL CHECK(status IN ('success', 'error')),
+        message TEXT,
+        events_created INTEGER DEFAULT 0,
+        events_updated INTEGER DEFAULT 0,
+        run_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (function_id) REFERENCES data_functions(id) ON DELETE CASCADE
+      )
+    `);
+
+    // Copy existing logs
+    const existingLogs = db.prepare('SELECT * FROM scraper_logs').all();
+    if (existingLogs.length > 0) {
+      const insertLogStmt = db.prepare(`
+        INSERT INTO data_function_logs (id, function_id, status, message, events_created, events_updated, run_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `);
+
+      const migrateLogs = db.transaction(() => {
+        for (const log of existingLogs) {
+          insertLogStmt.run(
+            log.id,
+            log.scraper_id,
+            log.status,
+            log.message,
+            log.events_created,
+            log.events_updated,
+            log.run_at
+          );
+        }
+      });
+      migrateLogs();
+    }
+
+    // Drop old tables
+    db.exec('DROP TABLE scraper_logs');
+    db.exec('DROP TABLE scrapers');
+
+    console.log('Migration to data_functions complete');
+  } else if (!dataFunctionsTableExists) {
+    // Create fresh data_functions table
+    db.exec(`
+      CREATE TABLE data_functions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        function_key TEXT UNIQUE NOT NULL,
+        calendar_id TEXT NOT NULL,
+        cron_schedule TEXT NOT NULL DEFAULT '0 6 * * *',
+        enabled BOOLEAN NOT NULL DEFAULT 1,
+        last_run DATETIME,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create fresh data_function_logs table
+    db.exec(`
+      CREATE TABLE data_function_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        function_id INTEGER NOT NULL,
+        status TEXT NOT NULL CHECK(status IN ('success', 'error')),
+        message TEXT,
+        events_created INTEGER DEFAULT 0,
+        events_updated INTEGER DEFAULT 0,
+        run_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (function_id) REFERENCES data_functions(id) ON DELETE CASCADE
+      )
+    `);
+  }
+
+  // Seed Marcy Lunches data function if not exists
+  const marcyLunchesExists = db
+    .prepare(
+      "SELECT id FROM data_functions WHERE function_key = 'marcy-lunches'"
     )
-  `);
+    .get();
+
+  if (!marcyLunchesExists) {
+    console.log('Seeding Marcy Lunches data function...');
+    db.prepare(
+      `
+      INSERT INTO data_functions (name, function_key, calendar_id, cron_schedule, enabled)
+      VALUES (?, ?, ?, ?, ?)
+    `
+    ).run(
+      'Marcy Lunches',
+      'marcy-lunches',
+      'marcylunches@gmail.com',
+      '0 6 * * *',
+      1
+    );
+    console.log('Marcy Lunches data function seeded');
+  }
 
   // Create indexes
   db.exec(`
@@ -481,8 +612,8 @@ function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_service_config_service ON service_config(service_id);
     CREATE INDEX IF NOT EXISTS idx_notes_section ON notes(section_id);
     CREATE INDEX IF NOT EXISTS idx_notes_order ON notes(section_id, display_order);
-    CREATE INDEX IF NOT EXISTS idx_scraper_logs_scraper ON scraper_logs(scraper_id);
-    CREATE INDEX IF NOT EXISTS idx_scraper_logs_run_at ON scraper_logs(run_at);
+    CREATE INDEX IF NOT EXISTS idx_data_function_logs_function ON data_function_logs(function_id);
+    CREATE INDEX IF NOT EXISTS idx_data_function_logs_run_at ON data_function_logs(run_at);
   `);
 
   // Ensure default section exists
