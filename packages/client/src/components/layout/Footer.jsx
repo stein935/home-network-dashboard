@@ -23,6 +23,8 @@ export function Footer() {
         <Link to="/terms">T&Cs</Link>
         <span>•</span>
         <span>{currentYear}</span>
+        <span>•</span>
+        <span>v{__APP_VERSION__}</span>
       </div>
       <div className="flex items-center justify-between">
         <div className="flex w-full flex-row gap-4 sm:w-auto">
@@ -51,6 +53,8 @@ export function Footer() {
           <Link to="/terms">Terms & Conditions</Link>
           <span>•</span>
           <span>{currentYear}</span>
+          <span>•</span>
+          <span>v{__APP_VERSION__}</span>
         </div>
       </div>
     </div>
