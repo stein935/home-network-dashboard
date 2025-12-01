@@ -9,8 +9,8 @@
 const express = require('express');
 const { param, validationResult } = require('express-validator');
 const router = express.Router();
-const Scraper = require('../models/Scraper'); // Uses data_functions table
-const ScraperLog = require('../models/ScraperLog'); // Uses data_function_logs table
+const DataFunction = require('../models/DataFunction');
+const DataFunctionLog = require('../models/DataFunctionLog');
 const GetDataService = require('../services/getDataService');
 const isAdmin = require('../middleware/admin');
 
@@ -21,7 +21,7 @@ const isAdmin = require('../middleware/admin');
  */
 router.get('/', isAdmin, (req, res) => {
   try {
-    const dataFunctions = Scraper.getAll();
+    const dataFunctions = DataFunction.getAll();
     res.json(dataFunctions);
   } catch (error) {
     console.error('Error fetching data functions:', error);
@@ -41,7 +41,7 @@ router.get('/:id', isAdmin, [param('id').isInt()], (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const dataFunction = Scraper.findById(req.params.id);
+    const dataFunction = DataFunction.findById(req.params.id);
     if (!dataFunction) {
       return res.status(404).json({ error: 'Data function not found' });
     }
@@ -69,7 +69,7 @@ router.post(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const dataFunction = Scraper.findById(req.params.id);
+      const dataFunction = DataFunction.findById(req.params.id);
       if (!dataFunction) {
         return res.status(404).json({ error: 'Data function not found' });
       }
@@ -113,13 +113,13 @@ router.get('/:id/logs', isAdmin, [param('id').isInt()], (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const dataFunction = Scraper.findById(req.params.id);
+    const dataFunction = DataFunction.findById(req.params.id);
     if (!dataFunction) {
       return res.status(404).json({ error: 'Data function not found' });
     }
 
     const limit = req.query.limit ? parseInt(req.query.limit, 10) : 10;
-    const logs = ScraperLog.getRecent(req.params.id, limit);
+    const logs = DataFunctionLog.getRecent(req.params.id, limit);
 
     res.json(logs);
   } catch (error) {

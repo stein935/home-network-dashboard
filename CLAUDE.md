@@ -40,8 +40,8 @@ home-network-dashboard/
 │   │   │   ├── ServiceConfig.js  # Calendar config operations
 │   │   │   ├── Section.js        # Section CRUD with services
 │   │   │   ├── Note.js           # Note CRUD operations
-│   │   │   ├── Scraper.js        # Data function model (backwards compatible name)
-│   │   │   └── ScraperLog.js     # Data function log model (backwards compatible name)
+│   │   │   ├── DataFunction.js   # Data function model
+│   │   │   └── DataFunctionLog.js # Data function log model
 │   │   ├── dataFunctions/
 │   │   │   ├── index.js          # Data function registry
 │   │   │   └── marcyLunches.js   # Marcy Lunches menu data function

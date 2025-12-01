@@ -7,8 +7,8 @@
 
 const dataFunctionRegistry = require('../dataFunctions');
 const CalendarService = require('./calendarService');
-const Scraper = require('../models/Scraper'); // Will be renamed to DataFunction
-const ScraperLog = require('../models/ScraperLog'); // Will be renamed to DataFunctionLog
+const DataFunction = require('../models/DataFunction');
+const DataFunctionLog = require('../models/DataFunctionLog');
 
 class GetDataService {
   /**
@@ -21,7 +21,7 @@ class GetDataService {
     console.log(`Starting data function execution: functionId=${functionId}`);
 
     // Get function from database
-    const dbFunction = Scraper.findById(functionId);
+    const dbFunction = DataFunction.findById(functionId);
     if (!dbFunction) {
       throw new Error(`Data function not found: ${functionId}`);
     }
@@ -39,7 +39,7 @@ class GetDataService {
     if (!functionDef) {
       const error = `Data function not found in registry: ${dbFunction.function_key || dbFunction.name}`;
       console.error(error);
-      ScraperLog.create(functionId, 'error', error, 0, 0);
+      DataFunctionLog.create(functionId, 'error', error, 0, 0);
       throw new Error(error);
     }
 
@@ -52,10 +52,10 @@ class GetDataService {
       );
 
       // Update last run time
-      Scraper.updateLastRun(functionId);
+      DataFunction.updateLastRun(functionId);
 
       // Log success
-      ScraperLog.create(
+      DataFunctionLog.create(
         functionId,
         'success',
         result.message,
@@ -69,7 +69,7 @@ class GetDataService {
       console.error(`Data function failed: ${dbFunction.name}`, error.message);
 
       // Log error
-      ScraperLog.create(functionId, 'error', error.message, 0, 0);
+      DataFunctionLog.create(functionId, 'error', error.message, 0, 0);
 
       throw error;
     }
@@ -318,7 +318,7 @@ class GetDataService {
    * @returns {Array} Array of data function records
    */
   static getAllFunctions() {
-    return Scraper.getAll();
+    return DataFunction.getAll();
   }
 
   /**
@@ -327,7 +327,7 @@ class GetDataService {
    * @returns {Object|null} Function record or null
    */
   static getFunction(functionId) {
-    return Scraper.findById(functionId);
+    return DataFunction.findById(functionId);
   }
 
   /**
@@ -335,7 +335,7 @@ class GetDataService {
    * @returns {Array} Array of enabled data function records
    */
   static getEnabledFunctions() {
-    return Scraper.getEnabled();
+    return DataFunction.getEnabled();
   }
 }
 
