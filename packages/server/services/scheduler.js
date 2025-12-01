@@ -1,14 +1,11 @@
 const cron = require('node-cron');
-const Scraper = require('../models/Scraper'); // Now uses data_functions table
+const DataFunction = require('../models/DataFunction');
 const GetDataService = require('./getDataService');
 const User = require('../models/User');
 
 /**
  * Scheduler Service
  * Manages scheduled execution of data functions using cron.
- *
- * Note: This scheduler now works with data functions (formerly scrapers).
- * The Scraper model has been updated to use the data_functions table.
  */
 class Scheduler {
   constructor() {
@@ -35,7 +32,7 @@ class Scheduler {
     console.log(`Data functions will run as user: ${admins[0].email}`);
 
     // Get all enabled data functions
-    const dataFunctions = Scraper.getEnabled();
+    const dataFunctions = DataFunction.getEnabled();
     console.log(`Found ${dataFunctions.length} enabled data functions`);
 
     // Schedule each data function
@@ -96,7 +93,7 @@ class Scheduler {
    * @param {number} functionId - ID of the data function to update
    */
   updateSchedule(functionId) {
-    const dataFunction = Scraper.findById(functionId);
+    const dataFunction = DataFunction.findById(functionId);
     if (!dataFunction) {
       console.error(`Data function ${functionId} not found`);
       return;
@@ -131,11 +128,6 @@ class Scheduler {
       console.log(`Stopped data function ${functionId}`);
     }
     this.tasks.clear();
-  }
-
-  // Backward compatibility aliases
-  scheduleScraperTask(scraper) {
-    return this.scheduleDataFunctionTask(scraper);
   }
 }
 

@@ -25,7 +25,7 @@ module.exports = {
   fetchData: async function () {
     const today = new Date();
     const startDate = addDays(today, 1); // Tomorrow
-    const endDate = addDays(today, 7); // +7 days
+    const endDate = addDays(today, 28); // +7 days
 
     const params = {
       buildingId: 'ff05b302-22d7-ee11-a71c-a811a99a3020',
@@ -337,6 +337,7 @@ function createHotLunchEvent(menuMeals, date) {
     start: { date },
     end: { date: getNextDay(date) },
     summaryPrefix: '🔥', // For deduplication
+    transparency: 'transparent',
   };
 }
 
@@ -409,5 +410,6 @@ function createBistroEvent(menuMeals, date) {
     start: { date },
     end: { date: getNextDay(date) },
     summaryPrefix: '🍱', // For deduplication
+    transparency: 'transparent',
   };
 }

@@ -1,15 +1,13 @@
 const db = require('../config/database');
 
 /**
- * Data Function Log Model (formerly ScraperLog)
+ * Data Function Log Model
  * Manages execution logs for data functions.
  *
- * Note: This model works with the data_function_logs table.
- * For backward compatibility, the class name remains "ScraperLog"
- * but all operations use the data_function_logs table.
+ * This model works with the data_function_logs table.
  */
-class ScraperLog {
-  static getAllForScraper(functionId) {
+class DataFunctionLog {
+  static getAllForFunction(functionId) {
     return db
       .prepare(
         'SELECT * FROM data_function_logs WHERE function_id = ? ORDER BY run_at DESC'
@@ -55,4 +53,4 @@ class ScraperLog {
   }
 }
 
-module.exports = ScraperLog;
+module.exports = DataFunctionLog;

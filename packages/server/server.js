@@ -20,7 +20,6 @@ const sectionsRoutes = require('./routes/sections');
 const usersRoutes = require('./routes/users');
 const calendarRoutes = require('./routes/calendar');
 const notesRoutes = require('./routes/notes');
-const scraperRoutes = require('./routes/scraper'); // Deprecated
 const getDataRoutes = require('./routes/getData');
 
 // Import scheduler
@@ -101,7 +100,6 @@ app.use('/api/sections', sectionsRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/notes', notesRoutes);
-app.use('/api/scrapers', scraperRoutes); // Deprecated - use /api/get-data instead
 app.use('/api/get-data', getDataRoutes);
 
 // Initialize scheduler after database and routes are set up

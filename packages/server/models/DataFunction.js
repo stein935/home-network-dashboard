@@ -1,15 +1,13 @@
 const db = require('../config/database');
 
 /**
- * Data Function Model (formerly Scraper)
+ * Data Function Model
  * Manages data functions that fetch data from external APIs
  * and create Google Calendar events.
  *
- * Note: This model works with the data_functions table.
- * For backward compatibility, the class name remains "Scraper"
- * but all operations use the data_functions table.
+ * This model works with the data_functions table.
  */
-class Scraper {
+class DataFunction {
   static getAll() {
     return db.prepare('SELECT * FROM data_functions ORDER BY id ASC').all();
   }
@@ -72,4 +70,4 @@ class Scraper {
   }
 }
 
-module.exports = Scraper;
+module.exports = DataFunction;
