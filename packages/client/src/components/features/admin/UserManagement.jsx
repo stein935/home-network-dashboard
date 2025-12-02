@@ -191,36 +191,23 @@ export function UserManagement() {
         </Dialog>
       )}
 
-      <div className="overflow-x-auto border-5 border-border bg-surface shadow-brutal">
-        <table className="w-full">
-          <thead className="border-b-3 border-border">
+      <div className="overflow-x-auto">
+        <table className="admin">
+          <thead>
             <tr>
-              <th className="p-4 text-left font-display uppercase text-text">
-                Email
-              </th>
-              <th className="p-4 text-left font-display uppercase text-text">
-                Name
-              </th>
-              <th className="p-4 text-left font-display uppercase text-text">
-                Role
-              </th>
-              <th className="p-4 text-left font-display uppercase text-text">
-                Last Login
-              </th>
-              <th className="p-4 text-right font-display uppercase text-text">
-                Actions
-              </th>
+              <th>Email</th>
+              <th>Name</th>
+              <th>Role</th>
+              <th>Last Login</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {users.map((user) => (
-              <tr
-                key={user.id}
-                className="border-b border-border/30 last:border-0"
-              >
-                <td className="p-4 font-body text-text">{user.email}</td>
-                <td className="p-4 font-body text-text">{user.name || '-'}</td>
-                <td className="p-4">
+              <tr key={user.id}>
+                <td>{user.email}</td>
+                <td>{user.name || '-'}</td>
+                <td>
                   <button
                     onClick={() => handleToggleRole(user.id, user.role)}
                     disabled={user.id === currentUser?.id}
@@ -238,12 +225,12 @@ export function UserManagement() {
                     </span>
                   </button>
                 </td>
-                <td className="p-4 font-body text-sm text-text/70">
+                <td>
                   {user.last_login
                     ? new Date(user.last_login).toLocaleDateString()
                     : 'Never'}
                 </td>
-                <td className="p-4 text-right">
+                <td>
                   <button
                     onClick={() => handleDeleteUser(user.id)}
                     disabled={user.id === currentUser?.id}

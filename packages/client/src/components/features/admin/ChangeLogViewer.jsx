@@ -132,57 +132,41 @@ export function ChangeLogViewer() {
 
       {!loading && !error && logs.length > 0 && (
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse border-2 border-black">
+          <table className="admin">
             <thead>
-              <tr className="bg-black text-left text-white">
-                <th className="border-2 border-black px-3 py-2 font-display text-xs uppercase">
-                  Timestamp
-                </th>
-                <th className="border-2 border-black px-3 py-2 font-display text-xs uppercase">
-                  User
-                </th>
-                <th className="border-2 border-black px-3 py-2 font-display text-xs uppercase">
-                  Action
-                </th>
-                <th className="border-2 border-black px-3 py-2 font-display text-xs uppercase">
-                  Entity Type
-                </th>
-                <th className="border-2 border-black px-3 py-2 font-display text-xs uppercase">
-                  Entity Name
-                </th>
-                <th className="border-2 border-black px-3 py-2 font-display text-xs uppercase">
-                  Details
-                </th>
+              <tr>
+                <th>Timestamp</th>
+                <th>User</th>
+                <th>Action</th>
+                <th>Entity Type</th>
+                <th>Entity Name</th>
+                <th>Details</th>
               </tr>
             </thead>
             <tbody>
               {logs.map((log) => (
-                <tr key={log.id} className="hover:bg-gray-50">
-                  <td className="border-2 border-black px-3 py-2 text-sm">
-                    {formatDate(log.created_at)}
-                  </td>
-                  <td className="border-2 border-black px-3 py-2 text-sm">
+                <tr key={log.id}>
+                  <td>{formatDate(log.created_at)}</td>
+                  <td>
                     <div className="font-medium">{log.user_name}</div>
                     <div className="text-xs text-text/60">{log.user_email}</div>
                   </td>
-                  <td className="border-2 border-black px-3 py-2">
+                  <td>
                     <span className={getActionBadgeClass(log.action_type)}>
                       {log.action_type}
                     </span>
                   </td>
-                  <td className="border-2 border-black px-3 py-2 text-sm">
+                  <td>
                     <span className="mr-1">
                       {getEntityIcon(log.entity_type)}
                     </span>
                     {log.entity_type}
                   </td>
-                  <td className="border-2 border-black px-3 py-2 text-sm font-medium">
-                    {log.entity_name}
-                  </td>
-                  <td className="border-2 border-black px-3 py-2 text-center">
+                  <td>{log.entity_name}</td>
+                  <td>
                     <button
                       onClick={() => handleViewDetails(log)}
-                      className="border-2 border-black bg-white px-3 py-1 font-display text-xs uppercase transition-all hover:translate-x-0.5 hover:translate-y-0.5 hover:bg-accent1 hover:text-white"
+                      className="w-full border-2 border-black bg-white px-3 py-1 font-display text-xs uppercase transition-all hover:translate-x-0.5 hover:translate-y-0.5 hover:bg-accent1 hover:text-white"
                     >
                       View
                     </button>
