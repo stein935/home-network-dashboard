@@ -9,7 +9,7 @@ Brutalist-designed home network dashboard with Google OAuth, role-based access c
 - SQLite database via better-sqlite3
 - Passport.js + Google OAuth 2.0
 - Session management with connect-sqlite3
-- Models: User, Service, ServiceConfig, Section, Note
+- Models: User, Service, ServiceConfig, Section, Note, ChangeLog
 
 **Frontend** (React + Vite)
 
@@ -41,7 +41,8 @@ home-network-dashboard/
 │   │   │   ├── Section.js        # Section CRUD with services
 │   │   │   ├── Note.js           # Note CRUD operations
 │   │   │   ├── DataFunction.js   # Data function model
-│   │   │   └── DataFunctionLog.js # Data function log model
+│   │   │   ├── DataFunctionLog.js # Data function log model
+│   │   │   └── ChangeLog.js      # Change log model (audit trail)
 │   │   ├── dataFunctions/
 │   │   │   ├── index.js          # Data function registry
 │   │   │   └── marcyLunches.js   # Marcy Lunches menu data function
@@ -52,7 +53,8 @@ home-network-dashboard/
 │   │   │   ├── users.js          # /api/users - admin only
 │   │   │   ├── calendar.js       # /api/calendar - Calendar API proxy
 │   │   │   ├── notes.js          # /api/notes - CRUD for sticky notes
-│   │   │   └── getData.js        # /api/get-data - Data function management
+│   │   │   ├── getData.js        # /api/get-data - Data function management
+│   │   │   └── changeLogs.js     # /api/change-logs - Audit trail (admin only)
 │   │   ├── services/
 │   │   │   ├── calendarService.js # Google Calendar API integration
 │   │   │   ├── getDataService.js  # Data function orchestration
@@ -92,7 +94,8 @@ home-network-dashboard/
 │       │   │   │   └── admin/
 │       │   │   │       ├── SectionManager.jsx  # Section management
 │       │   │   │       ├── UserManagement.jsx  # User whitelist management
-│       │   │   │       └── GetDataManager.jsx  # Data function management
+│       │   │   │       ├── GetDataManager.jsx  # Data function management
+│       │   │   │       └── ChangeLogViewer.jsx # Change log audit trail
 │       │   │   ├── common/                     # Reusable UI components
 │       │   │   │   ├── Dialog.jsx              # Unified dialog component (blue header)
 │       │   │   │   ├── RichTextEditor.jsx      # TipTap-based rich text editor
@@ -175,6 +178,8 @@ import { getDueDateCategory } from '@utils/dateUtils';
 
 **data_function_logs**: id, function_id, status (success/error), message, events_created, events_updated, run_at
 
+**change_logs**: id, user_id, user_email, user_name, action_type (create/update/delete/trigger), entity_type (service/section/note/user/data_function), entity_id, entity_name, details (JSON), created_at
+
 ## Key Features
 
 1. **Authentication**: Google OAuth with whitelist-based access
@@ -183,8 +188,9 @@ import { getDueDateCategory } from '@utils/dateUtils';
 4. **Calendar Integration**: Day/week/month views with event details, attendees, meeting links
 5. **Sticky Notes**: Draggable notes with due dates, color coding, and urgency badges
 6. **Automated Data Collection**: Scheduled data functions that fetch from external APIs and create calendar events
-7. **Admin Interface**: Manage services, sections, user access, and data functions
-8. **Responsive Design**: Brutalist styling with adaptive layouts
+7. **Change Log**: Audit trail of all user-initiated changes with before/after details (admin-only, 7-day retention)
+8. **Admin Interface**: Manage services, sections, user access, data functions, and view change logs
+9. **Responsive Design**: Brutalist styling with adaptive layouts
 
 ## API Endpoints
 
@@ -237,6 +243,11 @@ import { getDueDateCategory } from '@utils/dateUtils';
 - GET `/api/get-data` - List all data functions with metadata
 - POST `/api/get-data/:id/trigger` - Manually trigger data function execution (admin only)
 - GET `/api/get-data/:id/logs` - Get execution logs for a data function (returns last 10 logs)
+
+**Change Logs** (admin only)
+
+- GET `/api/change-logs` - Get all change logs (paginated, query params: limit, offset)
+- DELETE `/api/change-logs/cleanup` - Manually trigger cleanup of logs older than 7 days
 
 ## Development
 
