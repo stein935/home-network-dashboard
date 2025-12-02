@@ -41,12 +41,24 @@ class User {
   }
 
   static updateGoogleTokens(id, accessToken, refreshToken) {
-    const stmt = db.prepare(`
-      UPDATE users
-      SET google_access_token = ?, google_refresh_token = ?
-      WHERE id = ?
-    `);
-    return stmt.run(accessToken, refreshToken, id);
+    // Only update refresh token if provided (not null/undefined)
+    // This prevents overwriting stored refresh token during auto-refresh
+    if (refreshToken) {
+      const stmt = db.prepare(`
+        UPDATE users
+        SET google_access_token = ?, google_refresh_token = ?
+        WHERE id = ?
+      `);
+      return stmt.run(accessToken, refreshToken, id);
+    } else {
+      // Only update access token, preserve existing refresh token
+      const stmt = db.prepare(`
+        UPDATE users
+        SET google_access_token = ?
+        WHERE id = ?
+      `);
+      return stmt.run(accessToken, id);
+    }
   }
 
   static getGoogleTokens(id) {
