@@ -5,6 +5,7 @@ const Service = require('../models/Service');
 const ServiceConfig = require('../models/ServiceConfig');
 const { isAuthenticated } = require('../middleware/auth');
 const isAdmin = require('../middleware/admin');
+const { logChange, getChangedFields } = require('../middleware/changeLogger');
 
 // Validation middleware for create
 const validateServiceCreate = [
@@ -13,9 +14,17 @@ const validateServiceCreate = [
     .isLength({ min: 1, max: 100 })
     .withMessage('Name is required and must be less than 100 characters'),
   body('url')
-    .optional({ checkFalsy: true })
     .trim()
-    .isURL()
+    .customSanitizer((value) => value || '')
+    .custom((value) => {
+      if (!value) return true; // Allow empty string
+      try {
+        new URL(value);
+        return true;
+      } catch {
+        return false;
+      }
+    })
     .withMessage('Valid URL is required'),
   body('icon').trim().isLength({ min: 1 }).withMessage('Icon is required'),
   body('section_id').isInt({ min: 1 }).withMessage('Section ID is required'),
@@ -27,8 +36,14 @@ const validateServiceCreate = [
   body('config.calendar_id').optional().trim(),
   body('config.calendar_ids')
     .optional()
-    .isArray({ min: 1, max: 5 })
-    .withMessage('calendar_ids must be an array with 1-5 items'),
+    .custom((value, { req }) => {
+      if (req.body.card_type === 'calendar' && value) {
+        if (!Array.isArray(value) || value.length < 1 || value.length > 5) {
+          throw new Error('calendar_ids must be an array with 1-5 items');
+        }
+      }
+      return true;
+    }),
   body('config.calendar_ids.*')
     .optional()
     .trim()
@@ -47,9 +62,17 @@ const validateServiceUpdate = [
     .isLength({ min: 1, max: 100 })
     .withMessage('Name is required and must be less than 100 characters'),
   body('url')
-    .optional({ checkFalsy: true })
     .trim()
-    .isURL()
+    .customSanitizer((value) => value || '')
+    .custom((value) => {
+      if (!value) return true; // Allow empty string
+      try {
+        new URL(value);
+        return true;
+      } catch {
+        return false;
+      }
+    })
     .withMessage('Valid URL is required'),
   body('icon').trim().isLength({ min: 1 }).withMessage('Icon is required'),
   body('section_id').isInt({ min: 1 }).withMessage('Section ID is required'),
@@ -61,8 +84,14 @@ const validateServiceUpdate = [
   body('config.calendar_id').optional().trim(),
   body('config.calendar_ids')
     .optional()
-    .isArray({ min: 1, max: 5 })
-    .withMessage('calendar_ids must be an array with 1-5 items'),
+    .custom((value, { req }) => {
+      if (req.body.card_type === 'calendar' && value) {
+        if (!Array.isArray(value) || value.length < 1 || value.length > 5) {
+          throw new Error('calendar_ids must be an array with 1-5 items');
+        }
+      }
+      return true;
+    }),
   body('config.calendar_ids.*')
     .optional()
     .trim()
@@ -86,47 +115,69 @@ router.get('/', isAuthenticated, (req, res) => {
 });
 
 // POST create service (admin only)
-router.post('/', isAdmin, validateServiceCreate, (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const {
-      name,
-      url = '',
-      icon,
-      section_id,
-      card_type = 'link',
-      config,
-    } = req.body;
-    // Always create new services at the top (display_order = 0)
-    const service = Service.create(name, url, icon, 0, section_id, card_type);
-
-    // If calendar card type, save config
-    if (card_type === 'calendar' && config) {
-      // Support both calendar_ids (array) and calendar_id (single, backward compat)
-      const calendarIds =
-        config.calendar_ids || (config.calendar_id ? [config.calendar_id] : []);
-
-      if (calendarIds.length > 0) {
-        ServiceConfig.upsert(
-          service.id,
-          calendarIds,
-          config.view_type || 'week'
-        );
+router.post(
+  '/',
+  isAdmin,
+  validateServiceCreate,
+  logChange({
+    action: 'create',
+    entity: 'service',
+    getEntityInfo: (req, data) => ({
+      id: data.id,
+      name: data.name,
+      newData: {
+        name: data.name,
+        url: data.url,
+        icon: data.icon,
+        card_type: data.card_type,
+        section_id: data.section_id,
+        config: data.config,
+      },
+    }),
+  }),
+  (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
       }
-    }
 
-    const serviceWithConfig = Service.findByIdWithConfig(service.id);
-    console.log(`Service created: ${name} by ${req.user.email}`);
-    res.status(201).json(serviceWithConfig);
-  } catch (error) {
-    console.error('Error creating service:', error);
-    res.status(500).json({ error: 'Failed to create service' });
+      const {
+        name,
+        url = '',
+        icon,
+        section_id,
+        card_type = 'link',
+        config,
+      } = req.body;
+      // Always create new services at the top (display_order = 0)
+      const service = Service.create(name, url, icon, 0, section_id, card_type);
+
+      // If calendar card type, save config
+      if (card_type === 'calendar' && config) {
+        // Support both calendar_ids (array) and calendar_id (single, backward compat)
+        const calendarIds =
+          config.calendar_ids ||
+          (config.calendar_id ? [config.calendar_id] : []);
+
+        if (calendarIds.length > 0) {
+          ServiceConfig.upsert(
+            service.id,
+            calendarIds,
+            config.view_type || 'week'
+          );
+        }
+      }
+
+      const serviceWithConfig = Service.findByIdWithConfig(service.id);
+      console.log(`Service created: ${name} by ${req.user.email}`);
+      res.status(201).json(serviceWithConfig);
+    } catch (error) {
+      console.error('Error creating service:', error);
+      res.status(500).json({ error: 'Failed to create service' });
+    }
   }
-});
+);
 
 // PUT update service (admin only)
 router.put(
@@ -136,6 +187,45 @@ router.put(
     param('id').isInt().withMessage('Invalid service ID'),
     ...validateServiceUpdate,
   ],
+  logChange({
+    action: 'update',
+    entity: 'service',
+    getBeforeState: async (req) => {
+      const service = Service.findByIdWithConfig(req.params.id);
+      return service
+        ? {
+            name: service.name,
+            url: service.url,
+            icon: service.icon,
+            card_type: service.card_type,
+            section_id: service.section_id,
+            config: service.config,
+          }
+        : null;
+    },
+    getEntityInfo: (req, data, beforeState) => ({
+      id: data.id,
+      name: data.name,
+      newData: {
+        name: data.name,
+        url: data.url,
+        icon: data.icon,
+        card_type: data.card_type,
+        section_id: data.section_id,
+        config: data.config,
+      },
+      changes: beforeState
+        ? getChangedFields(beforeState, {
+            name: data.name,
+            url: data.url,
+            icon: data.icon,
+            card_type: data.card_type,
+            section_id: data.section_id,
+            config: data.config,
+          })
+        : {},
+    }),
+  }),
   (req, res) => {
     try {
       const errors = validationResult(req);
@@ -201,6 +291,27 @@ router.delete(
   '/:id',
   isAdmin,
   [param('id').isInt().withMessage('Invalid service ID')],
+  logChange({
+    action: 'delete',
+    entity: 'service',
+    getBeforeState: async (req) => {
+      const service = Service.findByIdWithConfig(req.params.id);
+      return service
+        ? {
+            name: service.name,
+            url: service.url,
+            icon: service.icon,
+            card_type: service.card_type,
+            section_id: service.section_id,
+            config: service.config,
+          }
+        : null;
+    },
+    getEntityInfo: (req, data, beforeState) => ({
+      id: req.params.id,
+      name: beforeState?.name || 'Unknown Service',
+    }),
+  }),
   (req, res) => {
     try {
       const errors = validationResult(req);

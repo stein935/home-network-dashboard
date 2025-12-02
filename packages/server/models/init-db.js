@@ -602,6 +602,23 @@ function initializeDatabase() {
     console.log('Marcy Lunches data function seeded');
   }
 
+  // Create change_logs table for audit trail
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS change_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      user_email TEXT NOT NULL,
+      user_name TEXT NOT NULL,
+      action_type TEXT NOT NULL CHECK(action_type IN ('create', 'update', 'delete', 'trigger')),
+      entity_type TEXT NOT NULL CHECK(entity_type IN ('service', 'section', 'note', 'user', 'data_function')),
+      entity_id INTEGER,
+      entity_name TEXT,
+      details TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    )
+  `);
+
   // Create indexes
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id);
@@ -614,6 +631,10 @@ function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_notes_order ON notes(section_id, display_order);
     CREATE INDEX IF NOT EXISTS idx_data_function_logs_function ON data_function_logs(function_id);
     CREATE INDEX IF NOT EXISTS idx_data_function_logs_run_at ON data_function_logs(run_at);
+    CREATE INDEX IF NOT EXISTS idx_change_logs_created_at ON change_logs(created_at);
+    CREATE INDEX IF NOT EXISTS idx_change_logs_user ON change_logs(user_id);
+    CREATE INDEX IF NOT EXISTS idx_change_logs_entity ON change_logs(entity_type, entity_id);
+    CREATE INDEX IF NOT EXISTS idx_change_logs_action ON change_logs(action_type);
   `);
 
   // Ensure default section exists

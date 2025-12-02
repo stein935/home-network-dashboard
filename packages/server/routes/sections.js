@@ -4,6 +4,7 @@ const router = express.Router();
 const Section = require('../models/Section');
 const { isAuthenticated } = require('../middleware/auth');
 const isAdmin = require('../middleware/admin');
+const { logChange, getChangedFields } = require('../middleware/changeLogger');
 
 // Validation middleware
 const validateSection = [
@@ -43,33 +44,81 @@ router.get('/with-services', isAuthenticated, (req, res) => {
 });
 
 // POST create section (admin only)
-router.post('/', isAdmin, validateSection, (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+router.post(
+  '/',
+  isAdmin,
+  validateSection,
+  logChange({
+    action: 'create',
+    entity: 'section',
+    getEntityInfo: (req, data) => ({
+      id: data.id,
+      name: data.name,
+      newData: {
+        name: data.name,
+        display_order: data.display_order,
+        is_collapsed_by_default: data.is_collapsed_by_default,
+      },
+    }),
+  }),
+  (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const { name, display_order, is_collapsed_by_default } = req.body;
+      const section = Section.create(
+        name,
+        display_order,
+        is_collapsed_by_default
+      );
+
+      console.log(`Section created: ${name} by ${req.user.email}`);
+      res.status(201).json(section);
+    } catch (error) {
+      console.error('Error creating section:', error);
+      res.status(500).json({ error: 'Failed to create section' });
     }
-
-    const { name, display_order, is_collapsed_by_default } = req.body;
-    const section = Section.create(
-      name,
-      display_order,
-      is_collapsed_by_default
-    );
-
-    console.log(`Section created: ${name} by ${req.user.email}`);
-    res.status(201).json(section);
-  } catch (error) {
-    console.error('Error creating section:', error);
-    res.status(500).json({ error: 'Failed to create section' });
   }
-});
+);
 
 // PUT update section (admin only)
 router.put(
   '/:id',
   isAdmin,
   [param('id').isInt().withMessage('Invalid section ID'), ...validateSection],
+  logChange({
+    action: 'update',
+    entity: 'section',
+    getBeforeState: async (req) => {
+      const section = Section.findById(req.params.id);
+      return section
+        ? {
+            name: section.name,
+            display_order: section.display_order,
+            is_collapsed_by_default: section.is_collapsed_by_default,
+          }
+        : null;
+    },
+    getEntityInfo: (req, data, beforeState) => ({
+      id: data.id,
+      name: data.name,
+      newData: {
+        name: data.name,
+        display_order: data.display_order,
+        is_collapsed_by_default: data.is_collapsed_by_default,
+      },
+      changes: beforeState
+        ? getChangedFields(beforeState, {
+            name: data.name,
+            display_order: data.display_order,
+            is_collapsed_by_default: data.is_collapsed_by_default,
+          })
+        : {},
+    }),
+  }),
   (req, res) => {
     try {
       const errors = validationResult(req);
@@ -106,6 +155,24 @@ router.delete(
   '/:id',
   isAdmin,
   [param('id').isInt().withMessage('Invalid section ID')],
+  logChange({
+    action: 'delete',
+    entity: 'section',
+    getBeforeState: async (req) => {
+      const section = Section.findById(req.params.id);
+      return section
+        ? {
+            name: section.name,
+            display_order: section.display_order,
+            is_collapsed_by_default: section.is_collapsed_by_default,
+          }
+        : null;
+    },
+    getEntityInfo: (req, data, beforeState) => ({
+      id: req.params.id,
+      name: beforeState?.name || 'Unknown Section',
+    }),
+  }),
   (req, res) => {
     try {
       const errors = validationResult(req);

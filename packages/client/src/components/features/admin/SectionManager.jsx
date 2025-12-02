@@ -149,33 +149,22 @@ export function SectionManager() {
           <p className="text-error">{error}</p>
         </div>
       ) : (
-        <div className="overflow-x-auto border-5 border-border bg-surface shadow-brutal">
-          <table className="w-full table-fixed">
-            <thead className="border-b-3 border-border">
+        <div className="overflow-x-auto">
+          <table className="admin">
+            <thead>
               <tr>
-                <th className="w-28 p-4 text-left font-display uppercase text-text">
-                  Order
-                </th>
-                <th className="p-4 text-left font-display uppercase text-text">
-                  Name
-                </th>
-                <th className="p-4 text-right font-display uppercase text-text">
-                  Actions
-                </th>
+                <th>Order</th>
+                <th>Name</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {sections.map((section) => (
-                <tr
-                  key={section.id}
-                  className="border-b border-border/30 last:border-0"
-                >
-                  <td className="p-4 font-body text-text">
-                    {section.display_order}
-                  </td>
-                  <td className="p-4 font-body text-text">{section.name}</td>
-                  <td className="p-4 text-right">
-                    <div className="flex justify-end gap-3">
+                <tr key={section.id}>
+                  <td>{section.display_order}</td>
+                  <td>{section.name}</td>
+                  <td>
+                    <div className="flex gap-3">
                       <button
                         onClick={() => handleEditClick(section)}
                         className="text-accent1 hover:opacity-80"

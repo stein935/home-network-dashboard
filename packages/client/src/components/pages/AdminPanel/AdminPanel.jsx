@@ -8,6 +8,7 @@ import UserManagement from '@features/admin/UserManagement';
 import ServiceForm from '@features/services/ServiceForm';
 import SectionManager from '@features/admin/SectionManager';
 import { GetDataManager } from '@features/admin/GetDataManager';
+import { ChangeLogViewer } from '@features/admin/ChangeLogViewer';
 import Footer from '@layout/Footer';
 
 export function AdminPanel() {
@@ -174,6 +175,16 @@ export function AdminPanel() {
           >
             Users
           </button>
+          <button
+            onClick={() => setActiveTab('change-log')}
+            className={`w-full border-b-5 bg-gray-200 px-3 py-1 text-left font-display uppercase transition-colors sm:w-auto sm:bg-inherit sm:px-6 sm:py-3 sm:text-center ${
+              activeTab === 'change-log'
+                ? 'border-accent1 text-accent1'
+                : 'border-transparent text-text/60 hover:text-text'
+            }`}
+          >
+            Change Log
+          </button>
         </div>
         <div className="mb-8 border-b-5 border-border"></div>
 
@@ -204,51 +215,38 @@ export function AdminPanel() {
                 <p className="text-error">{error}</p>
               </div>
             ) : (
-              <div className="overflow-x-auto border-5 border-border bg-surface shadow-brutal">
-                <table className="w-full sm:table-fixed">
-                  <thead className="border-b-3 border-border">
+              <div className="overflow-x-auto">
+                <table className="admin">
+                  <thead>
                     <tr>
-                      <th className="p-2 text-left font-display uppercase text-text sm:w-20 sm:p-4">
-                        Icon
-                      </th>
-                      <th className="p-2 text-left font-display uppercase text-text sm:w-[15%] sm:p-4">
-                        Type
-                      </th>
-                      <th className="p-2 text-left font-display uppercase text-text sm:w-[20%] sm:p-4">
-                        Name
-                      </th>
-                      <th className="hidden p-2 text-left font-display uppercase text-text sm:table-cell sm:p-4">
-                        URL
-                      </th>
-                      <th className="p-2 text-right font-display uppercase text-text sm:w-28 sm:p-4">
-                        Actions
-                      </th>
+                      <th>Icon</th>
+                      <th>Type</th>
+                      <th>Name</th>
+                      <th>URL</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {services.map((service) => (
-                      <tr
-                        key={service.id}
-                        className="border-b border-border/30 last:border-0"
-                      >
-                        <td className="p-2 font-body text-text sm:p-4">
+                      <tr key={service.id}>
+                        <td>
                           {(() => {
                             const IconComponent =
                               Icons[service.icon] || Icons.ExternalLink;
-                            return <IconComponent size={24} strokeWidth={2} />;
+                            return (
+                              <IconComponent
+                                size={24}
+                                strokeWidth={2}
+                                className="m-auto"
+                              />
+                            );
                           })()}
                         </td>
-                        <td className="truncate p-2 font-body text-text sm:p-4">
-                          {service.card_type}
-                        </td>
-                        <td className="truncate p-2 font-body text-text sm:p-4">
-                          {service.name}
-                        </td>
-                        <td className="hidden truncate break-all p-2 font-body text-sm text-text/70 sm:table-cell sm:p-4">
-                          {service.url}
-                        </td>
-                        <td className="p-2 text-right sm:p-4">
-                          <div className="flex justify-end gap-3">
+                        <td>{service.card_type}</td>
+                        <td>{service.name}</td>
+                        <td>{service.url}</td>
+                        <td>
+                          <div className="flex gap-3">
                             <button
                               onClick={() => handleEditClick(service)}
                               className="text-accent1 hover:opacity-80"
@@ -276,6 +274,8 @@ export function AdminPanel() {
           <SectionManager />
         ) : activeTab === 'get-data' ? (
           <GetDataManager />
+        ) : activeTab === 'change-log' ? (
+          <ChangeLogViewer />
         ) : (
           <UserManagement />
         )}

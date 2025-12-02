@@ -21,6 +21,7 @@ const usersRoutes = require('./routes/users');
 const calendarRoutes = require('./routes/calendar');
 const notesRoutes = require('./routes/notes');
 const getDataRoutes = require('./routes/getData');
+const changeLogsRoutes = require('./routes/changeLogs');
 
 // Import scheduler
 const scheduler = require('./services/scheduler');
@@ -101,6 +102,7 @@ app.use('/api/users', usersRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/notes', notesRoutes);
 app.use('/api/get-data', getDataRoutes);
+app.use('/api/change-logs', changeLogsRoutes);
 
 // Initialize scheduler after database and routes are set up
 scheduler.initialize().catch((err) => {

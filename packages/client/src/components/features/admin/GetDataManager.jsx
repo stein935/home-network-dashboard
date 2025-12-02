@@ -160,37 +160,22 @@ export function GetDataManager() {
           <p className="text-error">{error}</p>
         </div>
       ) : (
-        <div className="overflow-x-auto border-5 border-border bg-surface shadow-brutal">
-          <table className="w-full">
-            <thead className="border-b-3 border-border">
+        <div className="overflow-x-auto">
+          <table className="admin">
+            <thead>
               <tr>
-                <th className="p-4 text-left font-display uppercase text-text">
-                  Function Name
-                </th>
-                <th className="p-4 text-left font-display uppercase text-text">
-                  Target Calendar
-                </th>
-                <th className="p-4 text-left font-display uppercase text-text">
-                  Schedule
-                </th>
-                <th className="p-4 text-left font-display uppercase text-text">
-                  Last Run
-                </th>
-                <th className="p-4 text-left font-display uppercase text-text">
-                  Status
-                </th>
-                <th className="p-4 text-right font-display uppercase text-text">
-                  Actions
-                </th>
+                <th>Function Name</th>
+                <th>Target Calendar</th>
+                <th>Schedule</th>
+                <th>Last Run</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {dataFunctions.map((func) => (
-                <tr
-                  key={func.id}
-                  className="border-b-3 border-border last:border-b-0"
-                >
-                  <td className="p-4">
+                <tr key={func.id}>
+                  <td>
                     <div className="truncate font-display uppercase">
                       {func.name}
                     </div>
@@ -200,12 +185,12 @@ export function GetDataManager() {
                       </div>
                     )}
                   </td>
-                  <td className="p-4">
+                  <td>
                     <div className="text-sm">
                       {getCalendarName(func.calendar_id)}
                     </div>
                   </td>
-                  <td className="p-4">
+                  <td>
                     <div className="text-sm">
                       {formatSchedule(func.cron_schedule)}
                     </div>
@@ -213,8 +198,8 @@ export function GetDataManager() {
                       {func.cron_schedule}
                     </div>
                   </td>
-                  <td className="p-4 text-sm">{formatDate(func.last_run)}</td>
-                  <td className="p-4">
+                  <td>{formatDate(func.last_run)}</td>
+                  <td>
                     <span
                       className={`inline-block rounded px-2 py-1 text-xs font-bold uppercase ${
                         func.enabled
@@ -225,8 +210,8 @@ export function GetDataManager() {
                       {func.enabled ? 'Enabled' : 'Disabled'}
                     </span>
                   </td>
-                  <td className="p-4">
-                    <div className="flex justify-end gap-2">
+                  <td>
+                    <div className="flex gap-2">
                       <button
                         onClick={() => handleTrigger(func.id, func.name)}
                         disabled={triggering === func.id}

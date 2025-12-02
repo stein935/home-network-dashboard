@@ -83,4 +83,10 @@ export const getDataApi = {
     api.get(`/api/get-data/${id}/logs`, { params: { limit } }),
 };
 
+// Change Logs API
+export const changeLogsApi = {
+  getAll: (params) => api.get('/api/change-logs', { params }),
+  cleanup: () => api.delete('/api/change-logs/cleanup'),
+};
+
 export default api;

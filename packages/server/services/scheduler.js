@@ -2,6 +2,7 @@ const cron = require('node-cron');
 const DataFunction = require('../models/DataFunction');
 const GetDataService = require('./getDataService');
 const User = require('../models/User');
+const ChangeLog = require('../models/ChangeLog');
 
 /**
  * Scheduler Service
@@ -11,6 +12,7 @@ class Scheduler {
   constructor() {
     this.tasks = new Map(); // Map of functionId -> cron task
     this.adminUserId = null;
+    this.cleanupTask = null; // Change log cleanup task
   }
 
   /**
@@ -40,7 +42,30 @@ class Scheduler {
       this.scheduleDataFunctionTask(dataFunction);
     }
 
+    // Schedule change log cleanup (daily at midnight)
+    this.scheduleChangeLogCleanup();
+
     console.log('Scheduler initialized successfully');
+  }
+
+  /**
+   * Schedule daily change log cleanup task
+   * Runs at midnight every day and deletes logs older than 7 days
+   */
+  scheduleChangeLogCleanup() {
+    console.log('Scheduling change log cleanup task (daily at midnight)...');
+
+    this.cleanupTask = cron.schedule('0 0 * * *', () => {
+      console.log('Running scheduled change log cleanup...');
+      try {
+        const deletedCount = ChangeLog.deleteOlderThan(7);
+        console.log(
+          `Change log cleanup completed: ${deletedCount} logs deleted`
+        );
+      } catch (error) {
+        console.error('Failed to cleanup change logs:', error);
+      }
+    });
   }
 
   /**
@@ -128,6 +153,12 @@ class Scheduler {
       console.log(`Stopped data function ${functionId}`);
     }
     this.tasks.clear();
+
+    // Stop change log cleanup task
+    if (this.cleanupTask) {
+      this.cleanupTask.stop();
+      console.log('Stopped change log cleanup task');
+    }
   }
 }
 

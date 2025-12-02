@@ -4,6 +4,7 @@ const sanitizeHtml = require('sanitize-html');
 const router = express.Router();
 const Note = require('../models/Note');
 const { isAuthenticated } = require('../middleware/auth');
+const { logChange, getChangedFields } = require('../middleware/changeLogger');
 
 // HTML sanitization configuration
 const sanitizeOptions = {
@@ -169,48 +170,105 @@ router.get(
 );
 
 // POST create note (requires authentication)
-router.post('/', isAuthenticated, validateNote, (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+router.post(
+  '/',
+  isAuthenticated,
+  validateNote,
+  logChange({
+    action: 'create',
+    entity: 'note',
+    getEntityInfo: (req, data) => ({
+      id: data.id,
+      name: data.title,
+      newData: {
+        title: data.title,
+        author_email: data.author_email,
+        author_name: data.author_name,
+        due_date: data.due_date,
+        color: data.color,
+        section_id: data.section_id,
+      },
+    }),
+  }),
+  (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const { sectionId, title, message, dueDate, color, width, height } =
+        req.body;
+
+      // Sanitize HTML message to prevent XSS
+      const sanitizedMessage = sanitizeMessage(message);
+
+      // Extract author info from authenticated user
+      const authorEmail = req.user.email;
+      const authorName = req.user.name || req.user.email;
+
+      const note = Note.create({
+        sectionId,
+        title,
+        message: sanitizedMessage,
+        authorEmail,
+        authorName,
+        dueDate: dueDate || null,
+        color,
+        width,
+        height,
+      });
+
+      console.log(`Note created: "${title}" by ${authorEmail}`);
+      res.status(201).json(note);
+    } catch (error) {
+      console.error('Error creating note:', error);
+      res.status(500).json({ error: 'Failed to create note' });
     }
-
-    const { sectionId, title, message, dueDate, color, width, height } =
-      req.body;
-
-    // Sanitize HTML message to prevent XSS
-    const sanitizedMessage = sanitizeMessage(message);
-
-    // Extract author info from authenticated user
-    const authorEmail = req.user.email;
-    const authorName = req.user.name || req.user.email;
-
-    const note = Note.create({
-      sectionId,
-      title,
-      message: sanitizedMessage,
-      authorEmail,
-      authorName,
-      dueDate: dueDate || null,
-      color,
-      width,
-      height,
-    });
-
-    console.log(`Note created: "${title}" by ${authorEmail}`);
-    res.status(201).json(note);
-  } catch (error) {
-    console.error('Error creating note:', error);
-    res.status(500).json({ error: 'Failed to create note' });
   }
-});
+);
 
 // PUT update note (requires authentication)
 router.put(
   '/:id',
   isAuthenticated,
   [param('id').isInt().withMessage('Invalid note ID'), ...validateNoteUpdate],
+  logChange({
+    action: 'update',
+    entity: 'note',
+    getBeforeState: async (req) => {
+      const note = Note.findById(req.params.id);
+      return note
+        ? {
+            title: note.title,
+            due_date: note.due_date,
+            color: note.color,
+            width: note.width,
+            height: note.height,
+          }
+        : null;
+    },
+    getEntityInfo: (req, data, beforeState) => ({
+      id: data.id,
+      name: data.title,
+      newData: {
+        title: data.title,
+        due_date: data.due_date,
+        color: data.color,
+        width: data.width,
+        height: data.height,
+      },
+      changes: beforeState
+        ? getChangedFields(beforeState, {
+            title: data.title,
+            due_date: data.due_date,
+            color: data.color,
+            width: data.width,
+            height: data.height,
+          })
+        : {},
+    }),
+  }),
   (req, res) => {
     try {
       const errors = validationResult(req);
@@ -284,6 +342,25 @@ router.delete(
   '/:id',
   isAuthenticated,
   [param('id').isInt().withMessage('Invalid note ID')],
+  logChange({
+    action: 'delete',
+    entity: 'note',
+    getBeforeState: async (req) => {
+      const note = Note.findById(req.params.id);
+      return note
+        ? {
+            title: note.title,
+            author_email: note.author_email,
+            author_name: note.author_name,
+            section_id: note.section_id,
+          }
+        : null;
+    },
+    getEntityInfo: (req, data, beforeState) => ({
+      id: req.params.id,
+      name: beforeState?.title || 'Unknown Note',
+    }),
+  }),
   (req, res) => {
     try {
       const errors = validationResult(req);
