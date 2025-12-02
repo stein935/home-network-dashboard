@@ -13,6 +13,7 @@ const DataFunction = require('../models/DataFunction');
 const DataFunctionLog = require('../models/DataFunctionLog');
 const GetDataService = require('../services/getDataService');
 const isAdmin = require('../middleware/admin');
+const { logChange } = require('../middleware/changeLogger');
 
 /**
  * GET /api/get-data
@@ -62,6 +63,22 @@ router.post(
   '/:id/trigger',
   isAdmin,
   [param('id').isInt()],
+  logChange({
+    action: 'trigger',
+    entity: 'data_function',
+    getEntityInfo: (req, data) => {
+      const dataFunction = DataFunction.findById(req.params.id);
+      return {
+        id: req.params.id,
+        name: dataFunction?.name || 'Unknown Data Function',
+        details: {
+          eventsCreated: data.eventsCreated || 0,
+          eventsDeleted: data.eventsDeleted || 0,
+          message: data.message || '',
+        },
+      };
+    },
+  }),
   async (req, res) => {
     try {
       const errors = validationResult(req);
